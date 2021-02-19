@@ -1631,7 +1631,7 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"-h             : show this help\n"
 	"-v             : show version\n"
 	"\n"
-	"long options:\n",
+	"long options:\n"
 	"--gpio_button=<digit>     : Raspberry Pi GPIO pin number of button (2...27)\n"
 	"                            default = GPIO not in use\n"
 	"--gpio_statusled=<digit>  : Raspberry Pi GPIO number of status LED (2...27)\n"
@@ -1653,7 +1653,7 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"                             see man pcap-filter for a list of all filter options\n"
 	"--help                    : show this help\n"
 	"--version                 : show version\n",
-	eigenname, VERSIONTAG, VERSIONYEAR);
+	eigenname, VERSIONTAG, VERSIONYEAR, eigenname);
 exit(EXIT_SUCCESS);
 }
 /*---------------------------------------------------------------------------*/
