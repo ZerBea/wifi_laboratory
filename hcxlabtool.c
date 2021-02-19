@@ -756,19 +756,23 @@ return;
 }
 /*===========================================================================*/
 /*===========================================================================*/
+#ifdef DUMPALL
 static inline void process80211blockack(int ifnr)
 {
 
 writeepb((interfacelist +ifnr)->fdpcapng);
 return;
 }
+#endif
 /*===========================================================================*/
+#ifdef DUMPALL
 static inline void process80211blockack_req(int ifnr)
 {
 
 writeepb((interfacelist +ifnr)->fdpcapng);
 return;
 }
+#endif
 /*===========================================================================*/
 static inline void process80211qosnull(int ifnr)
 {
@@ -1046,8 +1050,10 @@ if(macfrx->type == IEEE80211_FTYPE_MGMT)
 else if(macfrx->type == IEEE80211_FTYPE_CTL)
 	{
 	if(macfrx->subtype == IEEE80211_STYPE_PSPOLL) process80211powersave_poll(ifnr);
+#ifdef DUMPALL
 	else if(macfrx->subtype == IEEE80211_STYPE_BACK) process80211blockack(ifnr);
 	else if(macfrx->subtype == IEEE80211_STYPE_BACK_REQ) process80211blockack_req(ifnr);
+#endif
 	}
 else if(macfrx->type == IEEE80211_FTYPE_DATA)
 	{
