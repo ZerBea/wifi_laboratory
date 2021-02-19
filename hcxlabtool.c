@@ -117,6 +117,26 @@ static uint8_t epbown[PCAPNG_MAXSNAPLEN *2];
 
 /*===========================================================================*/
 /*===========================================================================*/
+static inline void debugmac2(uint8_t *mac1, uint8_t *mac2)
+{
+static uint32_t p;
+
+for(p = 0; p < 6; p++) printf("%02x", mac1[p]);
+printf(" ");
+for(p = 0; p < 6; p++) printf("%02x", mac2[p]);
+printf("\n");
+return;
+}
+/*===========================================================================*/
+static inline void debugmac(uint8_t *xxmac)
+{
+static uint32_t p;
+
+for(p = 0; p < 6; p++) printf("%02x", xxmac[p]);
+printf("\n");
+return;
+}
+/*===========================================================================*/
 static inline void debugframe4(int ifnr, char *message)
 {
 static uint32_t p;
@@ -275,6 +295,7 @@ return;
 static inline aplist_t* getaptags(aplist_t* aplist, uint8_t *macap)
 {
 static aplist_t *zeiger;
+
 for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
 	if(zeiger->timestamp == 0) return NULL;
@@ -756,38 +777,120 @@ return;
 }
 /*===========================================================================*/
 /*===========================================================================*/
-#ifdef DUMPALL
 static inline void process80211blockack(int ifnr)
 {
+static aplist_t *zeiger;
 
-writeepb((interfacelist +ifnr)->fdpcapng);
+//debug
+return;
+
+zeiger = getaptags((interfacelist +ifnr)->aplist, macfrx->addr2);
+if(zeiger != NULL)
+	{
+	if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
+		{
+		if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
+			{
+			if((geteapolownd(ifnr, macfrx->addr1, macfrx->addr2) &0xf) == 0) send_deauthentication(ifnr, macfrx->addr1, macfrx->addr2, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+			}
+		}
+	}
+else
+	{
+	zeiger = getaptags((interfacelist +ifnr)->aplist, macfrx->addr1);
+	if(zeiger != NULL)
+		{
+		if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
+			{
+			if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
+				{
+				if((geteapolownd(ifnr, macfrx->addr2, macfrx->addr1) &0xf) == 0) send_deauthentication(ifnr, macfrx->addr2, macfrx->addr1, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+				}
+			}
+		}
+	}
 return;
 }
-#endif
 /*===========================================================================*/
-#ifdef DUMPALL
 static inline void process80211blockack_req(int ifnr)
 {
+static aplist_t *zeiger;
 
-writeepb((interfacelist +ifnr)->fdpcapng);
+//debug
+return;
+zeiger = getaptags((interfacelist +ifnr)->aplist, macfrx->addr2);
+if(zeiger != NULL)
+	{
+	if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
+		{
+		if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
+			{
+			if((geteapolownd(ifnr, macfrx->addr1, macfrx->addr2) &0xf) == 0) send_deauthentication(ifnr, macfrx->addr1, macfrx->addr2, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+			}
+		}
+	}
+else
+	{
+	zeiger = getaptags((interfacelist +ifnr)->aplist, macfrx->addr1);
+	if(zeiger != NULL)
+		{
+		if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
+			{
+			if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
+				{
+				if((geteapolownd(ifnr, macfrx->addr2, macfrx->addr1) &0xf) == 0) send_deauthentication(ifnr, macfrx->addr2, macfrx->addr1, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+				}
+			}
+		}
+	}
 return;
 }
-#endif
 /*===========================================================================*/
 static inline void process80211qosnull(int ifnr)
 {
-if((geteapolownd(ifnr, macfrx->addr2, macfrx->addr1) &0xf) == 0) send_deauthentication(ifnr, macfrx->addr2, macfrx->addr1, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+static aplist_t *zeiger;
+
+zeiger = getaptags((interfacelist +ifnr)->aplist, macfrx->addr1);
+if(zeiger != NULL)
+	{
+	if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
+		{
+		if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
+			{
+			debugmac2(macfrx->addr2, macfrx->addr1);
+			if((geteapolownd(ifnr, macfrx->addr2, macfrx->addr1) &0xf) == 0) send_deauthentication(ifnr, macfrx->addr2, macfrx->addr1, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+			}
+		}
+	}
 return;
 }
 /*===========================================================================*/
 static inline void process80211null(int ifnr)
 {
-if((geteapolownd(ifnr, macfrx->addr2, macfrx->addr1) &0xf) == 0) send_deauthentication(ifnr, macfrx->addr2, macfrx->addr1, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+static aplist_t *zeiger;
+
+//debug
+return;
+zeiger = getaptags((interfacelist +ifnr)->aplist, macfrx->addr1);
+if(zeiger != NULL)
+	{
+	if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
+		{
+		if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
+			{
+			debugmac2(macfrx->addr2, macfrx->addr1);
+			if((geteapolownd(ifnr, macfrx->addr2, macfrx->addr1) &0xf) == 0) send_deauthentication(ifnr, macfrx->addr2, macfrx->addr1, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+			}
+		}
+	}
 return;
 }
 /*===========================================================================*/
 static inline void process80211powersave_poll(int ifnr)
 {
+
+debugframe2(ifnr, "power save");
+
 
 writeepb((interfacelist +ifnr)->fdpcapng);
 return;
@@ -795,6 +898,8 @@ return;
 /*===========================================================================*/
 static inline void process80211action(int ifnr)
 {
+
+printf("debug ACTION\n");
 
 writeepb((interfacelist +ifnr)->fdpcapng);
 return;
@@ -959,8 +1064,9 @@ for(zeiger = (interfacelist +ifnr)->aplist; zeiger < (interfacelist +ifnr)->apli
 	zeiger->status |= STATUS_BEACON;
 	return;
 	}
-send_deauthentication(ifnr, macfrx->addr1, macfrx->addr2, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
-send_deauthentication(ifnr, macfrx->addr1, macfrx->addr2, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+//debug
+//send_deauthentication(ifnr, macfrx->addr1, macfrx->addr2, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+//send_deauthentication(ifnr, macfrx->addr1, macfrx->addr2, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 memset(zeiger, 0, APLIST_SIZE);
 gettags(apinfolen, apinfoptr, zeiger);
 if((interfacelist +ifnr)->channel != zeiger->channel) return;
@@ -1046,28 +1152,30 @@ if(macfrx->type == IEEE80211_FTYPE_MGMT)
 	else if(macfrx->subtype == IEEE80211_STYPE_REASSOC_REQ) process80211reassociation_req(ifnr);
 	else if(macfrx->subtype == IEEE80211_STYPE_ASSOC_RESP) process80211association_resp(ifnr);
 	else if(macfrx->subtype == IEEE80211_STYPE_REASSOC_RESP) process80211reassociation_resp(ifnr);
+	else if(macfrx->subtype == IEEE80211_STYPE_ACTION) process80211action(ifnr);
 	}
 else if(macfrx->type == IEEE80211_FTYPE_CTL)
 	{
-	if(macfrx->subtype == IEEE80211_STYPE_PSPOLL) process80211powersave_poll(ifnr);
-#ifdef DUMPALL
-	else if(macfrx->subtype == IEEE80211_STYPE_BACK) process80211blockack(ifnr);
+	if(macfrx->subtype == IEEE80211_STYPE_BACK) process80211blockack(ifnr);
 	else if(macfrx->subtype == IEEE80211_STYPE_BACK_REQ) process80211blockack_req(ifnr);
-#endif
+	else if(macfrx->subtype == IEEE80211_STYPE_PSPOLL) process80211powersave_poll(ifnr);
 	}
 else if(macfrx->type == IEEE80211_FTYPE_DATA)
 	{
-	if((macfrx->subtype &IEEE80211_STYPE_NULLFUNC) == IEEE80211_STYPE_NULLFUNC) process80211null(ifnr);
-	else if((macfrx->subtype &IEEE80211_STYPE_QOS_NULLFUNC) == IEEE80211_STYPE_QOS_NULLFUNC) process80211qosnull(ifnr);
 	if((macfrx->subtype &IEEE80211_STYPE_QOS_DATA) == IEEE80211_STYPE_QOS_DATA)
 		{
 		payloadptr += QOS_SIZE;
 		payloadlen -= QOS_SIZE;
 		}
+	if((macfrx->subtype &IEEE80211_STYPE_NULLFUNC) == IEEE80211_STYPE_NULLFUNC) process80211null(ifnr);
+	else if((macfrx->subtype &IEEE80211_STYPE_QOS_NULLFUNC) == IEEE80211_STYPE_QOS_NULLFUNC) process80211qosnull(ifnr);
 	if(payloadlen < LLC_SIZE) return;
 	llcptr = payloadptr;
 	llc = (llc_t*)llcptr;
 	if(((ntohs(llc->type)) == LLC_TYPE_AUTH) && (llc->dsap == LLC_SNAP) && (llc->ssap == LLC_SNAP)) process80211eap(ifnr);
+#ifdef DUMPALL
+	else writeepb((interfacelist +ifnr)->fdpcapng);
+#endif
 	}
 return;
 }
