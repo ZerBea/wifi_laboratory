@@ -202,9 +202,10 @@ static inline void globalclose()
 {
 static int ifnr;
 
+signal(SIGINT, SIG_DFL);
 if(interfacelist != NULL)
 	{
-	for(ifnr = 0; ifnr < interfacecount; ifnr++)
+	for(ifnr = 0; ifnr < INTERFACE_MAX; ifnr++)
 		{
 		if((interfacelist +ifnr)->fd > 0)
 			{
@@ -322,6 +323,8 @@ static inline void addeapolownd(int ifnr, uint8_t *macclient, uint8_t *macap, ui
 {
 static owndlist_t *zeiger; 
 
+printf("debug handshake\n");
+debugmac2(macclient,macap);
 for(zeiger = (interfacelist +ifnr)->owndlist; zeiger < (interfacelist +ifnr)->owndlist +OWNDLIST_MAX; zeiger++)
 	{
 	if(zeiger->timestamp == 0) break;
@@ -781,9 +784,6 @@ static inline void process80211blockack(int ifnr)
 {
 static aplist_t *zeiger;
 
-//debug
-return;
-
 zeiger = getaptags((interfacelist +ifnr)->aplist, macfrx->addr2);
 if(zeiger != NULL)
 	{
@@ -816,8 +816,6 @@ static inline void process80211blockack_req(int ifnr)
 {
 static aplist_t *zeiger;
 
-//debug
-return;
 zeiger = getaptags((interfacelist +ifnr)->aplist, macfrx->addr2);
 if(zeiger != NULL)
 	{
@@ -857,7 +855,6 @@ if(zeiger != NULL)
 		{
 		if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
 			{
-			debugmac2(macfrx->addr2, macfrx->addr1);
 			if((geteapolownd(ifnr, macfrx->addr2, macfrx->addr1) &0xf) == 0) send_deauthentication(ifnr, macfrx->addr2, macfrx->addr1, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 			}
 		}
@@ -869,8 +866,6 @@ static inline void process80211null(int ifnr)
 {
 static aplist_t *zeiger;
 
-//debug
-return;
 zeiger = getaptags((interfacelist +ifnr)->aplist, macfrx->addr1);
 if(zeiger != NULL)
 	{
@@ -878,7 +873,6 @@ if(zeiger != NULL)
 		{
 		if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
 			{
-			debugmac2(macfrx->addr2, macfrx->addr1);
 			if((geteapolownd(ifnr, macfrx->addr2, macfrx->addr1) &0xf) == 0) send_deauthentication(ifnr, macfrx->addr2, macfrx->addr1, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 			}
 		}
@@ -889,7 +883,8 @@ return;
 static inline void process80211powersave_poll(int ifnr)
 {
 
-debugframe2(ifnr, "power save");
+
+printf("psp %d\n", payloadlen);
 
 
 writeepb((interfacelist +ifnr)->fdpcapng);
@@ -898,8 +893,6 @@ return;
 /*===========================================================================*/
 static inline void process80211action(int ifnr)
 {
-
-printf("debug ACTION\n");
 
 writeepb((interfacelist +ifnr)->fdpcapng);
 return;
@@ -1697,7 +1690,7 @@ macrgclient[3] = (nicrgclient >> 16) & 0xff;
 macrgclient[2] = ouirgclient & 0xff;
 macrgclient[1] = (ouirgclient >> 8) & 0xff;
 macrgclient[0] = (ouirgclient >> 16) & 0xff;
-for(ifnr = 0; ifnr < interfacecount; ifnr++)
+for(ifnr = 0; ifnr < INTERFACE_MAX; ifnr++)
 	{
 	(interfacelist +ifnr)->ouirgap = (myvendorap[rand() %((MYVENDORAP_SIZE /sizeof(int)))]) &0xfcffff;
 	(interfacelist +ifnr)->nicrgap = (rand() & 0x0fffff) +ncc;

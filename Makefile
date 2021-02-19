@@ -1,7 +1,7 @@
 INSTALLDIR	= /usr/local/bin
 
 CC	= gcc
-CFLAGS	= -O3 -Wall -Wextra 
+CFLAGS	= -O3 -Wall -Wextra -ggdb
 
 all: build
 
