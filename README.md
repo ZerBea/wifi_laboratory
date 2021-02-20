@@ -80,3 +80,5 @@ A beautiful status output make the attack tool slow and sluggish
 Too many featues make the attack tool slow and sluggish.
 
 Response time behavior becomes very bad
+
+A Raspberry Pi is not able to handle more tha one interface!
