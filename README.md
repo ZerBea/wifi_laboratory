@@ -70,3 +70,13 @@ hcxlabxxxx will create 4 files which contain the recorded traffic
 
 
 Traffic on a single interface can be monitored by tshark or Wireshark on the fly 
+
+
+Lessons learned (to be continued)
+--------------
+
+A beautiful status output make the attack tool slow and sluggish
+
+Too many featues make the attack tool slow and sluggish.
+
+Response time behavior becomes very bad
