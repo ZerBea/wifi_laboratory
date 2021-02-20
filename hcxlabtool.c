@@ -1,64 +1,19 @@
 #define _GNU_SOURCE
-#include <ctype.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <ftw.h>
 #include <getopt.h>
-#include <libgen.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-#include <utime.h>
 #include <ifaddrs.h>
-#include <linux/ethtool.h>
-#include <linux/sockios.h>
-#include <linux/if_ether.h>
-#include <linux/filter.h>
-#include <netpacket/packet.h>
-#include <arpa/inet.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-
-#include <net/if.h>
-#include <sys/mman.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <sys/stat.h>
-#include <sys/ioctl.h>
-#include <netpacket/packet.h>
-#include <ctype.h>
-#include <stdarg.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <getopt.h>
-#include <errno.h>
-#include <string.h>
-#include <fcntl.h>
-#include <limits.h>
-#include <time.h>
-#include <signal.h>
-#include <unistd.h>
 #include <inttypes.h>
+#include <signal.h>
+#include <stdlib.h>
+#include <time.h>
+#include <arpa/inet.h>
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <arpa/inet.h>
-#include <linux/if_ether.h>
 #include <linux/filter.h>
+#include <net/if.h>
+#include <netpacket/packet.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <sys/time.h>
 
 #include "include/hcxlaboratory.h"
 #include "include/wireless-lite.h"
@@ -96,6 +51,7 @@ static uint8_t *llcptr;
 static llc_t *llc;
 
 static uint16_t mydeauthenticationsequence;
+static uint16_t myclientsequence;
 
 static const uint8_t hdradiotap[] =
 {
@@ -227,7 +183,7 @@ return;
 }
 /*===========================================================================*/
 /*===========================================================================*/
-static void send_deauthentication_check(int ifnr, uint8_t *macclient, uint8_t *macap, uint8_t reason)
+static inline uint8_t send_deauthentication_check(int ifnr, uint8_t *macclient, uint8_t *macap, uint8_t reason)
 {
 static owndlist_t *zeiger; 
 static mac_t *macftx;
@@ -237,7 +193,7 @@ for(zeiger = (interfacelist +ifnr)->owndlist; zeiger < (interfacelist +ifnr)->ow
 	if(zeiger->timestamp == 0) break;
 	if(memcmp(zeiger->macap, macap, 6) != 0) continue;
 	if(memcmp(zeiger->macclient, macclient, 6) != 0) continue;
-	if(zeiger->eapolstatus != 0) return;
+	if(zeiger->eapolstatus > EAPOLM1M2) return zeiger->eapolstatus;
 	}
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +2 +1);
@@ -255,10 +211,10 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM] = reason;
 if(write((interfacelist +ifnr)->fd, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +2) == -1) errorcount++;
 macftx->retry = 1;
 if(write((interfacelist +ifnr)->fd, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +2) == -1) errorcount++;
-return;
+return 0;
 }
 /*===========================================================================*/
-static void send_deauthentication(int ifnr, uint8_t *macclient, uint8_t *macap, uint8_t reason)
+static inline void send_deauthentication(int ifnr, uint8_t *macclient, uint8_t *macap, uint8_t reason)
 {
 static mac_t *macftx;
 
@@ -350,6 +306,7 @@ for(zeiger = (interfacelist +ifnr)->owndlist; zeiger < (interfacelist +ifnr)->ow
 	if(memcmp(zeiger->macclient, macclient, 6) != 0) continue;
 	zeiger->timestamp = timestamp;
 	zeiger->eapolstatus |= eapolstatus;
+	zeiger->count += 1;
 	printf("debug handshake %x\n", zeiger->eapolstatus);
 	debugmac2(macclient,macap);
 	return;
@@ -358,6 +315,7 @@ printf("debug handshake new %x\n", zeiger->eapolstatus);
 memset(zeiger, 0, OWNDLIST_SIZE);
 zeiger->timestamp = timestamp;
 zeiger->eapolstatus = eapolstatus;
+zeiger->count = 1;
 memcpy(zeiger->macap, macap, 6);
 memcpy(zeiger->macclient, macclient, 6);
 qsort((interfacelist +ifnr)->owndlist, zeiger -(interfacelist +ifnr)->owndlist +1, OWNDLIST_SIZE, sort_owndlist_by_time);
@@ -720,9 +678,11 @@ addeapolstatus(ifnr, macfrx->addr2, macfrx->addr1, 0);
 return;
 }
 /*===========================================================================*/
-static inline void process80211eapol_m1(int ifnr, uint8_t *wpakptr)
+static inline void process80211eapol_m1(int ifnr, uint16_t authlen, uint8_t *wpakptr)
 {
 static wpakey_t *wpak;
+static int infolen;
+static pmkid_t *pmkid;
 static eapollist_t *zeiger;
 
 writeepb((interfacelist +ifnr)->fdpcapng);
@@ -734,10 +694,17 @@ memcpy(zeiger->macclient, macfrx->addr1, 6);
 zeiger->rc = be64toh(wpak->replaycount);
 qsort((interfacelist +ifnr)->eapolm1list, EAPOLLIST_MAX +1, EAPOLLIST_SIZE, sort_eapollist_by_time);
 addeapolstatus(ifnr, macfrx->addr1, macfrx->addr2, EAPOLM1);
+if(authlen <= WPAKEY_SIZE +PMKID_SIZE) return;
+if(infolen < (int)PMKID_SIZE) return;
+pmkid = (pmkid_t*)(wpakptr +WPAKEY_SIZE);
+if(pmkid->id != TAG_VENDOR) return;
+if((pmkid->len != 0x14) && (pmkid->type != 0x04)) return;
+if(memcmp(pmkid->pmkid, &zeroed32, 16) == 0) return;
+addeapolstatus(ifnr, macfrx->addr1, macfrx->addr2, EAPOLPMKID);
 return;
 }
 /*===========================================================================*/
-static inline void process80211eapol(int ifnr)
+static inline void process80211eapol(int ifnr, uint16_t authlen)
 {
 static uint8_t *wpakptr;
 static wpakey_t *wpak;
@@ -746,7 +713,7 @@ static uint16_t keyinfo;
 wpakptr = payloadptr +LLC_SIZE +EAPAUTH_SIZE;
 wpak = (wpakey_t*)wpakptr;
 keyinfo = (getkeyinfo(ntohs(wpak->keyinfo)));
-if(keyinfo == 1) process80211eapol_m1(ifnr, wpakptr);
+if(keyinfo == 1) process80211eapol_m1(ifnr, authlen, wpakptr);
 else if(keyinfo == 2) process80211eapol_m2(ifnr, wpakptr);
 else if(keyinfo == 3) process80211eapol_m3(ifnr, wpakptr);
 else if(keyinfo == 4) process80211eapol_m4(ifnr, wpakptr);
@@ -767,7 +734,7 @@ authlen = ntohs(eapauth->len);
 if(authlen > (eapauthlen -4)) return;
 if(eapauth->type == EAPOL_KEY)
 	{
-	if(authlen >= WPAKEY_SIZE) process80211eapol(ifnr);
+	if(authlen >= WPAKEY_SIZE) process80211eapol(ifnr, authlen);
 	}
 else if(eapauth->type == EAP_PACKET) process80211exteap(ifnr, authlen);
 return;
@@ -865,30 +832,59 @@ writeepb((interfacelist +ifnr)->fdpcapng);
 return;
 }
 /*===========================================================================*/
-static inline void process80211authentication_resp(int ifnr)
-{
-
-writeepb((interfacelist +ifnr)->fdpcapng);
-return;
-}
-/*===========================================================================*/
-static inline void process80211authentication_req(int ifnr)
-{
-
-writeepb((interfacelist +ifnr)->fdpcapng);
-return;
-}
-/*===========================================================================*/
 static inline void process80211authentication(int ifnr)
 {
 static authf_t *auth;
 
 auth = (authf_t*)payloadptr;
 if(payloadlen < AUTHENTICATIONFRAME_SIZE) return;
-if((auth->sequence %2) == 1) process80211authentication_req(ifnr);
-if((auth->sequence %2) == 1) process80211authentication_req(ifnr);
-else  process80211authentication_resp(ifnr);
+if((auth->sequence %2) == 1)
+	{
+
+	}
+if((auth->sequence %2) == 2)
+	{
+
+
+	}
+
+writeepb((interfacelist +ifnr)->fdpcapng);
 return;
+}
+/*===========================================================================*/
+static inline uint8_t send_authentication_req_opensystem_check(int ifnr, uint8_t *macclient, uint8_t *macap)
+{
+static owndlist_t *zeiger; 
+static mac_t *macftx;
+
+static const uint8_t authenticationrequestdata[] =
+{
+0x00, 0x00, 0x01, 0x00, 0x00, 0x00
+};
+#define MYAUTHENTICATIONREQUEST_SIZE sizeof(authenticationrequestdata)
+
+for(zeiger = (interfacelist +ifnr)->owndlist; zeiger < (interfacelist +ifnr)->owndlist +OWNDLIST_MAX; zeiger++)
+	{
+	if(zeiger->timestamp == 0) break;
+	if(memcmp(zeiger->macap, macap, 6) != 0) continue;
+	if(memcmp(zeiger->macclient, macclient, 6) != 0) continue;
+	if(zeiger->eapolstatus > EAPOLM1M2) return zeiger->eapolstatus;
+	}
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +MYAUTHENTICATIONREQUEST_SIZE +1);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_AUTH;
+memcpy(macftx->addr1, macap, 6);
+memcpy(macftx->addr2, &macclient, 6);
+memcpy(macftx->addr3, macap, 6);
+macftx->duration = 0x013a;
+macftx->sequence = myclientsequence++ << 4;
+if(myclientsequence >= 4096) myclientsequence = 1;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &authenticationrequestdata, MYAUTHENTICATIONREQUEST_SIZE);
+if(write((interfacelist +ifnr)->fd, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +MYAUTHENTICATIONREQUEST_SIZE) == -1) errorcount++;
+return 0;
 }
 /*===========================================================================*/
 static inline void process80211probe_req(int ifnr)
@@ -974,13 +970,14 @@ for(zeiger = (interfacelist +ifnr)->aplist; zeiger < (interfacelist +ifnr)->apli
 	zeiger->timestamp = timestamp;
 	if((zeiger->status & STATUS_BEACON) != STATUS_BEACON) writeepb((interfacelist +ifnr)->fdpcapng);
 	zeiger->status |= STATUS_BEACON;
+	zeiger->count += 1;
 	return;
 	}
 memset(zeiger, 0, APLIST_SIZE);
 gettags(apinfolen, apinfoptr, zeiger);
 if((interfacelist +ifnr)->channel != zeiger->channel) return;
 zeiger->timestamp = timestamp;
-zeiger->atcount += 1;
+zeiger->count += 1;
 send_deauthentication(ifnr, macfrx->addr1, macfrx->addr2, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 zeiger->status = STATUS_BEACON;
 memcpy(zeiger->macap, macfrx->addr2, 6);
@@ -1595,6 +1592,7 @@ interfacecount = INTERFACE_MAX;
 errorcount = 0;
 memset(&bpf, 0, sizeof(bpf));
 mydeauthenticationsequence = 1;
+myclientsequence = 1;
 
 if((interfacelist = (interfacelist_t*)calloc((INTERFACE_MAX), INTERFACELIST_SIZE)) == NULL) return false;
 
@@ -1786,6 +1784,8 @@ if(interfacecount > 0)
 	}
 else emptyloop();
 globalclose();
+
+fprintf(stdout, "\n%d error(s) encountered\n", errorcount);
 
 if(gpiobutton != 0)
 	{
