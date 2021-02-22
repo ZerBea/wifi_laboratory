@@ -35,6 +35,8 @@ tshark or Wireshark to monitor interface
 
 tcpdump to create BPF code
 
+Raspberry Pi onboard WiFi chip msut be disabled by boot options: dtoverlay=pi3-disable-wifi
+
 
 General workflow
 --------------
