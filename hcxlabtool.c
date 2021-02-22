@@ -599,6 +599,9 @@ for(zeigerm3 = eapolm3list; zeigerm3 < eapolm3list +EAPOLLIST_MAX; zeigerm3++)
 	if(timestamp - zeigerm3->timestamp > EAPOLM3M4TIMEOUT) break;
 	if((be64toh(wpak->replaycount)) != zeigerm3->rc) continue;
 	addeapolstatus(macfrx->addr1, EAPOLM3M4);
+#ifdef STATUSOUT
+	debugmac2(macfrx->addr1, macfrx->addr2, "M3M4");
+#endif
 	return;
 	}
 addeapolstatus(macfrx->addr1, 0);
@@ -629,6 +632,9 @@ for(zeigerm2 = eapolm2list; zeigerm2 < eapolm2list +EAPOLLIST_MAX; zeigerm2++)
 	if(eapolm3list->timestamp - zeigerm2->timestamp > EAPOLM2M3TIMEOUT) break;
 	if(eapolm3list->rc != (zeigerm2->rc +1)) continue;
 	addeapolstatus(macfrx->addr2, EAPOLM2M3);
+#ifdef STATUSOUT
+	debugmac2(macfrx->addr1, macfrx->addr2, "M2M3");
+#endif
 	return;
 	}
 addeapolstatus(macfrx->addr2, 0);
@@ -659,6 +665,9 @@ for(zeigerm1 = eapolm1list; zeigerm1 < eapolm1list +EAPOLLIST_MAX; zeigerm1++)
 	if(eapolm2list->rc != zeigerm1->rc) continue;
 	m2status |= EAPOLM1M2;
 	addeapolstatus(macfrx->addr1, m2status);
+#ifdef STATUSOUT
+	debugmac2(macfrx->addr1, macfrx->addr2, "M1M2");
+#endif
 	return;
 	}
 addeapolstatus(macfrx->addr1, m2status);
@@ -713,6 +722,9 @@ if(memcmp(pmkid->pmkid, &zeroed32, 16) == 0)
 	return;
 	}
 addeapolstatus(macfrx->addr2, EAPOLPMKID);
+#ifdef STATUSOUT
+debugmac2(macfrx->addr1, macfrx->addr2, "M1");
+#endif
 return;
 }
 /*===========================================================================*/
@@ -1311,6 +1323,34 @@ writeepb(fd_pcapng);
 return;
 }
 /*===========================================================================*/
+static inline void send_proberequest_undirected_broadcast()
+{
+static mac_t *macftx;
+
+static const uint8_t undirectedproberequestdata[] =
+{
+0x00, 0x00,
+0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x8c, 0x92, 0x98, 0xa4,
+0x32, 0x04, 0xb0, 0x48, 0x60, 0x6c
+};
+#define UNDIRECTEDPROBEREQUEST_SIZE sizeof(undirectedproberequestdata)
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +ESSID_LEN_MAX +UNDIRECTEDPROBEREQUEST_SIZE +1);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_PROBE_REQ;
+memcpy(macftx->addr1, &mac_broadcast, 6);
+memcpy(macftx->addr2, &macrgclient, 6);
+memcpy(macftx->addr3, &mac_broadcast, 6);
+macftx->sequence = clientsequence++ << 4;
+if(clientsequence >= 4096) clientsequence = 1;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &undirectedproberequestdata, UNDIRECTEDPROBEREQUEST_SIZE);
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +UNDIRECTEDPROBEREQUEST_SIZE) == -1) errorcount++;
+return;
+}
+/*===========================================================================*/
 static inline void process80211beacon()
 {
 static int apinfolen;
@@ -1363,7 +1403,7 @@ zeiger->status = STATUS_BEACON;
 memcpy(zeiger->macap, macfrx->addr2, 6);
 memset(zeiger->lastmacclient, 0xff, 6);
 #ifdef GETM1
-send_authentication_req_opensystem(zeiger->lastmacclient, macfrx->addr2);
+send_authentication_req_opensystem(macrgclient, macfrx->addr2);
 #endif
 #ifdef GETM1234
 if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
@@ -1372,6 +1412,10 @@ if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_P
 	}
 send_deauthentication(macfrx->addr1, macfrx->addr2, WLAN_REASON_UNSPECIFIED);
 #endif
+if(zeiger->essidlen == 0)
+	{
+	send_proberequest_undirected_broadcast();
+	}
 qsort(aplist, zeiger -aplist +1, APLIST_SIZE, sort_aplist_by_time);
 writeepb(fd_pcapng);
 return;
