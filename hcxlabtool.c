@@ -1178,9 +1178,9 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	send_ack();
 	if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) send_association_req_wpa2(macfrx->addr1, zeiger);
 	else if ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_association_req_wpa1(macfrx->addr1, zeiger);
-	writeepb(fd_pcapng);
 	return;
 	}
+writeepb(fd_pcapng);
 return;
 }
 /*===========================================================================*/
@@ -1199,7 +1199,7 @@ if((auth->sequence %2) == 1)
 	{
 
 	}
-if((auth->sequence %2) == 0)
+else if((auth->sequence %2) == 0)
 	{
 
 
@@ -1209,7 +1209,7 @@ writeepb(fd_pcapng);
 return;
 }
 /*===========================================================================*/
-static inline uint8_t send_authentication_req_opensystem(uint8_t *macclient, uint8_t *macap)
+static inline void send_authentication_req_opensystem(uint8_t *macclient, uint8_t *macap)
 {
 static mac_t *macftx;
 
@@ -1233,7 +1233,7 @@ macftx->sequence = clientsequence++ << 4;
 if(clientsequence >= 4096) clientsequence = 1;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &authenticationrequestdata, MYAUTHENTICATIONREQUEST_SIZE);
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +MYAUTHENTICATIONREQUEST_SIZE) == -1) errorcount++;
-return 0;
+return;
 }
 /*===========================================================================*/
 static inline void send_probe_resp(uint8_t *macclient, rgaplist_t *zeigerrgap)
@@ -1553,6 +1553,7 @@ static struct timespec sleepled;
 static int cgc;
 
 fprintf(stdout, "%s entered loop on channels ", ifname);
+cgc = 0;
 while(channelscanlist[cgc] != 0)
 	{
 	fprintf(stdout, "%d ", channelscanlist[cgc]);
@@ -2010,7 +2011,6 @@ tvold.tv_usec = tv.tv_usec;
 tvlast.tv_sec = tv.tv_sec;
 tvlast.tv_sec = tv.tv_sec;
 mytime = 1;
-
 srand(time(NULL));
 if((gpiobutton > 0) || (gpiostatusled > 0))
 	{
@@ -2043,11 +2043,11 @@ if((gpiobutton > 0) || (gpiostatusled > 0))
 errorcount = 0;
 deauthenticationsequence = 1;
 clientsequence = 1;
+apsequence = 1;
 
 memset(&bpf, 0, sizeof(bpf));
 memset(&ifname, 0 , sizeof(ifname));
-memset(&ifname, 0 , sizeof(ifmac));
-wantstopflag = false;
+memset(&ifmac, 0 , sizeof(ifmac));
 
 ouirgap = (myvendorap[rand() %((MYVENDORAP_SIZE /sizeof(int)))]) &0xfcffff;
 nicrgap = (rand() & 0x0fffff);
@@ -2079,6 +2079,7 @@ if((eapolm1list = (eapollist_t*)calloc((EAPOLLIST_MAX +1), EAPOLLIST_SIZE)) == N
 if((eapolm2list = (eapollist_t*)calloc((EAPOLLIST_MAX +1), EAPOLLIST_SIZE)) == NULL) return false;
 if((eapolm3list = (eapollist_t*)calloc((EAPOLLIST_MAX +1), EAPOLLIST_SIZE)) == NULL) return false;
 
+wantstopflag = false;
 signal(SIGINT, programmende);
 return true;
 }
@@ -2097,7 +2098,8 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"usage  : %s <options>\n"
 	"\n"
 	"short options:\n"
-	"-i <interface> : interface (monitor mode will be enabled by hcxdumptool)\n"
+	"-i <interface> : interface (monitor mode will be enabled by hcxlabtool)\n"
+	"                 default: first discovered interface\n"
 	"-c <digit>     : set channel (1,2,3, ...)\n"
 	"-t <seconds>   : stay time on channel before hopping to the next channel\n"
 	"-h             : show this help\n"
