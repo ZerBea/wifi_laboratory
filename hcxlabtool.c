@@ -98,85 +98,36 @@ static uint8_t epbown[PCAPNG_MAXSNAPLEN *2];
 
 /*===========================================================================*/
 /*===========================================================================*/
-static inline void debugmac2(char *message, uint8_t *mac1, uint8_t *mac2)
+static inline void debugmac3(uint8_t *mac1, uint8_t *mac2, uint8_t *mac3, char *message)
 {
 static uint32_t p;
 
-printf("%s ", message);
 for(p = 0; p < 6; p++) printf("%02x", mac1[p]);
 printf(" ");
 for(p = 0; p < 6; p++) printf("%02x", mac2[p]);
-printf("\n");
+printf(" ");
+for(p = 0; p < 6; p++) printf("%02x", mac3[p]);
+printf(" %s\n", message);
 return;
 }
 /*===========================================================================*/
-static inline void debugmac(char *message, uint8_t *mac1)
+static inline void debugmac2(uint8_t *mac1, uint8_t *mac2, char *message)
 {
 static uint32_t p;
 
-printf("%s ", message);
 for(p = 0; p < 6; p++) printf("%02x", mac1[p]);
-printf("\n");
+printf(" ");
+for(p = 0; p < 6; p++) printf("%02x", mac2[p]);
+printf(" %s\n", message);
 return;
 }
 /*===========================================================================*/
-static inline void debugframe4(char *message)
+static inline void debugmac1(uint8_t *mac1, char *message)
 {
 static uint32_t p;
 
-printf("%s %d\n", message,  payloadlen);
-for(p = 0; p < 6; p++) printf("%02x", macfrx->addr1[p]);
-printf(" ");
-for(p = 0; p < 6; p++) printf("%02x", macfrx->addr2[p]);
-printf(" ");
-for(p = 0; p < 6; p++) printf("%02x", macfrx->addr3[p]);
-printf(" ");
-for(p = 0; p < 6; p++) printf("%02x", macfrx->addr4[p]);
-printf("\n");
-for(p = 0; p < payloadlen; p++) printf("%02x", payloadptr[p]);
-printf("\n\n");
-return;
-}
-/*===========================================================================*/
-static inline void debugframe3(char *message)
-{
-static uint32_t p;
-
-printf("%s %d\n", message,  payloadlen);
-for(p = 0; p < 6; p++) printf("%02x", macfrx->addr1[p]);
-printf(" ");
-for(p = 0; p < 6; p++) printf("%02x", macfrx->addr2[p]);
-printf(" ");
-for(p = 0; p < 6; p++) printf("%02x", macfrx->addr3[p]);
-printf("\n");
-for(p = 0; p < payloadlen; p++) printf("%02x", payloadptr[p]);
-printf("\n\n");
-return;
-}
-/*===========================================================================*/
-static inline void debugframe2(char *message)
-{
-static uint32_t p;
-
-printf("%s %d\n", message,  payloadlen);
-for(p = 0; p < 6; p++) printf("%02x", macfrx->addr1[p]);
-printf(" ");
-for(p = 0; p < 6; p++) printf("%02x", macfrx->addr2[p]);
-printf("\n");
-for(p = 0; p < payloadlen; p++) printf("%02x", payloadptr[p]);
-printf("\n\n");
-return;
-}
-/*===========================================================================*/
-static inline void debugframe1(char *message)
-{
-static uint32_t p;
-
-printf("%s %d\n",  message,  payloadlen);
-for(p = 0; p < 6; p++) printf("%02x", macfrx->addr1[p]);
-printf("\n");
-for(p = 0; p < payloadlen; p++) printf("%02x", payloadptr[p]);
-printf("\n\n");
+for(p = 0; p < 6; p++) printf("%02x", mac1[p]);
+printf(" %s\n", message);
 return;
 }
 /*===========================================================================*/
