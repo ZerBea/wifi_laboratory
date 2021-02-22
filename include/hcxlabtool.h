@@ -12,43 +12,19 @@
 #define HCX_HELP		'h'
 #define HCX_VERSION		'v'
 
-#define FDTIMER			1
-
 #define ERROR_MAX		100
 #define WATCHDOG		600
 
 #define ESSID_LEN_MAX		32
+#define FDTIMER			1
+#define STAYTIME		5
 
-#define BEACONDEAUTHINTERVALL	1200
+#define BEACONPMKIDINTERVALL	120
+#define BEACONREASSOCINTERVALL	155
+#define BEACONDEAUTHINTERVALL	190
 
-/*===========================================================================*/
-#define OWNDLIST_MAX	64
-typedef struct
-{
- uint64_t		timestamp;
- uint32_t		count;
- uint8_t		eapolstatus;
-#define EAPOLM1		0b00000001
-#define EAPOLM1M2	0b00000010
-#define EAPOLM2M3	0b00000100
-#define EAPOLM3M4	0b00001000
-#define EAPOLPMKID	0b00010000
- uint8_t		eapstatus;
-#define EAP		0b00000001
- uint8_t		macap[6];
- uint8_t		macclient[6];
-}owndlist_t;
-#define	OWNDLIST_SIZE (sizeof(owndlist_t))
+#define REMOVECLIENTINTERVALL	600
 
-static int sort_owndlist_by_time(const void *a, const void *b)
-{
-const owndlist_t *ia = (const owndlist_t *)a;
-const owndlist_t *ib = (const owndlist_t *)b;
-
-if(ia->timestamp < ib->timestamp) return 1;
-else if(ia->timestamp > ib->timestamp) return -1;
-return 0;
-}
 /*===========================================================================*/
 #define	EAPOLM1M2TIMEOUT	25000
 #define	EAPOLM2M3TIMEOUT	50000
@@ -99,7 +75,17 @@ typedef struct
  uint64_t		timestamp;
  uint32_t		count;
  uint16_t		status;
+ uint8_t		essidlen;
+ uint8_t		essid[ESSID_LEN_MAX];
+ uint8_t		lastmacclient[6];
  uint8_t		eapolstatus;
+#define EAPOLM1		0b00000001
+#define EAPOLM1M2	0b00000010
+#define EAPOLRGM2	0b00000100
+#define EAPOLM2M3	0b00001000
+#define EAPOLM3M4	0b00010000
+#define EAPOLPMKID	0b00100000
+ uint8_t		eapstatus;
  int			channel;
 #define STATUS_BEACON	0b0000000000000001
 #define STATUS_PRESP	0b0000000000000010
@@ -126,8 +112,6 @@ typedef struct
 #define	TAK_TDLS	0b0000000001000000
 #define	TAK_SAE_SHA256	0b0000000010000000
 #define TAK_FT_SAE	0b0000000100000000
- uint8_t		essidlen;
- uint8_t		essid[ESSID_LEN_MAX];
 }aplist_t;
 #define	APLIST_SIZE (sizeof(aplist_t))
 
@@ -140,31 +124,5 @@ if(ia->timestamp < ib->timestamp) return 1;
 else if(ia->timestamp > ib->timestamp) return -1;
 return 0;
 }
-/*===========================================================================*/
-#define INTERFACE_MAX	4
-typedef struct
-{
- int		fd;
- char		ifname[IFNAMSIZ +1];
- uint8_t	ifmac[6];
- int		fdpcapng;
- uint32_t	ouirgap;
- uint32_t	nicrgap;
- uint8_t	macrgap[6];
- uint8_t	anonce[32];
- uint32_t	ouirgclient;
- uint32_t	nicrgclient;
- uint8_t	macrgclient[6];
- uint8_t	snonce[32];
- uint64_t	rc;
- int		channel;
- aplist_t	*aplist;
- rgaplist_t	*rgaplist;
- eapollist_t	*eapolm1list;
- eapollist_t	*eapolm2list;
- eapollist_t	*eapolm3list;
- owndlist_t	*owndlist;
-}interfacelist_t;
-#define	INTERFACELIST_SIZE (sizeof(interfacelist_t))
 /*===========================================================================*/
 

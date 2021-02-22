@@ -17,7 +17,7 @@ This skeleton is designed to understand 802.11 protocol and to provide a laborat
 
 There are only a few basic options and there is no status output.
 
-All additional test functions must be compiled individually.
+All additional test functions must be compiled individually (gcc -D - see Makefile).
 
 
 Requirements
