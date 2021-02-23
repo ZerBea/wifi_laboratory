@@ -290,19 +290,13 @@ static aplist_t *zeiger;
 
 for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
-	if(zeiger->timestamp == 0) break;
+	if(zeiger->timestamp == 0) return;
 	if(memcmp(zeiger->macap, macap, 6) != 0) continue;
 	zeiger->timestamp = timestamp;
 	zeiger->eapolstatus |= eapolstatus;
 	zeiger->count += 1;
 	return;
 	}
-memset(zeiger, 0, APLIST_SIZE);
-zeiger->timestamp = timestamp;
-zeiger->eapolstatus = eapolstatus;
-zeiger->count = 1;
-memcpy(zeiger->macap, macap, 6);
-qsort(aplist, zeiger -aplist +1, APLIST_SIZE, sort_aplist_by_time);
 return;
 }
 /*===========================================================================*/
@@ -599,9 +593,9 @@ for(zeigerm3 = eapolm3list; zeigerm3 < eapolm3list +EAPOLLIST_MAX; zeigerm3++)
 	if(timestamp - zeigerm3->timestamp > EAPOLM3M4TIMEOUT) break;
 	if((be64toh(wpak->replaycount)) != zeigerm3->rc) continue;
 	addeapolstatus(macfrx->addr1, EAPOLM3M4);
-#ifdef STATUSOUT
+	#ifdef STATUSOUT
 	debugmac2(macfrx->addr1, macfrx->addr2, "M3M4");
-#endif
+	#endif
 	return;
 	}
 addeapolstatus(macfrx->addr1, 0);
@@ -632,9 +626,9 @@ for(zeigerm2 = eapolm2list; zeigerm2 < eapolm2list +EAPOLLIST_MAX; zeigerm2++)
 	if(eapolm3list->timestamp - zeigerm2->timestamp > EAPOLM2M3TIMEOUT) break;
 	if(eapolm3list->rc != (zeigerm2->rc +1)) continue;
 	addeapolstatus(macfrx->addr2, EAPOLM2M3);
-#ifdef STATUSOUT
+	#ifdef STATUSOUT
 	debugmac2(macfrx->addr1, macfrx->addr2, "M2M3");
-#endif
+	#endif
 	return;
 	}
 addeapolstatus(macfrx->addr2, 0);
@@ -665,9 +659,9 @@ for(zeigerm1 = eapolm1list; zeigerm1 < eapolm1list +EAPOLLIST_MAX; zeigerm1++)
 	if(eapolm2list->rc != zeigerm1->rc) continue;
 	m2status |= EAPOLM1M2;
 	addeapolstatus(macfrx->addr1, m2status);
-#ifdef STATUSOUT
+	#ifdef STATUSOUT
 	debugmac2(macfrx->addr1, macfrx->addr2, "M1M2");
-#endif
+	#endif
 	return;
 	}
 addeapolstatus(macfrx->addr1, m2status);
@@ -677,10 +671,8 @@ return;
 static inline void process80211eapol_m1(uint16_t authlen, uint8_t *wpakptr)
 {
 static wpakey_t *wpak;
-static int infolen;
 static pmkid_t *pmkid;
 static eapollist_t *zeiger;
-
 
 writeepb(fd_pcapng);
 wpak = (wpakey_t*)wpakptr;
@@ -690,17 +682,18 @@ memcpy(zeiger->macap, macfrx->addr2, 6);
 memcpy(zeiger->macclient, macfrx->addr1, 6);
 zeiger->rc = be64toh(wpak->replaycount);
 qsort(eapolm1list, EAPOLLIST_MAX +1, EAPOLLIST_SIZE, sort_eapollist_by_time);
+
 if(memcmp(&macrgclient, macfrx->addr1, 6) == 0)
 	{
 	send_ack();
 	send_deauthentication_client(macfrx->addr1, macfrx->addr2, WLAN_REASON_DISASSOC_STA_HAS_LEFT);
 	}
-if(authlen <= WPAKEY_SIZE +PMKID_SIZE)
+if(authlen < WPAKEY_SIZE +PMKID_SIZE)
 	{
 	addeapolstatus(macfrx->addr2, EAPOLM1);
 	return;
 	}
-if(infolen < (int)PMKID_SIZE)
+if(ntohs(wpak->wpadatalen) < (int)PMKID_SIZE)
 	{
 	addeapolstatus(macfrx->addr2, EAPOLM1);
 	return;
@@ -721,9 +714,9 @@ if(memcmp(pmkid->pmkid, &zeroed32, 16) == 0)
 	addeapolstatus(macfrx->addr2, EAPOLM1);
 	return;
 	}
-addeapolstatus(macfrx->addr2, EAPOLPMKID);
+addeapolstatus(macfrx->addr2, EAPOLM1 | EAPOLPMKID);
 #ifdef STATUSOUT
-debugmac2(macfrx->addr1, macfrx->addr2, "M1");
+debugmac2(macfrx->addr1, macfrx->addr2, "PMKID");
 #endif
 return;
 }
@@ -866,7 +859,9 @@ static inline void process80211reassociation_resp()
 {
 
 
+#ifdef DUMPALL
 writeepb(fd_pcapng);
+#endif
 return;
 }
 /*===========================================================================*/
@@ -874,7 +869,9 @@ static inline void process80211association_resp()
 {
 
 
+#ifdef DUMPALL
 writeepb(fd_pcapng);
+#endif
 return;
 }
 /*===========================================================================*/
@@ -886,7 +883,6 @@ static uint16_t clientinfolen;
 //clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
 clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
 if(clientinfolen < IETAG_SIZE) return;
-
 
 writeepb(fd_pcapng);
 return;
@@ -1160,12 +1156,11 @@ if(auth->algorithm != OPEN_SYSTEM)
 	}
 if((auth->sequence %2) == 1)
 	{
+//	debugmac2(macfrx->addr1, macfrx->addr2, "AUTH");
 
 	}
 else if((auth->sequence %2) == 0)
 	{
-
-
 	}
 
 writeepb(fd_pcapng);
@@ -1199,7 +1194,7 @@ if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +MYAUTHENTICATIONREQ
 return;
 }
 /*===========================================================================*/
-static inline void send_probe_resp(uint8_t *macclient, rgaplist_t *zeigerrgap)
+static inline void send_probe_resp(uint8_t *macclient, uint8_t *macap, rgaplist_t *zeigerrgap)
 {
 static mac_t *macftx;
 static capap_t *capap;
@@ -1238,13 +1233,21 @@ macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_PROBE_RESP;
 memcpy(macftx->addr1, macclient, 6);
-memcpy(macftx->addr2, zeigerrgap->macrgap, 6);
-memcpy(macftx->addr3, zeigerrgap->macrgap, 6);
+if(memcmp(&mac_broadcast, macap, 6) == 0)
+	{
+	memcpy(macftx->addr2, zeigerrgap->macrgap, 6);
+	memcpy(macftx->addr3, zeigerrgap->macrgap, 6);
+	}
+else
+	{
+	memcpy(macftx->addr2, macap, 6);
+	memcpy(macftx->addr3, macap, 6);
+	}
 macftx->sequence = apsequence++ << 4;
 if(apsequence >= 4096) apsequence = 1;
 capap = (capap_t*)(packetoutptr +HDRRT_SIZE +MAC_SIZE_NORM);
 capap->timestamp = mytime++;
-capap->beaconintervall = 0x64;
+capap->beaconintervall = 0xc8;
 capap->capabilities = 0x431;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +1] = zeigerrgap->essidlen;
@@ -1270,7 +1273,7 @@ for(zeiger = rgaplist; zeiger < rgaplist +RGAPLIST_MAX; zeiger++)
 	if(zeiger->essidlen != essidlen) continue;
 	if(memcmp(zeiger->essid, essidptr, essidlen) != 0) continue;
 	zeiger->timestamp = timestamp;
-	send_probe_resp(macfrx->addr2, zeiger);
+	send_probe_resp(macfrx->addr2, macfrx->addr1, zeiger);
 	return;
 	}
 memset(zeiger, 0, RGAPLIST_SIZE);
@@ -1284,7 +1287,7 @@ zeiger->macrgap[2] = ouirgap & 0xff;
 zeiger->macrgap[1] = (ouirgap >> 8) & 0xff;
 zeiger->macrgap[0] = (ouirgap >> 16) & 0xff;
 nicrgap += 1;
-send_probe_resp(macfrx->addr2, zeiger);
+send_probe_resp(macfrx->addr2, macfrx->addr1, zeiger);
 qsort(rgaplist, zeiger -rgaplist +1, RGAPLIST_SIZE, sort_rgaplist_by_time);
 writeepb(fd_pcapng);
 return;
@@ -1296,6 +1299,7 @@ static int apinfolen;
 static uint8_t *apinfoptr;
 static aplist_t *zeiger;
 
+return;
 if(payloadlen < CAPABILITIESAP_SIZE +IETAG_SIZE) return;
 apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
 apinfolen = payloadlen -CAPABILITIESAP_SIZE;
@@ -1318,6 +1322,18 @@ zeiger->timestamp = timestamp;
 zeiger->status = STATUS_PRESP;
 memcpy(zeiger->macap, macfrx->addr2, 6);
 gettags(apinfolen, apinfoptr, aplist);
+if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
+	{
+	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
+		{
+		#ifdef GETM1
+		send_authentication_req_opensystem(macrgclient, macfrx->addr2);
+		#endif
+		#ifdef GETM1234
+		send_association_req_wpa2(macfrx->addr1, zeiger);
+		#endif
+		}
+	}
 qsort(aplist, zeiger -aplist +1, APLIST_SIZE, sort_aplist_by_time);
 writeepb(fd_pcapng);
 return;
@@ -1372,13 +1388,13 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 		{
 		if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
 			{
-#ifdef GETM1
+			#ifdef GETM1
 			if((zeiger->eapolstatus &EAPOLM1) != EAPOLM1)
 				{
-				if((zeiger->count %BEACONPMKIDINTERVALL) == 0) send_authentication_req_opensystem(macrgclient, macfrx->addr2);
+				if((zeiger->count %M1REQUESTINTERVALL) == 0) send_authentication_req_opensystem(macrgclient, macfrx->addr2);
 				}
-#endif
-#ifdef GETM1234
+			#endif
+			#ifdef GETM1234
 			if(zeiger->eapolstatus < EAPOLM2M3)
 				{
 				if((zeiger->count %REMOVECLIENTINTERVALL) == 0) memset(zeiger->lastmacclient, 0xff, 6);
@@ -1389,7 +1405,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 					}
 				else if((zeiger->count %BEACONDEAUTHINTERVALL) == 0) send_deauthentication(zeiger->lastmacclient, macfrx->addr2, WLAN_REASON_DISASSOC_AP_BUSY);
 				}
-#endif
+			#endif
 			}
 		}
 	return;
@@ -1402,14 +1418,19 @@ zeiger->count += 1;
 zeiger->status = STATUS_BEACON;
 memcpy(zeiger->macap, macfrx->addr2, 6);
 memset(zeiger->lastmacclient, 0xff, 6);
-#ifdef GETM1
-send_authentication_req_opensystem(macrgclient, macfrx->addr2);
-#endif
-#ifdef GETM1234
 if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
 	{
-	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)) send_association_req_wpa2(macfrx->addr1, zeiger);
+	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
+		{
+		#ifdef GETM1
+		send_authentication_req_opensystem(macrgclient, macfrx->addr2);
+		#endif
+		#ifdef GETM1234
+		send_association_req_wpa2(macfrx->addr1, zeiger);
+		#endif
+		}
 	}
+#ifdef GETM1234
 send_deauthentication(macfrx->addr1, macfrx->addr2, WLAN_REASON_UNSPECIFIED);
 #endif
 if(zeiger->essidlen == 0)
@@ -1557,8 +1578,8 @@ while(channelscanlist[cgc] != 0)
 fprintf(stdout, "\n");
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
-tsfd.tv_sec = FDTIMER;
-tsfd.tv_nsec = 0;
+tsfd.tv_sec = 0;
+tsfd.tv_nsec = FDNSECTIMER;
 csc = 0;
 if(set_channel() == false) return;
 while(wantstopflag == false)
@@ -1585,9 +1606,10 @@ while(wantstopflag == false)
 				GPIO_CLR = 1 << gpiostatusled;
 				}
 			}
-		set_channel();
 		csc++;
 		if(channelscanlist[csc] == 0) csc = 0;
+		set_channel();
+		printf("debug %d chan\n", channelscanlist[csc]);
 		}
 	FD_ZERO(&readfds);
 	sd_socket = fd_socket;
@@ -1614,8 +1636,8 @@ static struct timespec sleepled;
 fprintf(stdout, "%s entered loop on channel %d\n", ifname, channelscanlist[0]);
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
-tsfd.tv_sec = FDTIMER;
-tsfd.tv_nsec = 0;
+tsfd.tv_sec = 0;
+tsfd.tv_nsec = FDNSECTIMER;
 csc = 0;
 if(set_channel() == false) return;
 while(wantstopflag == false)
@@ -1654,19 +1676,25 @@ while(wantstopflag == false)
 		}
 	sd_socket = fd_socket;
 	if(FD_ISSET(sd_socket, &readfds)) process_packet();
+	else printf ("timer\n");
 	}
 return;
 }
 /*===========================================================================*/
 /*===========================================================================*/
-static inline void emptyloop()
+static inline void standbyloop()
 {
 static struct timespec sleepled;
+static struct timespec standbytime;
 
-sleepled.tv_sec = 5;
-sleepled.tv_nsec = 0;
+fprintf(stdout, "entering standby loop\n");
+sleepled.tv_sec = 0;
+sleepled.tv_nsec = GPIO_LED_DELAY;
+standbytime.tv_sec = 5;
+standbytime.tv_nsec = 0;
 while(wantstopflag == false)
 	{
+	if(wantstopflag == true) break;
 	if(gpiobutton > 0)
 		{
 		if(GET_GPIO(gpiobutton) > 0) break;
@@ -1681,7 +1709,7 @@ while(wantstopflag == false)
 		nanosleep(&sleepled, NULL);
 		GPIO_CLR = 1 << gpiostatusled;
 		}
-	nanosleep(&sleepled, NULL);
+	nanosleep(&standbytime, NULL);
 	}
 return;
 }
@@ -1765,6 +1793,7 @@ static struct ethtool_perm_addr *epmaddr;
 if(interfacename != NULL) strncpy(ifname, interfacename, IFNAMSIZ);
 else
 	{
+	memset(&ifname, 0, IFNAMSIZ);
 	if(getifaddrs(&ifaddr) == -1) return false;
 	for(ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
 		{
@@ -1772,18 +1801,27 @@ else
 			{
 			if((fd_info = socket(AF_INET, SOCK_STREAM, 0)) != -1)
 				{
-				memcpy(ifname, ifa->ifa_name, IFNAMSIZ);
 				memset(&iwrinfo, 0, sizeof(iwr));
 				memcpy(&iwrinfo.ifr_name, ifa->ifa_name, IFNAMSIZ);
-				if(ioctl(fd_info, SIOCGIWNAME, &iwrinfo) != -1) break;
+				if(ioctl(fd_info, SIOCGIWNAME, &iwrinfo) != -1)
+					{
+					memcpy(ifname, ifa->ifa_name, IFNAMSIZ);
+					break;
+					}
 				}
 			}
 		}
 	freeifaddrs(ifaddr);
 	}
+if(ifname[0] == 0) return false;
 if((fd_socket = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) return false;
 	{
+	memset(&iwrinfo, 0, sizeof(iwr));
+	memcpy(&iwrinfo.ifr_name, ifname, IFNAMSIZ);
+	if(ioctl(fd_socket, SIOCGIWNAME, &iwrinfo) == -1) return false;
+
 	if(bpf.len > 0) if(setsockopt(fd_socket, SOL_SOCKET, SO_ATTACH_FILTER, &bpf, sizeof(bpf)) < 0) return false;
+
 	memset(&ifr, 0, sizeof(ifr));
 	memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
 	if(ioctl(fd_socket, SIOCSIFFLAGS, &ifr) < 0) return false;
@@ -2262,7 +2300,12 @@ if(bpfcname != NULL) readbpfc(bpfcname);
 if((bpfcname != NULL) && (bpf.len == 0)) fprintf(stderr, "BPF code not loaded\n");
 if(opensocket(interfacename) == false)
 	{
-	fprintf(stderr, "open socket failed\n");
+	standbyloop();
+	globalclose();
+	if(gpiobutton != 0)
+		{
+		if(system("poweroff") != 0) fprintf(stderr, "can't power off\n");
+		}
 	exit(EXIT_FAILURE);
 	}
 
