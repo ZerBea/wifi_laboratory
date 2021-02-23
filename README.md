@@ -59,4 +59,6 @@ Too many featues make the attack tool slow and sluggish.
 
 Response time behavior becomes very bad.
 
+Transmitting too many packets make a channel busy.
+
 A Raspberry Pi is not able to handle more than one interface!
