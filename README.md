@@ -35,52 +35,28 @@ tshark or Wireshark to monitor interface
 
 tcpdump to create BPF code
 
-Raspberry Pi onboard WiFi chip msut be disabled by boot options: dtoverlay=pi3-disable-wifi
+Raspberry Pi onboard WiFi chip must be disabled by boot options: dtoverlay=pi3-disable-wifi
 
 
 General workflow
 --------------
 
-connect 1, 2, 3 or 4 WiFi adpater
+connect WiFi adpater
 
-run hcxlabxxxx tool (at the moment only hcxlabdeauth)
+run hcxlabxxxx tool
 
-$ sudo hcxlabdeauth --bpfc=own.bpfc
+hcxlabxxxx will create a pcapng file which contain the recorded traffic
 
-output (depending on the interfaces) will look like this
-
-0 wlp39s0f3u1u1u2 scanlist:2 3 4 5 7 8 9 10 12 13
-
-1 wlp39s0f3u1u4 channel:1
-
-2 wlp39s0f3u1u1u4 channel:6
-
-3 wlp39s0f3u1u3 channel:11
-
-entering main loop...
-
-
-hcxlabxxxx will create 4 files which contain the recorded traffic
-
-20210219010816-wlp39s0f3u1u1u2.pcapng
-
-20210219010816-wlp39s0f3u1u1u4.pcapng
-
-20210219010816-wlp39s0f3u1u3.pcapng
-
-20210219010816-wlp39s0f3u1u4.pcapng 
-
-
-Traffic on a single interface can be monitored by tshark or Wireshark on the fly 
+Traffic can be monitored by tshark or Wireshark on the fly 
 
 
 Lessons learned (to be continued)
 --------------
 
-A beautiful status output make the attack tool slow and sluggish
+A beautiful status output make the attack tool slow and sluggish.
 
 Too many featues make the attack tool slow and sluggish.
 
-Response time behavior becomes very bad
+Response time behavior becomes very bad.
 
-A Raspberry Pi is not able to handle more tha one interface!
+A Raspberry Pi is not able to handle more than one interface!

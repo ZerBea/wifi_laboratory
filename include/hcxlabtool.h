@@ -5,6 +5,7 @@
 #define HCX_GPIO_BUTTON		1
 #define HCX_GPIO_STATUSLED	2
 #define HCX_BPFC		3
+#define HCX_TOT			4
 
 #define	HCX_INTERFACE_NAME	'i'
 #define HCX_CHANNEL		'c'
@@ -73,11 +74,10 @@ return 0;
 typedef struct
 {
  uint64_t		timestamp;
+ uint8_t		macap[6];
+ uint8_t		client[6];
  uint32_t		count;
  uint16_t		status;
- uint8_t		essidlen;
- uint8_t		essid[ESSID_LEN_MAX];
- uint8_t		lastmacclient[6];
  uint8_t		eapolstatus;
 #define EAPOLM1		0b00000001
 #define EAPOLM1M2	0b00000010
@@ -89,7 +89,6 @@ typedef struct
  int			channel;
 #define STATUS_BEACON	0b0000000000000001
 #define STATUS_PRESP	0b0000000000000010
- uint8_t		macap[6];
  uint8_t		kdversion;
 #define KV_RSNIE	0b00000001
 #define KV_WPAIE	0b00000010
@@ -112,6 +111,8 @@ typedef struct
 #define	TAK_TDLS	0b0000000001000000
 #define	TAK_SAE_SHA256	0b0000000010000000
 #define TAK_FT_SAE	0b0000000100000000
+ uint8_t		essidlen;
+ uint8_t		essid[ESSID_LEN_MAX];
 }aplist_t;
 #define	APLIST_SIZE (sizeof(aplist_t))
 

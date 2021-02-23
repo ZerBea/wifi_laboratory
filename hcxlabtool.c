@@ -1,4 +1,5 @@
 #define _GNU_SOURCE
+#include <ctype.h>
 #include <getopt.h>
 #include <ifaddrs.h>
 #include <inttypes.h>
@@ -25,8 +26,12 @@
 /*===========================================================================*/
 /* global var */
 
+
+static bool rebootflag;
+static bool poweroffflag;
 static struct timeval tv;
 static struct timeval tvold;
+static struct timeval tvtot;
 static struct timeval tvlast;
 static uint64_t timestamp;
 static uint64_t mytime;
@@ -684,11 +689,6 @@ memcpy(zeiger->macclient, macfrx->addr1, 6);
 zeiger->rc = be64toh(wpak->replaycount);
 qsort(eapolm1list, EAPOLLIST_MAX +1, EAPOLLIST_SIZE, sort_eapollist_by_time);
 
-if(memcmp(&macrgclient, macfrx->addr1, 6) == 0)
-	{
-	send_ack();
-	send_deauthentication_client(macfrx->addr1, macfrx->addr2, WLAN_REASON_DISASSOC_STA_HAS_LEFT);
-	}
 if(authlen < WPAKEY_SIZE +PMKID_SIZE)
 	{
 	addeapolstatus(macfrx->addr2, EAPOLM1);
@@ -767,7 +767,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
 	if(zeiger->timestamp == 0) return;
 	if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
-	memcpy(zeiger->lastmacclient, macfrx->addr2, 6);
+	memcpy(zeiger->client, macfrx->addr2, 6);
 	zeiger->timestamp = timestamp;
 	return;
 	}
@@ -782,7 +782,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
 	if(zeiger->timestamp == 0) return;
 	if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
-	memcpy(zeiger->lastmacclient, macfrx->addr2, 6);
+	memcpy(zeiger->client, macfrx->addr2, 6);
 	zeiger->timestamp = timestamp;
 	return;
 	}
@@ -799,7 +799,7 @@ if((macfrx->to_ds == 1) && (macfrx->from_ds == 0))
 		{
 		if(zeiger->timestamp == 0) return;
 		if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
-		memcpy(zeiger->lastmacclient, macfrx->addr2, 6);
+		memcpy(zeiger->client, macfrx->addr2, 6);
 		zeiger->timestamp = timestamp;
 		return;
 		}
@@ -817,7 +817,7 @@ if((macfrx->to_ds == 1) && (macfrx->from_ds == 0))
 		{
 		if(zeiger->timestamp == 0) return;
 		if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
-		memcpy(zeiger->lastmacclient, macfrx->addr2, 6);
+		memcpy(zeiger->client, macfrx->addr2, 6);
 		zeiger->timestamp = timestamp;
 		return;
 		}
@@ -833,7 +833,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
 	if(zeiger->timestamp == 0) return;
 	if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
-	memcpy(zeiger->lastmacclient, macfrx->addr2, 6);
+	memcpy(zeiger->client, macfrx->addr2, 6);
 	zeiger->timestamp = timestamp;
 	return;
 	}
@@ -848,7 +848,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
 	if(zeiger->timestamp == 0) return;
 	if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
-	memcpy(zeiger->lastmacclient, macfrx->addr2, 6);
+	memcpy(zeiger->client, macfrx->addr2, 6);
 	zeiger->timestamp = timestamp;
 	return;
 	}
@@ -1157,7 +1157,7 @@ if(auth->algorithm != OPEN_SYSTEM)
 	}
 if((auth->sequence %2) == 1)
 	{
-//	debugmac2(macfrx->addr1, macfrx->addr2, "AUTH");
+	debugmac2(macfrx->addr1, macfrx->addr2, "AUTH");
 
 	}
 else if((auth->sequence %2) == 0)
@@ -1300,7 +1300,6 @@ static int apinfolen;
 static uint8_t *apinfoptr;
 static aplist_t *zeiger;
 
-return;
 if(payloadlen < CAPABILITIESAP_SIZE +IETAG_SIZE) return;
 apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
 apinfolen = payloadlen -CAPABILITIESAP_SIZE;
@@ -1398,13 +1397,13 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 			#ifdef GETM1234
 			if(zeiger->eapolstatus < EAPOLM2M3)
 				{
-				if((zeiger->count %REMOVECLIENTINTERVALL) == 0) memset(zeiger->lastmacclient, 0xff, 6);
+				if((zeiger->count %REMOVECLIENTINTERVALL) == 0) memset(zeiger->client, 0xff, 6);
 				if((zeiger->count %REASSOCINTERVALL) == 0)
 					{
-					if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) send_reassociation_req_wpa2(zeiger->lastmacclient, zeiger);
-					else if ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_reassociation_req_wpa1(zeiger->lastmacclient, zeiger);
+					if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) send_reassociation_req_wpa2(zeiger->client, zeiger);
+					else if ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_reassociation_req_wpa1(zeiger->client, zeiger);
 					}
-				else if((zeiger->count %DEAUTHINTERVALL) == 0) send_deauthentication(zeiger->lastmacclient, macfrx->addr2, WLAN_REASON_DISASSOC_AP_BUSY);
+				else if((zeiger->count %DEAUTHINTERVALL) == 0) send_deauthentication(zeiger->client, macfrx->addr2, WLAN_REASON_DISASSOC_AP_BUSY);
 				}
 			#endif
 			}
@@ -1418,7 +1417,7 @@ zeiger->timestamp = timestamp;
 zeiger->count += 1;
 zeiger->status = STATUS_BEACON;
 memcpy(zeiger->macap, macfrx->addr2, 6);
-memset(zeiger->lastmacclient, 0xff, 6);
+memset(zeiger->client, 0xff, 6);
 if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
 	{
 	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
@@ -1601,9 +1600,9 @@ else if(macfrx->type == IEEE80211_FTYPE_DATA)
 	llcptr = payloadptr;
 	llc = (llc_t*)llcptr;
 	if(((ntohs(llc->type)) == LLC_TYPE_AUTH) && (llc->dsap == LLC_SNAP) && (llc->ssap == LLC_SNAP)) process80211eap();
-#ifdef DUMPALL
+	#ifdef DUMPALL
 	else writeepb(fd_pcapng);
-#endif
+	#endif
 	}
 return;
 }
@@ -1647,10 +1646,19 @@ while(wantstopflag == false)
 	{
 	if(gpiobutton > 0)
 		{
-		if(GET_GPIO(gpiobutton) > 0) wantstopflag = true;
+		if(GET_GPIO(gpiobutton) > 0)
+			{
+			poweroffflag = true;
+			wantstopflag = true;
+			}
 		}
 	if(errorcount > ERROR_MAX) wantstopflag = true;
 	gettimeofday(&tv, NULL);
+	if(tv.tv_sec >= tvtot.tv_sec)
+		{
+		rebootflag = true;
+		wantstopflag = true;
+		}
 	if((tv.tv_sec -tvold.tv_sec) >= staytime)
 		{
 		tvold.tv_sec = tv.tv_sec;
@@ -1670,7 +1678,6 @@ while(wantstopflag == false)
 		csc++;
 		if(channelscanlist[csc] == 0) csc = 0;
 		set_channel();
-		printf("debug %d chan\n", channelscanlist[csc]);
 		}
 	FD_ZERO(&readfds);
 	sd_socket = fd_socket;
@@ -1683,7 +1690,9 @@ while(wantstopflag == false)
 		}
 	sd_socket = fd_socket;
 	if(FD_ISSET(sd_socket, &readfds)) process_packet();
+	#ifdef GETM2
 	else send_beacon();
+	#endif
 	}
 return;
 }
@@ -1706,10 +1715,19 @@ while(wantstopflag == false)
 	{
 	if(gpiobutton > 0)
 		{
-		if(GET_GPIO(gpiobutton) > 0) wantstopflag = true;
+		if(GET_GPIO(gpiobutton) > 0)
+			{
+			poweroffflag = true;
+			wantstopflag = true;
+			}
 		}
 	if(errorcount > ERROR_MAX) wantstopflag = true;
 	gettimeofday(&tv, NULL);
+	if(tv.tv_sec >= tvtot.tv_sec)
+		{
+		rebootflag = true;
+		wantstopflag = true;
+		}
 	if((tv.tv_sec -tvold.tv_sec) >= 10)
 		{
 		tvold.tv_sec = tv.tv_sec;
@@ -1738,7 +1756,9 @@ while(wantstopflag == false)
 		}
 	sd_socket = fd_socket;
 	if(FD_ISSET(sd_socket, &readfds)) process_packet();
+	#ifdef GETM2
 	else send_beacon();
+	#endif
 	}
 return;
 }
@@ -2203,13 +2223,14 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"\n"
 	"long options:\n"
 	"--gpio_button=<digit>     : Raspberry Pi GPIO pin number of button (2...27)\n"
+	"                            push GIPO butto to power off system\n"
 	"                            default = GPIO not in use\n"
 	"--gpio_statusled=<digit>  : Raspberry Pi GPIO number of status LED (2...27)\n"
 	"                            default = GPIO not in use\n"
 	"--bpfc=<file>             : input kernel space Berkeley Packet Filter (BPF) code\n"
 	"                            affected: incoming and outgoing traffic - that include rca scan\n"
 	"                            steps to create a BPF (it only has to be done once):\n"
-	"                             set hcxdumptool monitormode\n"
+	"                             set monitormode\n"
 	"                             $ hcxumptool -m <interface>\n"
 	"                             create BPF to protect a MAC\n"
 	"                             $ tcpdump -i <interface> not wlan addr1 11:22:33:44:55:66 and not wlan addr2 11:22:33:44:55:66 -ddd > protect.bpf\n"
@@ -2218,9 +2239,10 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"                             $ tcpdump -i <interface> wlan addr1 11:22:33:44:55:66 or wlan addr2 11:22:33:44:55:66 -ddd > attack.bpf\n"
 	"                             not recommended, because important pre-authentication frames will be lost due to MAC randomization of the CLIENTs\n"
 	"                             use the BPF code\n"
-	"                             $ hcxumptool --bpfc=attack.bpf ...\n"
 	"                             notice: this is a protect/attack, a capture and a display filter\n"
 	"                             see man pcap-filter for a list of all filter options\n"
+	"--tot=<digit>             : enable timeout timer in minutes (minimum = 2 minutes)\n"
+	"                             set TOT to reboot system\n"
 	"--help                    : show this help\n"
 	"--version                 : show version\n",
 	eigenname, VERSIONTAG, VERSIONYEAR, eigenname);
@@ -2243,6 +2265,7 @@ static char *interfacename;
 static char *bpfcname;
 static char *userscanlist;
 static char *tokptr;
+static int totvalue;
 static int cgc;
 
 static const char *short_options = "i:c:t:hv";
@@ -2260,11 +2283,16 @@ auswahl = -1;
 index = 0;
 optind = 1;
 optopt = 0;
+rebootflag = false;
+poweroffflag = false;
 gpiobutton = 0;
 gpiostatusled = 0;
 interfacename = NULL;
 bpfcname = NULL;
 staytime = STAYTIME;
+tvtot.tv_sec = 2147483647L;
+tvtot.tv_usec = 0;
+totvalue = 0;
 cgc = 3;
 channelscanlist[0] = 1;
 channelscanlist[1] = 6;
@@ -2333,6 +2361,22 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		bpfcname = optarg;
 		break;
 
+		case HCX_TOT:
+		if(!isdigit(optarg[0]))
+			{
+			fprintf(stderr, "status must be a digit\n");
+			exit(EXIT_FAILURE);
+			}
+		totvalue = strtol(optarg, NULL, 10);
+		if(totvalue < 2)
+			{
+			fprintf(stderr, "tot must be >= 2 (minutes)\n");
+			exit(EXIT_FAILURE);
+			}
+		gettimeofday(&tvtot, NULL);
+		tvtot.tv_sec += totvalue *60;
+		break;
+
 		case HCX_HELP:
 		usage(basename(argv[0]));
 		break;
@@ -2365,13 +2409,12 @@ if(opensocket(interfacename) == false)
 	{
 	standbyloop();
 	globalclose();
-	if(gpiobutton != 0)
+	if(poweroffflag == true)
 		{
 		if(system("poweroff") != 0) fprintf(stderr, "can't power off\n");
+		exit(EXIT_FAILURE);
 		}
-	exit(EXIT_FAILURE);
 	}
-
 if(openpcapng() == false)
 	{
 	fprintf(stderr, "open pcapng file failed\n");
@@ -2384,9 +2427,15 @@ else fdloop();
 globalclose();
 fprintf(stdout, "\n%d error(s) encountered\n", errorcount);
 
-if(gpiobutton != 0)
+if(poweroffflag == true)
 	{
-	if(system("poweroff") != 0) fprintf(stderr, "can't power off\n");
+	if(system("poweroff") != 0) fprintf(stderr, "can't power off system\n");
+	exit(EXIT_FAILURE);
+	}
+if(rebootflag == true)
+	{
+	if(system("reboot") != 0) fprintf(stderr, "can't reboot system\n");
+	exit(EXIT_FAILURE);
 	}
 return EXIT_SUCCESS;
 }

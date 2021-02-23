@@ -1,7 +1,7 @@
 INSTALLDIR	= /usr/local/bin
 
 CC	= gcc
-CFLAGS	= -O3 -Wall -Wextra -ggdb
+CFLAGS	= -O3 -Wall -Wextra -ggdb -fsanitize=address
 
 all: build
 
@@ -9,18 +9,20 @@ build:
 	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabgetm1 hcxlabtool.c -DGETM1
 	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabgetm2 hcxlabtool.c -DGETM2
 	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabgetm1234 hcxlabtool.c -DGETM1234
+	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabgetmall hcxlabtool.c  -DGETM1 -DGETM2 -DGETM1234
 	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabdumpall hcxlabtool.c -DDUMPALL
 
 install: build
-	install -D -m 0755 hcxlabgetm2 $(INSTALLDIR)/hcxlabgetm2
-	install -D -m 0755 hcxlabgetm2 $(INSTALLDIR)/hcxlabgetm2
 	install -D -m 0755 hcxlabgetm1 $(INSTALLDIR)/hcxlabgetm1
+	install -D -m 0755 hcxlabgetm2 $(INSTALLDIR)/hcxlabgetm2
 	install -D -m 0755 hcxlabgetm1234 $(INSTALLDIR)/hcxlabgetm1234
+	install -D -m 0755 hcxlabgetmall $(INSTALLDIR)/hcxlabgetmall
 	install -D -m 0755 hcxlabdumpall $(INSTALLDIR)/hcxlabdumpall
 
 	rm -f hcxlabgetm1
 	rm -f hcxlabgetm2
 	rm -f hcxlabgetm1234
+	rm -f hcxlabgetmall
 	rm -f hcxlabdumpall
 	rm -f *.o *~
 
@@ -28,6 +30,7 @@ clean:
 	rm -f hcxlabgetm1
 	rm -f hcxlabgetm2
 	rm -f hcxlabgetm1234
+	rm -f hcxlabgetmall
 	rm -f hcxlabdumpall
 	rm -f *.o *~
 
@@ -35,4 +38,5 @@ uninstall:
 	rm -f $(INSTALLDIR)/hcxlabgetm1
 	rm -f $(INSTALLDIR)/hcxlabgetm2
 	rm -f $(INSTALLDIR)/hcxlabgetm1234
+	rm -f $(INSTALLDIR)/hcxlabgetmall
 	rm -f $(INSTALLDIR)/hcxlabdumpall
