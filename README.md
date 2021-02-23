@@ -57,7 +57,7 @@ A beautiful status output make the attack tool slow and sluggish.
 
 Too many featues make the attack tool slow and sluggish.
 
-Response time behavior becomes very bad.
+Response time behavior becomes very bad on big ringbuffers.
 
 Transmitting too many packets make a channel busy.
 
