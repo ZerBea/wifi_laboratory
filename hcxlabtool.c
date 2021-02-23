@@ -1398,12 +1398,12 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 			if(zeiger->eapolstatus < EAPOLM2M3)
 				{
 				if((zeiger->count %REMOVECLIENTINTERVALL) == 0) memset(zeiger->lastmacclient, 0xff, 6);
-				if((zeiger->count %BEACONREASSOCINTERVALL) == 0)
+				if((zeiger->count %REASSOCINTERVALL) == 0)
 					{
 					if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) send_reassociation_req_wpa2(zeiger->lastmacclient, zeiger);
 					else if ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_reassociation_req_wpa1(zeiger->lastmacclient, zeiger);
 					}
-				else if((zeiger->count %BEACONDEAUTHINTERVALL) == 0) send_deauthentication(zeiger->lastmacclient, macfrx->addr2, WLAN_REASON_DISASSOC_AP_BUSY);
+				else if((zeiger->count %DEAUTHINTERVALL) == 0) send_deauthentication(zeiger->lastmacclient, macfrx->addr2, WLAN_REASON_DISASSOC_AP_BUSY);
 				}
 			#endif
 			}
