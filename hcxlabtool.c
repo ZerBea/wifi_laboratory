@@ -57,6 +57,7 @@ static int gpiobutton;
 static int errorcount;
 
 static enhanced_packet_block_t *epbhdr;
+static enhanced_packet_block_t *epbhdrown;
 static int packetlen;
 static uint8_t *packetptr;
 static uint8_t *packetoutptr;
@@ -273,6 +274,35 @@ epblen += TOTAL_SIZE;
 epbhdr->total_length = epblen;
 totallenght->total_length = epblen;
 written = write(fd_pcapng, &epb, epblen);
+if(written != epblen) errorcount++;
+return;	
+}
+/*===========================================================================*/
+static inline void writeepbown(int fd, int packetlenown)
+{
+static int epblen;
+static int written;
+static uint16_t padding;
+static total_length_t *totallenght;
+
+epbhdrown = (enhanced_packet_block_t*)epbown;
+epblen = EPB_SIZE;
+epbhdrown->block_type = EPBID;
+epbhdrown->interface_id = 0;
+epbhdrown->cap_len = packetlenown;
+epbhdrown->org_len = packetlenown;
+epbhdrown->timestamp_high = timestamp >> 32;
+epbhdrown->timestamp_low = (uint32_t)timestamp &0xffffffff;
+padding = (4 -(epbhdrown->cap_len %4)) %4;
+epblen += packetlenown;
+memset(&epbown[epblen], 0, padding);
+epblen += padding;
+epblen += addoption(epbown +epblen, SHB_EOC, 0, NULL);
+totallenght = (total_length_t*)(epbown +epblen);
+epblen += TOTAL_SIZE;
+epbhdrown->total_length = epblen;
+totallenght->total_length = epblen;
+written = write(fd, &epbown, epblen);
 if(written != epblen) errorcount++;
 return;	
 }
@@ -642,7 +672,7 @@ addeapolstatus(macfrx->addr2, 0);
 return;
 }
 /*===========================================================================*/
-static inline void addapm2(uint8_t *macclient, uint8_t *macap, uint8_t status)
+static inline void addapm2(uint8_t *macclient, uint8_t *macap)
 {
 static aplist_t *zeiger; 
 
@@ -652,7 +682,7 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macap, macap, 6) != 0) continue;
 	if(memcmp(zeiger->macclient, macclient, 6) != 0) continue;
 	zeiger->timestamp = timestamp;
-	zeiger->eapolstatus |= status;
+	zeiger->status = STATUS_M2;
 	zeiger->count += 1;
 	if(zeiger->count >= 10) zeiger->status = STATUS_DONE;
 	return;
@@ -674,10 +704,13 @@ memcpy(zeiger->macap, macfrx->addr1, 6);
 memcpy(zeiger->macclient, macfrx->addr2, 6);
 zeiger->rc = be64toh(wpak->replaycount);
 m2status = 0;
-if(zeiger->rc == rgrc) m2status |= EAPOLRGM2;
+if(zeiger->rc == rgrc)
 	{
-	addapm2(macfrx->addr1, macfrx->addr2, STATUS_M2);
-	return;
+	#ifdef STATUSOUT
+	debugmac2(macfrx->addr1, macfrx->addr2, "M1M2ROGUE");
+	#endif
+	m2status |= EAPOLRGM2;
+	addapm2(macfrx->addr1, macfrx->addr2);
 	}
 qsort(eapolm2list, EAPOLLIST_MAX +1, EAPOLLIST_SIZE, sort_eapollist_by_time);
 for(zeigerm1 = eapolm1list; zeigerm1 < eapolm1list +EAPOLLIST_MAX; zeigerm1++)
@@ -743,7 +776,7 @@ if(memcmp(pmkid->pmkid, &zeroed32, 16) == 0)
 	addeapolstatus(macfrx->addr2, EAPOLM1);
 	return;
 	}
-addeapolstatus(macfrx->addr2, EAPOLM1 | EAPOLPMKID);
+addeapolstatus(macfrx->addr2, EAPOLPMKID);
 #ifdef STATUSOUT
 debugmac2(macfrx->addr1, macfrx->addr2, "PMKID");
 #endif
@@ -838,9 +871,24 @@ return;
 static inline void process80211null()
 {
 static aplist_t *zeiger;
+static aplist_t *zeigerm2;
 
 if((macfrx->to_ds == 1) && (macfrx->from_ds == 0))
 	{
+	if(macfrx->power != 1)
+		{
+		for(zeigerm2 = apm2list; zeigerm2 < apm2list +APLIST_MAX; zeigerm2++)
+			{
+			if(zeigerm2->timestamp == 0) break;
+			if(memcmp(zeigerm2->macap, macfrx->addr1, 6) != 0) continue;
+			if(memcmp(zeigerm2->macclient, macfrx->addr2, 6) != 0) continue;
+			zeigerm2->timestamp = timestamp;
+			if(zeigerm2->status >= STATUS_DONE) break;
+			if((zeiger->status & STATUS_ASSOC) != STATUS_ASSOC) break;
+			send_ack();
+			break;
+			}
+		}
 	for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 		{
 		if(zeiger->timestamp == 0) return;
@@ -1106,7 +1154,90 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +zeiger->ess
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +zeiger->essidlen +IETAG_SIZE +ASSOCIATIONREQUESTWPA1_SIZE) == -1) errorcount++;
 return;
 }
+/*===========================================================================*/
+static inline void send_m1_wpa2(uint8_t *macclient, uint8_t *macap)
+{
+static mac_t *macftx;
+static const uint8_t llcdata[] =
+{
+0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x88, 0x8e
+};
+static const uint8_t wpa2data[] =
+{
+0x02,
+0x03,
+0x00, 0x5f,
+0x02,
+0x00, 0x8a,
+0x00, 0x10,
+};
+#define WPA2_SIZE sizeof(wpa2data)
 
+timestamp += 1;
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +100);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_DATA;
+macftx->subtype = IEEE80211_STYPE_DATA;
+memcpy(macftx->addr1, macclient, 6);
+memcpy(macftx->addr2, macap, 6);
+memcpy(macftx->addr3, macap, 6);
+macftx->from_ds = 1;
+macftx->duration = 0x013a;
+macftx->sequence = apsequence++ << 4;
+if(apsequence >= 4096) apsequence = 1;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &llcdata, LLC_SIZE);
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE], &wpa2data, WPA2_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x0f] = (rgrc >> 8) &0xff;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x10] = rgrc &0xff;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x11], &anonce, 32);
+writeepbown(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99);
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99) == -1) errorcount++;
+return;
+}
+/*===========================================================================*/
+static inline void send_m1_wpa1(uint8_t *macclient, uint8_t *macap)
+{
+static mac_t *macftx;
+static const uint8_t llcdata[] =
+{
+0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x88, 0x8e
+};
+static const uint8_t wpa1data[] =
+{
+0x02,
+0x03,
+0x00, 0x5f,
+0x02,
+0x00, 0x89,
+0x00, 0x20,
+};
+#define WPA1_SIZE sizeof(wpa1data)
+
+timestamp += 1;
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +100);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_DATA;
+macftx->subtype = IEEE80211_STYPE_DATA;
+memcpy(macftx->addr1, macclient, 6);
+memcpy(macftx->addr2, macap, 6);
+memcpy(macftx->addr3, macap, 6);
+macftx->from_ds = 1;
+macftx->duration = 0x013a;
+macftx->sequence = apsequence++ << 4;
+if(apsequence >= 4096) apsequence = 1;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &llcdata, LLC_SIZE);
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE], &wpa1data, WPA1_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x0f] = (rgrc >> 8) &0xff;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x10] = rgrc &0xff;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x11], &anonce, 32);
+writeepbown(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99);
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99) == -1) errorcount++;
+return;
+}
 /*===========================================================================*/
 static inline void process80211reassociation_resp()
 {
@@ -1128,6 +1259,41 @@ writeepb(fd_pcapng);
 return;
 }
 /*===========================================================================*/
+static inline void send_reassociation_resp(uint8_t *macclient, uint8_t *macap)
+{
+static mac_t *macftx;
+static const uint8_t associationresponsedata[] =
+{
+/* Fixed parameters (6 bytes) Fixed parameters (6 bytes) */
+0x31, 0x04,
+0x00, 0x00,
+0x01, 0xc0,
+/* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6, 9, 12, 18, [Mbit/sec] */
+0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x0c, 0x12, 0x18, 0x24,
+/* Tag: Extended Supported Rates 24, 36, 48, 54, [Mbit/sec] */
+0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
+/* Tag: Extended Capabilities (8 octets) */
+0x7f, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40
+};
+#define ASSOCIATIONRESPONSE_SIZE sizeof(associationresponsedata)
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONRESPONSE_SIZE +1);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_REASSOC_RESP;
+memcpy(macftx->addr1, macclient, 6);
+memcpy(macftx->addr2, macap, 6);
+memcpy(macftx->addr3, macap, 6);
+macftx->duration = 0x013a;
+macftx->sequence = apsequence++ << 4;
+if(apsequence >= 4096) apsequence = 1;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &associationresponsedata, ASSOCIATIONRESPONSE_SIZE);
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONRESPONSE_SIZE) == -1) errorcount++;
+return;
+}
+/*===========================================================================*/
 static inline void process80211reassociation_req()
 {
 static uint8_t *clientinfoptr;
@@ -1144,21 +1310,104 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macclient, macfrx->addr2, 6) != 0) continue;
 	gettags(clientinfolen, clientinfoptr, zeiger);
 	zeiger->timestamp = timestamp;
+	zeiger->status |= STATUS_ASSOC;
 	if(zeiger->status >= STATUS_DONE) return;
-	send_ack();
-	debugmac2(macfrx->addr1, macfrx->addr2, "ASSOC loop");
+	if((zeiger->akm &TAK_PSK) != TAK_PSK)
+		{
+		zeiger->status = STATUS_DONE;
+		return;
+		}
+	if((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256)
+		{
+		zeiger->status = STATUS_DONE;
+		return;
+		}
+	if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)
+		{
+		send_ack();
+		send_reassociation_resp(macfrx->addr2, macfrx->addr1);
+		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
+		return;
+		}
+	if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)
+		{
+		send_ack();
+		send_reassociation_resp(macfrx->addr2, macfrx->addr1);
+		send_m1_wpa1(macfrx->addr2, macfrx->addr1);
+		return;
+		}
+	zeiger->status = STATUS_DONE;
 	return;
 	}
 memset(zeiger, 0, APLIST_SIZE);
 gettags(clientinfolen, clientinfoptr, zeiger);
 zeiger->timestamp = timestamp;
-zeiger->status = STATUS_AUTH;
+zeiger->firsttimestamp = timestamp;
+zeiger->status = STATUS_ASSOC;
 memcpy(zeiger->macap, macfrx->addr1, 6);
 memcpy(zeiger->macclient, macfrx->addr2, 6);
-send_ack();
-debugmac2(macfrx->addr1, macfrx->addr2, "ASSOC");
+if((zeiger->akm &TAK_PSK) != TAK_PSK)
+	{
+	zeiger->status = STATUS_DONE;
+	return;
+	}
+if((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256)
+	{
+	zeiger->status = STATUS_DONE;
+	return;
+	}
+if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)
+	{
+	send_ack();
+	send_reassociation_resp(macfrx->addr2, macfrx->addr1);
+	send_m1_wpa2(macfrx->addr2, macfrx->addr1);
+	return;
+	}
+if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)
+	{
+	send_ack();
+	send_reassociation_resp(macfrx->addr2, macfrx->addr1);
+	send_m1_wpa1(macfrx->addr2, macfrx->addr1);
+	return;
+	}
+zeiger->status = STATUS_DONE;
 qsort(apm2list, zeiger -apm2list +1, APLIST_SIZE, sort_aplist_by_time);
 writeepb(fd_pcapng);
+return;
+}
+/*===========================================================================*/
+static inline void send_association_resp(uint8_t *macclient, uint8_t *macap)
+{
+static mac_t *macftx;
+static const uint8_t associationresponsedata[] =
+{
+/* Fixed parameters (6 bytes) Fixed parameters (6 bytes) */
+0x31, 0x04,
+0x00, 0x00,
+0x01, 0xc0,
+/* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6, 9, 12, 18, [Mbit/sec] */
+0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x0c, 0x12, 0x18, 0x24,
+/* Tag: Extended Supported Rates 24, 36, 48, 54, [Mbit/sec] */
+0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
+/* Tag: Extended Capabilities (8 octets) */
+0x7f, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40
+};
+#define ASSOCIATIONRESPONSE_SIZE sizeof(associationresponsedata)
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONRESPONSE_SIZE +1);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_ASSOC_RESP;
+memcpy(macftx->addr1, macclient, 6);
+memcpy(macftx->addr2, macap, 6);
+memcpy(macftx->addr3, macap, 6);
+macftx->duration = 0x013a;
+macftx->sequence = apsequence++ << 4;
+if(apsequence >= 4096) apsequence = 1;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &associationresponsedata, ASSOCIATIONRESPONSE_SIZE);
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONRESPONSE_SIZE) == -1) errorcount++;
 return;
 }
 /*===========================================================================*/
@@ -1178,17 +1427,57 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macclient, macfrx->addr2, 6) != 0) continue;
 	gettags(clientinfolen, clientinfoptr, zeiger);
 	zeiger->timestamp = timestamp;
+	zeiger->status |= STATUS_ASSOC;
 	if(zeiger->status >= STATUS_DONE) return;
-	debugmac2(macfrx->addr1, macfrx->addr2, "ASSOC loop");
+	if(((zeiger->akm &TAK_PSK) != TAK_PSK) && ((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256))
+		{
+		zeiger->status = STATUS_DONE;
+		return;
+		}
+	if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)
+		{
+		send_ack();
+		send_association_resp(macfrx->addr2, macfrx->addr1);
+		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
+		return;
+		}
+	if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)
+		{
+		send_ack();
+		send_association_resp(macfrx->addr2, macfrx->addr1);
+		send_m1_wpa1(macfrx->addr2, macfrx->addr1);
+		return;
+		}
+	zeiger->status = STATUS_DONE;
 	return;
 	}
 memset(zeiger, 0, APLIST_SIZE);
 gettags(clientinfolen, clientinfoptr, zeiger);
 zeiger->timestamp = timestamp;
-zeiger->status = STATUS_AUTH;
+zeiger->firsttimestamp = timestamp;
+zeiger->status = STATUS_ASSOC;
 memcpy(zeiger->macap, macfrx->addr1, 6);
 memcpy(zeiger->macclient, macfrx->addr2, 6);
-debugmac2(macfrx->addr1, macfrx->addr2, "ASSOC");
+if(((zeiger->akm &TAK_PSK) != TAK_PSK) && ((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256))
+	{
+	zeiger->status = STATUS_DONE;
+	return;
+	}
+if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)
+	{
+	send_ack();
+	send_association_resp(macfrx->addr2, macfrx->addr1);
+	send_m1_wpa2(macfrx->addr2, macfrx->addr1);
+	return;
+	}
+if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)
+	{
+	send_ack();
+	send_association_resp(macfrx->addr2, macfrx->addr1);
+	send_m1_wpa1(macfrx->addr2, macfrx->addr1);
+	return;
+	}
+zeiger->status = STATUS_DONE;
 qsort(apm2list, zeiger -apm2list +1, APLIST_SIZE, sort_aplist_by_time);
 writeepb(fd_pcapng);
 return;
@@ -1258,6 +1547,7 @@ if((auth->sequence %2) == 1)
 		}
 	memset(zeiger, 0, APLIST_SIZE);
 	zeiger->timestamp = timestamp;
+	zeiger->firsttimestamp = timestamp;
 	zeiger->status = STATUS_AUTH;
 	memcpy(zeiger->macap, macfrx->addr1, 6);
 	memcpy(zeiger->macclient, macfrx->addr2, 6);
@@ -1464,20 +1754,19 @@ memset(zeiger, 0, APLIST_SIZE);
 gettags(apinfolen, apinfoptr, zeiger);
 if(channelscanlist[csc] != zeiger->channel) return;
 zeiger->timestamp = timestamp;
+zeiger->firsttimestamp = timestamp;
 zeiger->status = STATUS_PRESP;
 memcpy(zeiger->macap, macfrx->addr2, 6);
 gettags(apinfolen, apinfoptr, aplist);
 if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
 	{
-	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
-		{
-		#ifdef GETM1
-		send_authentication_req_opensystem(macrgclient, macfrx->addr2);
-		#endif
-		#ifdef GETM1234
-		send_association_req_wpa2(macfrx->addr1, zeiger);
-		#endif
-		}
+	#ifdef GETM1
+	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)) send_authentication_req_opensystem(macrgclient, macfrx->addr2);
+	#endif
+	#ifdef GETM1234
+	if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) send_association_req_wpa2(macfrx->addr1, zeiger);
+	else if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_association_req_wpa1(macfrx->addr1, zeiger);
+	#endif
 	}
 qsort(aplist, zeiger -aplist +1, APLIST_SIZE, sort_aplist_by_time);
 writeepb(fd_pcapng);
@@ -1528,27 +1817,40 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	zeiger->timestamp = timestamp;
 	if((zeiger->status & STATUS_BEACON) != STATUS_BEACON) writeepb(fd_pcapng);
 	zeiger->status |= STATUS_BEACON;
-	zeiger->count += 1;
+	if(channelscanlist[csc] != zeiger->channel) return;
 	if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
 		{
 		if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
 			{
+			if((zeiger->timestamp - zeiger->firsttimestamp) > 3600000000ULL) zeiger->firsttimestamp = zeiger->timestamp;
+			if((zeiger->timestamp - zeiger->firsttimestamp) > 30000000ULL)
+				{
+				memset(zeiger->macclient, 0xff, 6);
+				return;
+				}
+			zeiger->count += 1;
 			#ifdef GETM1
 			if((zeiger->eapolstatus &EAPOLM1) != EAPOLM1)
 				{
-				if((zeiger->count %M1REQUESTINTERVALL) == 0) send_authentication_req_opensystem(macrgclient, macfrx->addr2);
+				if(zeiger->count == 5)
+					{
+					send_authentication_req_opensystem(macrgclient, macfrx->addr2);
+					}
 				}
 			#endif
 			#ifdef GETM1234
 			if(zeiger->eapolstatus < EAPOLM2M3)
 				{
-				if((zeiger->count %REMOVECLIENTINTERVALL) == 0) memset(zeiger->macclient, 0xff, 6);
-				if((zeiger->count %REASSOCINTERVALL) == 0)
+				if(zeiger->count == 10)
 					{
 					if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) send_reassociation_req_wpa2(zeiger->macclient, zeiger);
 					else if ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_reassociation_req_wpa1(zeiger->macclient, zeiger);
 					}
-				else if((zeiger->count %DEAUTHINTERVALL) == 0) send_deauthentication(zeiger->macclient, macfrx->addr2, WLAN_REASON_DISASSOC_AP_BUSY);
+				if(zeiger->count == 15)
+					{
+					send_deauthentication(zeiger->macclient, macfrx->addr2, WLAN_REASON_DISASSOC_AP_BUSY);
+					}
+				if(zeiger->count == 20) zeiger->count = 0;
 				}
 			#endif
 			}
@@ -1559,6 +1861,7 @@ memset(zeiger, 0, APLIST_SIZE);
 gettags(apinfolen, apinfoptr, zeiger);
 if(channelscanlist[csc] != zeiger->channel) return;
 zeiger->timestamp = timestamp;
+zeiger->firsttimestamp = timestamp;
 zeiger->count += 1;
 zeiger->status = STATUS_BEACON;
 memcpy(zeiger->macap, macfrx->addr2, 6);

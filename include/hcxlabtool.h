@@ -20,12 +20,6 @@
 #define FDNSECTIMER		200000000
 #define STAYTIME		5
 
-#define M1REQUESTINTERVALL	20
-#define REASSOCINTERVALL	85
-#define DEAUTHINTERVALL		145
-
-#define REMOVECLIENTINTERVALL	600
-
 /*===========================================================================*/
 #define	EAPOLM1M2TIMEOUT	25000
 #define	EAPOLM2M3TIMEOUT	50000
@@ -74,21 +68,26 @@ return 0;
 typedef struct
 {
  uint64_t		timestamp;
+ uint64_t		firsttimestamp;
  uint8_t		macap[6];
- uint8_t		client[6];
+ uint8_t		macclient[6];
  uint32_t		count;
- uint16_t		status;
+ uint8_t		status;
+#define STATUS_BEACON	0b00000001
+#define STATUS_PRESP	0b00000010
+#define STATUS_AUTH	0b00000001
+#define STATUS_ASSOC	0b00000010
+#define STATUS_M2	0b00000100
+#define STATUS_DONE	0b10000000
  uint8_t		eapolstatus;
 #define EAPOLM1		0b00000001
 #define EAPOLM1M2	0b00000010
 #define EAPOLRGM2	0b00000100
 #define EAPOLM2M3	0b00001000
 #define EAPOLM3M4	0b00010000
-#define EAPOLPMKID	0b00100000
+#define EAPOLPMKID	0b00100001
  uint8_t		eapstatus;
  int			channel;
-#define STATUS_BEACON	0b0000000000000001
-#define STATUS_PRESP	0b0000000000000010
  uint8_t		kdversion;
 #define KV_RSNIE	0b00000001
 #define KV_WPAIE	0b00000010
