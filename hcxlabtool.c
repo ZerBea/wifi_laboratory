@@ -1131,6 +1131,60 @@ if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTC
 return;
 }
 /*===========================================================================*/
+static inline void process80211authentication_sae()
+{
+static authf_t *auth;
+
+auth = (authf_t*)payloadptr;
+if(payloadlen < AUTHENTICATIONFRAME_SIZE) return;
+if((auth->sequence %2) == 1)
+	{
+	}
+else if((auth->sequence %2) == 0)
+	{
+	}
+writeepb(fd_pcapng);
+return;
+}
+/*===========================================================================*/
+static inline void process80211authentication_opensystem()
+{
+static authf_t *auth;
+
+auth = (authf_t*)payloadptr;
+if(payloadlen < AUTHENTICATIONFRAME_SIZE) return;
+if((auth->sequence %2) == 1)
+	{
+	debugmac2(macfrx->addr1, macfrx->addr2, "AUTH");
+
+	}
+else if((auth->sequence %2) == 0)
+	{
+	}
+writeepb(fd_pcapng);
+return;
+}
+/*===========================================================================*/
+static inline void process80211authentication()
+{
+static authf_t *auth;
+
+auth = (authf_t*)payloadptr;
+if(payloadlen < AUTHENTICATIONFRAME_SIZE) return;
+if(auth->algorithm == OPEN_SYSTEM)
+	{
+	process80211authentication_opensystem();
+	return;
+	}
+else
+	{
+	if(auth->algorithm == SAE) process80211authentication_sae();
+	return;
+	}
+writeepb(fd_pcapng);
+return;
+}
+/*===========================================================================*/
 static inline void process80211authentication_rg_resp()
 {
 static aplist_t *zeiger;
@@ -1145,30 +1199,6 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	else if ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_association_req_wpa1(macfrx->addr1, zeiger);
 	return;
 	}
-writeepb(fd_pcapng);
-return;
-}
-/*===========================================================================*/
-static inline void process80211authentication()
-{
-static authf_t *auth;
-
-auth = (authf_t*)payloadptr;
-if(payloadlen < AUTHENTICATIONFRAME_SIZE) return;
-if(auth->algorithm != OPEN_SYSTEM)
-	{
-	writeepb(fd_pcapng);
-	return;
-	}
-if((auth->sequence %2) == 1)
-	{
-	debugmac2(macfrx->addr1, macfrx->addr2, "AUTH");
-
-	}
-else if((auth->sequence %2) == 0)
-	{
-	}
-
 writeepb(fd_pcapng);
 return;
 }
