@@ -2065,9 +2065,9 @@ if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_P
 		send_authentication_req_opensystem(macrgclient, macfrx->addr2);
 		#endif
 		#ifdef GETM1234
-		if(((zeiger->akm &TAK_PSK) == TAK_PSK) && ((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) send_association_req_wpa2(macfrx->addr1, zeiger);
-		else if ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_association_req_wpa1(macfrx->addr1, zeiger);
-		else if((zeiger->akm &TAK_PSKSHA256) && ((zeiger->kdversion &KV_RSNIE) == TAK_PSKSHA256) send_association_req_wpa2kv2(macfrx->addr1, zeiger);
+		if(((zeiger->akm &TAK_PSK) == TAK_PSK) && ((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)) send_association_req_wpa2(macfrx->addr1, zeiger);
+		else if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_association_req_wpa1(macfrx->addr1, zeiger);
+		else if(((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256) && ((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)) send_association_req_wpa2(macfrx->addr1, zeiger);
 		#endif
 		}
 	}
@@ -2509,7 +2509,7 @@ return len;
 }
 /*===========================================================================*/
 /*===========================================================================*/
-static inline void getscanlist()
+static inline int getscanlist()
 {
 static int c;
 static int cgc;
@@ -2529,7 +2529,7 @@ for(c = 1; c < 256; c++)
 	cgc++;
 	}
 channelscanlist[cgc] = 0;
-return;
+return cgc;
 }
 /*===========================================================================*/
 static inline bool opensocket(char *interfacename)
@@ -2969,11 +2969,7 @@ staytime = STAYTIME;
 tvtot.tv_sec = 2147483647L;
 tvtot.tv_usec = 0;
 totvalue = 0;
-cgc = 3;
-channelscanlist[0] = 1;
-channelscanlist[1] = 6;
-channelscanlist[2] = 11;
-channelscanlist[3] = 0;
+cgc = 0;
 
 while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) != -1)
 	{
@@ -3098,6 +3094,11 @@ if(openpcapng() == false)
 	exit(EXIT_FAILURE);
 	}
 
+if(cgc == 0)
+	{
+	printf("detecting available channels\n");
+	cgc = getscanlist();
+	}
 if(cgc > 1) fdloopscan();
 else fdloop();
 
