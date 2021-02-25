@@ -3093,6 +3093,7 @@ if(openpcapng() == false)
 	fprintf(stderr, "open pcapng file failed\n");
 	exit(EXIT_FAILURE);
 	}
+printf("%d\n", cgc);
 if(cgc == 0)
 	{
 	printf("detecting available channels\n");
