@@ -30,6 +30,7 @@ static bool rebootflag;
 static bool poweroffflag;
 static struct timeval tv;
 static struct timeval tvold;
+static struct timeval tvoldled;
 static struct timeval tvtot;
 static struct timeval tvlast;
 static uint64_t timestamp;
@@ -2299,9 +2300,9 @@ while(wantstopflag == false)
 		rebootflag = true;
 		wantstopflag = true;
 		}
-	if((tv.tv_sec -tvold.tv_sec) >= staytime)
+	if((tv.tv_sec -tvoldled.tv_sec) >= 10)
 		{
-		tvold.tv_sec = tv.tv_sec;
+		tvoldled.tv_sec = tv.tv_sec;
 		if(gpiostatusled > 0)
 			{
 			GPIO_SET = 1 << gpiostatusled;
@@ -2315,6 +2316,10 @@ while(wantstopflag == false)
 				GPIO_CLR = 1 << gpiostatusled;
 				}
 			}
+		}
+	if((tv.tv_sec -tvold.tv_sec) >= staytime)
+		{
+		tvold.tv_sec = tv.tv_sec;
 		csc++;
 		if(channelscanlist[csc] == 0) csc = 0;
 		set_channel();
@@ -2790,6 +2795,8 @@ gettimeofday(&tv, NULL);
 timestamp = ((uint64_t)tv.tv_sec *1000000) +tv.tv_usec;
 tvold.tv_sec = tv.tv_sec;
 tvold.tv_usec = tv.tv_usec;
+tvoldled.tv_sec = tv.tv_sec;
+tvoldled.tv_usec = tv.tv_usec;
 tvlast.tv_sec = tv.tv_sec;
 tvlast.tv_sec = tv.tv_sec;
 mytime = 1;
