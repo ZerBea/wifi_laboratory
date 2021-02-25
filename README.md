@@ -29,8 +29,6 @@ driver must support full monitor mode and full packet injection
 
 diver must not depend on NETLINK
 
-up to 4 WiFi adapters
-
 tshark or Wireshark to monitor interface
 
 tcpdump to create BPF code
