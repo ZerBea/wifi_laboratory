@@ -684,7 +684,7 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 	zeiger->timestamp = timestamp;
 	zeiger->status = STATUS_M2;
 	zeiger->count += 1;
-	if(zeiger->count >= 10) zeiger->status = STATUS_DONE;
+	if(zeiger->count >= 10) zeiger->status |= STATUS_M2DONE;
 	return;
 	}
 return;
@@ -883,8 +883,8 @@ if((macfrx->to_ds == 1) && (macfrx->from_ds == 0))
 			if(memcmp(zeigerm2->macap, macfrx->addr1, 6) != 0) continue;
 			if(memcmp(zeigerm2->macclient, macfrx->addr2, 6) != 0) continue;
 			zeigerm2->timestamp = timestamp;
-			if(zeigerm2->status >= STATUS_DONE) break;
-			if((zeiger->status & STATUS_ASSOC) != STATUS_ASSOC) break;
+			if((zeigerm2->status &STATUS_M2DONE) == STATUS_M2DONE) break;
+			if((zeiger->status &STATUS_ASSOC) != STATUS_ASSOC) break;
 			send_ack();
 			break;
 			}
@@ -931,6 +931,60 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 return;
 }
 /*===========================================================================*/
+/*===========================================================================*/
+static inline void send_reassociation_req_wpa2kv2(uint8_t *macclient, aplist_t *zeiger)
+{
+static mac_t *macftx;
+static capreqsta_t *stacapa;
+
+static const uint8_t reassociationrequestwpa2data[] =
+{
+/* supported rates */
+0x01, 0x08, 0x02, 0x04, 0x0b, 0x16, 0x0c, 0x12, 0x18, 0x24,
+/* extended supported rates */
+0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
+/* power Capability */
+0x21, 0x02, 0x04, 0x14,
+/* vendor specific */
+0xdd, 0x08, 0xac, 0x85, 0x3d, 0x82, 0x01, 0x00, 0x00, 0x00,
+/* RSN information AES PSK (WPA2) */
+0x30, 0x14, 0x01, 0x00,
+0x00, 0x0f, 0xac, 0x04, /* group cipher */
+0x01, 0x00, /* count */
+0x00, 0x0f, 0xac, 0x04, /* pairwise cipher */
+0x01, 0x00, /* count */
+0x00, 0x0f, 0xac, 0x06, /* AKM */
+0x00, 0x00,
+};
+#define REASSOCIATIONREQUESTWPA2_SIZE sizeof(reassociationrequestwpa2data)
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +REASSOCIATIONREQUESTWPA2_SIZE +IETAG_SIZE +zeiger->essidlen);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_REASSOC_REQ;
+memcpy(macftx->addr1, zeiger->macap, 6);
+memcpy(macftx->addr2, macclient, 6);
+memcpy(macftx->addr3, zeiger->macap, 6);
+macftx->duration = 0x013a;
+macftx->sequence = clientsequence++ << 4;
+if(clientsequence >= 4096) clientsequence = 1;
+stacapa = (capreqsta_t *) (packetoutptr +HDRRT_SIZE +MAC_SIZE_NORM);
+stacapa->capabilities = 0x0411;
+stacapa->listeninterval = 3;
+memcpy(stacapa->addr, zeiger->macap, 6);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +1] = zeiger->essidlen;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +IETAG_SIZE], zeiger->essid, zeiger->essidlen);
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +zeiger->essidlen +IETAG_SIZE], &reassociationrequestwpa2data, REASSOCIATIONREQUESTWPA2_SIZE);
+if((zeiger->groupcipher &TCS_CCMP) == TCS_CCMP) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +zeiger->essidlen +IETAG_SIZE +0x25] = CS_CCMP;
+else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +zeiger->essidlen +IETAG_SIZE +0x25] = CS_TKIP;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +zeiger->essidlen +IETAG_SIZE +0x2b] = CS_CCMP;
+if((zeiger->akm &TAK_PSK) == TAK_PSK) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +zeiger->essidlen +IETAG_SIZE +0x31] = AK_PSK;
+else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +zeiger->essidlen +IETAG_SIZE +0x31] = AK_PSKSHA256;
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +zeiger->essidlen +IETAG_SIZE +REASSOCIATIONREQUESTWPA2_SIZE) == -1) errorcount++;
+return;
+}
 /*===========================================================================*/
 static inline void send_reassociation_req_wpa2(uint8_t *macclient, aplist_t *zeiger)
 {
@@ -983,6 +1037,68 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +zeiger->essidle
 if((zeiger->akm &TAK_PSK) == TAK_PSK) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +zeiger->essidlen +IETAG_SIZE +0x31] = AK_PSK;
 else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +zeiger->essidlen +IETAG_SIZE +0x31] = AK_PSKSHA256;
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +zeiger->essidlen +IETAG_SIZE +REASSOCIATIONREQUESTWPA2_SIZE) == -1) errorcount++;
+return;
+}
+/*===========================================================================*/
+static inline void send_association_req_wpa2kv2(uint8_t *macclient, aplist_t *zeiger)
+{
+static mac_t *macftx;
+
+static const uint8_t associationrequestcapa[] =
+{
+0x31, 0x04, 0x05, 0x00
+};
+#define ASSOCIATIONREQUESTCAPA_SIZE sizeof(associationrequestcapa)
+
+static const uint8_t associationrequestwpa2data[] =
+{
+/* supported rates */
+0x01, 0x08, 0x02, 0x04, 0x0b, 0x16, 0x0c, 0x12, 0x18, 0x24,
+/* extended supported rates */
+0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
+/* RSN information AES PSK (WPA2) */
+0x30, 0x14, 0x01, 0x00,
+0x00, 0x0f, 0xac, 0x04, /* group cipher */
+0x01, 0x00, /* count */
+0x00, 0x0f, 0xac, 0x04, /* pairwise cipher */
+0x01, 0x00, /* count */
+0x00, 0x0f, 0xac, 0x06, /* AKM */
+0x00, 0x00,
+/* HT capabilites */
+0x2d, 0x1a, 0x6e, 0x18, 0x1f, 0xff, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x96,
+0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+/* extended capabilites */
+0x7f, 0x08, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x40,
+/* supported operating classes */
+0x3b, 0x14, 0x51, 0x51, 0x53, 0x54, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x7b, 0x7c,
+0x7d, 0x7e, 0x7f, 0x80, 0x81, 0x82,
+/* WMM/WME */
+0xdd, 0x07, 0x00, 0x50, 0xf2, 0x02, 0x00, 0x01, 0x00
+};
+#define ASSOCIATIONREQUESTWPA2_SIZE sizeof(associationrequestwpa2data)
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +ASSOCIATIONREQUESTWPA2_SIZE +IETAG_SIZE +zeiger->essidlen);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_ASSOC_REQ;
+memcpy(macftx->addr1, zeiger->macap, 6);
+memcpy(macftx->addr2, macclient, 6);
+memcpy(macftx->addr3, zeiger->macap, 6);
+macftx->duration = 0x013a;
+macftx->sequence = clientsequence++ << 4;
+if(clientsequence >= 4096) clientsequence = 1;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &associationrequestcapa, ASSOCIATIONREQUESTCAPA_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +1] = zeiger->essidlen;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +IETAG_SIZE], zeiger->essid, zeiger->essidlen);
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +zeiger->essidlen +IETAG_SIZE], &associationrequestwpa2data, ASSOCIATIONREQUESTWPA2_SIZE);
+if((zeiger->groupcipher &TCS_CCMP) == TCS_CCMP) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +zeiger->essidlen +IETAG_SIZE +0x17] = CS_CCMP;
+else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +zeiger->essidlen +IETAG_SIZE +0x17] = CS_TKIP;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +zeiger->essidlen +IETAG_SIZE +0x1d] = CS_CCMP;
+if((zeiger->akm &TAK_PSK) == TAK_PSK) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +zeiger->essidlen +IETAG_SIZE +0x23] = AK_PSK;
+else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +zeiger->essidlen +IETAG_SIZE +0x23] = AK_PSKSHA256;
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +zeiger->essidlen +IETAG_SIZE +ASSOCIATIONREQUESTWPA2_SIZE) == -1) errorcount++;
 return;
 }
 /*===========================================================================*/
@@ -1155,6 +1271,51 @@ if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTC
 return;
 }
 /*===========================================================================*/
+#ifdef GETM2
+static inline void send_m1_wpa2kv2(uint8_t *macclient, uint8_t *macap)
+{
+static mac_t *macftx;
+static const uint8_t llcdata[] =
+{
+0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x88, 0x8e
+};
+static const uint8_t wpa2data[] =
+{
+0x02,
+0x03,
+0x00, 0x5f,
+0x02,
+0x00, 0x8b,
+0x00, 0x10,
+};
+#define WPA2_SIZE sizeof(wpa2data)
+
+timestamp += 1;
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +100);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_DATA;
+macftx->subtype = IEEE80211_STYPE_DATA;
+memcpy(macftx->addr1, macclient, 6);
+memcpy(macftx->addr2, macap, 6);
+memcpy(macftx->addr3, macap, 6);
+macftx->from_ds = 1;
+macftx->duration = 0x013a;
+macftx->sequence = apsequence++ << 4;
+if(apsequence >= 4096) apsequence = 1;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &llcdata, LLC_SIZE);
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE], &wpa2data, WPA2_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x0f] = (rgrc >> 8) &0xff;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x10] = rgrc &0xff;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x11], &anonce, 32);
+writeepbown(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99);
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99) == -1) errorcount++;
+return;
+}
+#endif
+/*===========================================================================*/
+#ifdef GETM2
 static inline void send_m1_wpa2(uint8_t *macclient, uint8_t *macap)
 {
 static mac_t *macftx;
@@ -1196,7 +1357,9 @@ writeepbown(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99);
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99) == -1) errorcount++;
 return;
 }
+#endif
 /*===========================================================================*/
+#ifdef GETM2
 static inline void send_m1_wpa1(uint8_t *macclient, uint8_t *macap)
 {
 static mac_t *macftx;
@@ -1238,6 +1401,7 @@ writeepbown(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99);
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99) == -1) errorcount++;
 return;
 }
+#endif
 /*===========================================================================*/
 static inline void process80211reassociation_resp()
 {
@@ -1311,15 +1475,16 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 	gettags(clientinfolen, clientinfoptr, zeiger);
 	zeiger->timestamp = timestamp;
 	zeiger->status |= STATUS_ASSOC;
-	if(zeiger->status >= STATUS_DONE) return;
+	#ifdef GETM2
+	if((zeiger->status &STATUS_M2DONE) == STATUS_M2DONE) return;
 	if((zeiger->akm &TAK_PSK) != TAK_PSK)
 		{
-		zeiger->status = STATUS_DONE;
+		zeiger->status |= STATUS_M2DONE;
 		return;
 		}
 	if((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256)
 		{
-		zeiger->status = STATUS_DONE;
+		zeiger->status |= STATUS_M2DONE;
 		return;
 		}
 	if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)
@@ -1336,7 +1501,8 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 		send_m1_wpa1(macfrx->addr2, macfrx->addr1);
 		return;
 		}
-	zeiger->status = STATUS_DONE;
+	#endif
+	zeiger->status |= STATUS_M2DONE;
 	return;
 	}
 memset(zeiger, 0, APLIST_SIZE);
@@ -1346,14 +1512,15 @@ zeiger->firsttimestamp = timestamp;
 zeiger->status = STATUS_ASSOC;
 memcpy(zeiger->macap, macfrx->addr1, 6);
 memcpy(zeiger->macclient, macfrx->addr2, 6);
+#ifdef GETM2
 if((zeiger->akm &TAK_PSK) != TAK_PSK)
 	{
-	zeiger->status = STATUS_DONE;
+	zeiger->status |= STATUS_M2DONE;
 	return;
 	}
 if((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256)
 	{
-	zeiger->status = STATUS_DONE;
+	zeiger->status |= STATUS_M2DONE;
 	return;
 	}
 if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)
@@ -1370,12 +1537,14 @@ if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)
 	send_m1_wpa1(macfrx->addr2, macfrx->addr1);
 	return;
 	}
-zeiger->status = STATUS_DONE;
+#endif
+zeiger->status |= STATUS_M2DONE;
 qsort(apm2list, zeiger -apm2list +1, APLIST_SIZE, sort_aplist_by_time);
 writeepb(fd_pcapng);
 return;
 }
 /*===========================================================================*/
+#ifdef GETM2
 static inline void send_association_resp(uint8_t *macclient, uint8_t *macap)
 {
 static mac_t *macftx;
@@ -1410,6 +1579,7 @@ memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &associationresponsedata, ASSOC
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONRESPONSE_SIZE) == -1) errorcount++;
 return;
 }
+#endif
 /*===========================================================================*/
 static inline void process80211association_req()
 {
@@ -1428,13 +1598,14 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 	gettags(clientinfolen, clientinfoptr, zeiger);
 	zeiger->timestamp = timestamp;
 	zeiger->status |= STATUS_ASSOC;
-	if(zeiger->status >= STATUS_DONE) return;
+	if((zeiger->status &STATUS_M2DONE) == STATUS_M2DONE) return;
+	#ifdef GETM2
 	if(((zeiger->akm &TAK_PSK) != TAK_PSK) && ((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256))
 		{
-		zeiger->status = STATUS_DONE;
+		zeiger->status |= STATUS_M2DONE;
 		return;
 		}
-	if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)
+	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSK) != TAK_PSK))
 		{
 		send_ack();
 		send_association_resp(macfrx->addr2, macfrx->addr1);
@@ -1448,7 +1619,15 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 		send_m1_wpa1(macfrx->addr2, macfrx->addr1);
 		return;
 		}
-	zeiger->status = STATUS_DONE;
+	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256))
+		{
+		send_ack();
+		send_association_resp(macfrx->addr2, macfrx->addr1);
+		send_m1_wpa2kv2(macfrx->addr2, macfrx->addr1);
+		return;
+		}
+	#endif
+	zeiger->status |= STATUS_M2DONE;
 	return;
 	}
 memset(zeiger, 0, APLIST_SIZE);
@@ -1458,9 +1637,10 @@ zeiger->firsttimestamp = timestamp;
 zeiger->status = STATUS_ASSOC;
 memcpy(zeiger->macap, macfrx->addr1, 6);
 memcpy(zeiger->macclient, macfrx->addr2, 6);
+#ifdef GETM2
 if(((zeiger->akm &TAK_PSK) != TAK_PSK) && ((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256))
 	{
-	zeiger->status = STATUS_DONE;
+	zeiger->status |= STATUS_M2DONE;
 	return;
 	}
 if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)
@@ -1477,7 +1657,8 @@ if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)
 	send_m1_wpa1(macfrx->addr2, macfrx->addr1);
 	return;
 	}
-zeiger->status = STATUS_DONE;
+#endif
+zeiger->status |= STATUS_M2DONE;
 qsort(apm2list, zeiger -apm2list +1, APLIST_SIZE, sort_aplist_by_time);
 writeepb(fd_pcapng);
 return;
@@ -1540,9 +1721,11 @@ if((auth->sequence %2) == 1)
 		if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 		if(memcmp(zeiger->macclient, macfrx->addr2, 6) != 0) continue;
 		zeiger->timestamp = timestamp;
-		if(zeiger->status >= STATUS_DONE) return;
+		if((zeiger->status &STATUS_M2DONE) == STATUS_M2DONE) return;
+		#ifdef GETM2
 		send_ack();
 		send_authentication_resp_opensystem(macfrx->addr2, macfrx->addr1);
+		#endif
 		return;
 		}
 	memset(zeiger, 0, APLIST_SIZE);
@@ -1551,8 +1734,10 @@ if((auth->sequence %2) == 1)
 	zeiger->status = STATUS_AUTH;
 	memcpy(zeiger->macap, macfrx->addr1, 6);
 	memcpy(zeiger->macclient, macfrx->addr2, 6);
+	#ifdef GETM2
 	send_ack();
 	send_authentication_resp_opensystem(macfrx->addr2, macfrx->addr1);
+	#endif
 	qsort(apm2list, zeiger -apm2list +1, APLIST_SIZE, sort_aplist_by_time);
 	writeepb(fd_pcapng);
 	return;
@@ -1595,8 +1780,9 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macap, macfrx->addr2, 6) != 0) continue;
 	zeiger->timestamp = timestamp;
 	send_ack();
-	if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) send_association_req_wpa2(macfrx->addr1, zeiger);
-	else if ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_association_req_wpa1(macfrx->addr1, zeiger);
+	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK)) send_association_req_wpa2(macfrx->addr1, zeiger);
+	else if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_association_req_wpa1(macfrx->addr1, zeiger);
+	else if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256)) send_association_req_wpa2kv2(macfrx->addr1, zeiger);
 	return;
 	}
 writeepb(fd_pcapng);
@@ -1746,7 +1932,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	if(channelscanlist[csc] != zeiger->channel) return;
 	zeiger->timestamp = timestamp;
 	gettags(apinfolen, apinfoptr, aplist);
-	if((zeiger->status & STATUS_PRESP) != STATUS_PRESP) writeepb(fd_pcapng);
+	if((zeiger->status &STATUS_PRESP) != STATUS_PRESP) writeepb(fd_pcapng);
 	zeiger->status |= STATUS_PRESP;
 	return;
 	}
@@ -1764,8 +1950,9 @@ if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_P
 	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)) send_authentication_req_opensystem(macrgclient, macfrx->addr2);
 	#endif
 	#ifdef GETM1234
-	if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) send_association_req_wpa2(macfrx->addr1, zeiger);
+	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK)) send_association_req_wpa2(macfrx->addr1, zeiger);
 	else if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_association_req_wpa1(macfrx->addr1, zeiger);
+	else if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256)) send_association_req_wpa2kv2(macfrx->addr1, zeiger);
 	#endif
 	}
 qsort(aplist, zeiger -aplist +1, APLIST_SIZE, sort_aplist_by_time);
@@ -1815,15 +2002,15 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	if(zeiger->timestamp == 0) break;
 	if(memcmp(zeiger->macap, macfrx->addr2, 6) != 0) continue;
 	zeiger->timestamp = timestamp;
-	if((zeiger->status & STATUS_BEACON) != STATUS_BEACON) writeepb(fd_pcapng);
+	if((zeiger->status &STATUS_BEACON) != STATUS_BEACON) writeepb(fd_pcapng);
 	zeiger->status |= STATUS_BEACON;
 	if(channelscanlist[csc] != zeiger->channel) return;
 	if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
 		{
 		if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
 			{
-			if((zeiger->timestamp - zeiger->firsttimestamp) > 3600000000ULL) zeiger->firsttimestamp = zeiger->timestamp;
-			if((zeiger->timestamp - zeiger->firsttimestamp) > 30000000ULL)
+			if((zeiger->timestamp - zeiger->firsttimestamp) > RESUMEINTERVALL) zeiger->firsttimestamp = zeiger->timestamp;
+			if((zeiger->timestamp - zeiger->firsttimestamp) > DURATIONINTERVALL)
 				{
 				memset(zeiger->macclient, 0xff, 6);
 				return;
@@ -1843,14 +2030,19 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 				{
 				if(zeiger->count == 10)
 					{
-					if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) send_reassociation_req_wpa2(zeiger->macclient, zeiger);
+					if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa2(zeiger->macclient, zeiger);
 					else if ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_reassociation_req_wpa1(zeiger->macclient, zeiger);
+					else if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256)) send_reassociation_req_wpa2kv2(zeiger->macclient, zeiger);
 					}
-				if(zeiger->count == 15)
+				else if(zeiger->count == 15)
 					{
 					send_deauthentication(zeiger->macclient, macfrx->addr2, WLAN_REASON_DISASSOC_AP_BUSY);
 					}
-				if(zeiger->count == 20) zeiger->count = 0;
+				else if(zeiger->count == 15)
+					{
+					send_association_req_wpa2(macfrx->addr1, zeiger);
+					}
+				else if(zeiger->count == 20) zeiger->count = 0;
 				}
 			#endif
 			}
@@ -1874,7 +2066,8 @@ if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_P
 		send_authentication_req_opensystem(macrgclient, macfrx->addr2);
 		#endif
 		#ifdef GETM1234
-		send_association_req_wpa2(macfrx->addr1, zeiger);
+		if((zeiger->akm &TAK_PSK) == TAK_PSK) send_association_req_wpa2(macfrx->addr1, zeiger);
+		else if((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256) send_association_req_wpa2kv2(macfrx->addr1, zeiger);
 		#endif
 		}
 	}

@@ -20,10 +20,13 @@
 #define FDNSECTIMER		200000000
 #define STAYTIME		5
 
+#define RESUMEINTERVALL		3600000000ULL
+#define DURATIONINTERVALL	120000000ULL
+
 /*===========================================================================*/
-#define	EAPOLM1M2TIMEOUT	25000
-#define	EAPOLM2M3TIMEOUT	50000
-#define	EAPOLM3M4TIMEOUT	50000
+#define	EAPOLM1M2TIMEOUT	20000
+#define	EAPOLM2M3TIMEOUT	20000
+#define	EAPOLM3M4TIMEOUT	20000
 #define EAPOLLIST_MAX		4
 typedef struct
 {
@@ -78,7 +81,8 @@ typedef struct
 #define STATUS_AUTH	0b00000001
 #define STATUS_ASSOC	0b00000010
 #define STATUS_M2	0b00000100
-#define STATUS_DONE	0b10000000
+#define STATUS_M2DONE	0b01000000
+#define STATUS_EAPDONE	0b10000000
  uint8_t		eapolstatus;
 #define EAPOLM1		0b00000001
 #define EAPOLM1M2	0b00000010

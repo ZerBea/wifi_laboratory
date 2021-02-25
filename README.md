@@ -47,18 +47,20 @@ run hcxlabxxxx tool
 
 hcxlabxxxx will create a pcapng file which contain the recorded traffic
 
-Traffic can be monitored by tshark or Wireshark on the fly 
+traffic can be monitored by tshark or Wireshark on the fly 
 
 
 Lessons learned (to be continued)
 --------------
 
-A beautiful status output make the attack tool slow and sluggish.
+a beautiful status output make the attack tool slow and sluggish.
 
-Too many featues make the attack tool slow and sluggish.
+too many featues make the attack tool slow and sluggish.
 
-Response time behavior becomes very bad on big ringbuffers.
+response time behavior becomes very bad on big ringbuffers.
 
-Transmitting too many packets make a channel busy.
+transmitting too many packets make a channel busy.
 
-A Raspberry Pi is not able to handle more than one interface!
+a Raspberry Pi is not able to handle more than one interface!
+
+pselect doesn't like to be interrupted by another timer
