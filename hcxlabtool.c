@@ -1408,16 +1408,32 @@ return;
 /*===========================================================================*/
 static inline void process80211reassociation_resp()
 {
+static aplist_t *zeiger;
 
-
+for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
+	{
+	if(zeiger->timestamp == 0) break;
+	if(memcmp(zeiger->macap, macfrx->addr2, 6) != 0) continue;
+	if((zeiger->status &STATUS_REASSOC) != STATUS_REASSOC) writeepb(fd_pcapng);
+	zeiger->status |= STATUS_REASSOC;
+	return;
+	}
 writeepb(fd_pcapng);
 return;
 }
 /*===========================================================================*/
 static inline void process80211association_resp()
 {
+static aplist_t *zeiger;
 
-
+for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
+	{
+	if(zeiger->timestamp == 0) break;
+	if(memcmp(zeiger->macap, macfrx->addr2, 6) != 0) continue;
+	if((zeiger->status &STATUS_ASSOC) != STATUS_ASSOC) writeepb(fd_pcapng);
+	zeiger->status |= STATUS_ASSOC;
+	return;
+	}
 writeepb(fd_pcapng);
 return;
 }
@@ -1473,7 +1489,8 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macclient, macfrx->addr2, 6) != 0) continue;
 	gettags(clientinfolen, clientinfoptr, zeiger);
 	zeiger->timestamp = timestamp;
-	zeiger->status |= STATUS_ASSOC;
+	if((zeiger->status &STATUS_REASSOC) != STATUS_REASSOC) writeepb(fd_pcapng);
+	zeiger->status |= STATUS_REASSOC;
 	#ifdef GETM2
 	if((zeiger->status &STATUS_M2DONE) == STATUS_M2DONE) return;
 	if((zeiger->akm &TAK_PSK) != TAK_PSK)
@@ -1596,6 +1613,7 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macclient, macfrx->addr2, 6) != 0) continue;
 	gettags(clientinfolen, clientinfoptr, zeiger);
 	zeiger->timestamp = timestamp;
+	if((zeiger->status &STATUS_ASSOC) != STATUS_ASSOC) writeepb(fd_pcapng);
 	zeiger->status |= STATUS_ASSOC;
 	if((zeiger->status &STATUS_M2DONE) == STATUS_M2DONE) return;
 	#ifdef GETM2
