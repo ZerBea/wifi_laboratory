@@ -2942,6 +2942,7 @@ static const struct option long_options[] =
 	{"gpio_button",			required_argument,	NULL,	HCX_GPIO_BUTTON},
 	{"gpio_statusled",		required_argument,	NULL,	HCX_GPIO_STATUSLED},
 	{"bpfc",			required_argument,	NULL,	HCX_BPFC},
+	{"tot",				required_argument,	NULL,	HCX_TOT},
 	{"version",			no_argument,		NULL,	HCX_VERSION},
 	{"help",			no_argument,		NULL,	HCX_HELP},
 	{NULL,				0,			NULL,	0}
