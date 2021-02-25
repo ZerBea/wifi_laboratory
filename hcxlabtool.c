@@ -69,7 +69,10 @@ static uint8_t *payloadptr;
 static uint32_t payloadlen;
 static uint8_t *llcptr;
 static llc_t *llc;
-
+#if defined(DUMPWPA) || defined(DUMPWEP)
+static uint8_t *mpduptr;
+static mpdu_t *mpdu;
+#endif
 static uint32_t ouirgap;
 static uint32_t nicrgap;
 static uint8_t macrgap[6];
@@ -1407,9 +1410,7 @@ static inline void process80211reassociation_resp()
 {
 
 
-#ifdef DUMPALL
 writeepb(fd_pcapng);
-#endif
 return;
 }
 /*===========================================================================*/
@@ -1417,9 +1418,7 @@ static inline void process80211association_resp()
 {
 
 
-#ifdef DUMPALL
 writeepb(fd_pcapng);
-#endif
 return;
 }
 /*===========================================================================*/
@@ -2235,14 +2234,58 @@ else if(macfrx->type == IEEE80211_FTYPE_DATA)
 		payloadptr += QOS_SIZE;
 		payloadlen -= QOS_SIZE;
 		}
-	if((macfrx->subtype &IEEE80211_STYPE_NULLFUNC) == IEEE80211_STYPE_NULLFUNC) process80211null();
-	else if((macfrx->subtype &IEEE80211_STYPE_QOS_NULLFUNC) == IEEE80211_STYPE_QOS_NULLFUNC) process80211qosnull();
+	if((macfrx->subtype &IEEE80211_STYPE_NULLFUNC) == IEEE80211_STYPE_NULLFUNC)
+		{
+		process80211null();
+		return;
+		}
+	if((macfrx->subtype &IEEE80211_STYPE_QOS_NULLFUNC) == IEEE80211_STYPE_QOS_NULLFUNC)
+		{
+		process80211qosnull();
+		return;
+		}
 	if(payloadlen < LLC_SIZE) return;
 	llcptr = payloadptr;
 	llc = (llc_t*)llcptr;
-	if(((ntohs(llc->type)) == LLC_TYPE_AUTH) && (llc->dsap == LLC_SNAP) && (llc->ssap == LLC_SNAP)) process80211eap();
-	#ifdef DUMPALL
-	else writeepb(fd_pcapng);
+	if(((ntohs(llc->type)) == LLC_TYPE_AUTH) && (llc->dsap == LLC_SNAP) && (llc->ssap == LLC_SNAP))
+		{
+		process80211eap();
+		return;
+		}
+	#ifdef DUMPIPV4
+	if(((ntohs(llc->type)) == LLC_TYPE_IPV4) && (llc->dsap == LLC_SNAP) && (llc->ssap == LLC_SNAP))
+		{
+		writeepb(fd_pcapng);
+		return;
+		}
+	#endif
+	#ifdef DUMPIPV6
+	if(((ntohs(llc->type)) == LLC_TYPE_IPV6) && (llc->dsap == LLC_SNAP) && (llc->ssap == LLC_SNAP))
+		{
+		writeepb(fd_pcapng);
+		return;
+		}
+	#endif
+	#if defined(DUMPWPA) || defined(DUMPWEP)
+	if(macfrx->prot ==1)
+		{
+		mpduptr = payloadptr;
+		mpdu = (mpdu_t*)mpduptr;
+		#ifdef DUMPWPA
+		if(((mpdu->keyid >> 5) &1) == 1)
+			{
+			 writeepb(fd_pcapng);
+			return;
+			}
+		#endif
+		#ifdef DUMPWEP
+		 if(((mpdu->keyid >> 5) &1) == 0)
+			{
+			writeepb(fd_pcapng);
+			return;
+			}
+		#endif
+		}
 	#endif
 	}
 return;
