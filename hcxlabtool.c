@@ -884,7 +884,7 @@ if((macfrx->to_ds == 1) && (macfrx->from_ds == 0))
 			if(memcmp(zeigerm2->macclient, macfrx->addr2, 6) != 0) continue;
 			zeigerm2->timestamp = timestamp;
 			if((zeigerm2->status &STATUS_M2DONE) == STATUS_M2DONE) break;
-			if((zeiger->status &STATUS_ASSOC) != STATUS_ASSOC) break;
+			if((zeigerm2->status &STATUS_ASSOC) != STATUS_ASSOC) break;
 			send_ack();
 			break;
 			}
