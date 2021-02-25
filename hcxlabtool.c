@@ -2334,6 +2334,12 @@ while(wantstopflag == false)
 	else send_beacon();
 	#endif
 	}
+if(gpiostatusled > 0)
+	{
+	GPIO_SET = 1 << gpiostatusled;
+	nanosleep(&sleepled, NULL);
+	}
+fprintf(stdout, "\nterminated loop\n");
 return;
 }
 /*===========================================================================*/
@@ -2400,6 +2406,17 @@ while(wantstopflag == false)
 	else send_beacon();
 	#endif
 	}
+if(gpiostatusled > 0)
+	{
+	GPIO_SET = 1 << gpiostatusled;
+	nanosleep(&sleepled, NULL);
+	}
+if(gpiostatusled > 0)
+	{
+	GPIO_SET = 1 << gpiostatusled;
+	nanosleep(&sleepled, NULL);
+	}
+fprintf(stdout, "\nterminated loop\n");
 return;
 }
 /*===========================================================================*/
@@ -2437,6 +2454,12 @@ while(wantstopflag == false)
 		}
 	nanosleep(&standbytime, NULL);
 	}
+if(gpiostatusled > 0)
+	{
+	GPIO_SET = 1 << gpiostatusled;
+	nanosleep(&sleepled, NULL);
+	}
+fprintf(stdout, "\nterminated loop\n");
 return;
 }
 /*===========================================================================*/
