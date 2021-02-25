@@ -142,13 +142,12 @@ return;
 static inline void globalclose()
 {
 signal(SIGINT, SIG_DFL);
-
 if(bpf.filter != NULL)
 	{
-	setsockopt(fd_socket, SOL_SOCKET, SO_DETACH_FILTER, &bpf, sizeof(bpf));
+	if(fd_socket > 0) setsockopt(fd_socket, SOL_SOCKET, SO_DETACH_FILTER, &bpf, sizeof(bpf));
 	free(bpf.filter);
 	}
-close(fd_socket);
+if(fd_socket > 0) close(fd_socket);
 if(fd_pcapng > 0) close(fd_pcapng);
 if(aplist != NULL) free(aplist);
 if(apm2list != NULL) free(apm2list);
@@ -2413,14 +2412,18 @@ static struct timespec standbytime;
 fprintf(stdout, "entering standby loop\n");
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
-standbytime.tv_sec = 5;
+standbytime.tv_sec = 10;
 standbytime.tv_nsec = 0;
 while(wantstopflag == false)
 	{
 	if(wantstopflag == true) break;
 	if(gpiobutton > 0)
 		{
-		if(GET_GPIO(gpiobutton) > 0) break;
+		if(GET_GPIO(gpiobutton) > 0)
+			{
+			poweroffflag = true;
+			wantstopflag = true;
+			}
 		}
 	if(gpiostatusled > 0)
 		{
@@ -3056,6 +3059,7 @@ if(opensocket(interfacename) == false)
 		if(system("poweroff") != 0) fprintf(stderr, "can't power off\n");
 		exit(EXIT_FAILURE);
 		}
+	return EXIT_SUCCESS;
 	}
 if(openpcapng() == false)
 	{
