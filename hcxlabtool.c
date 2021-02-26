@@ -1960,6 +1960,7 @@ zeiger->timestamp = timestamp;
 zeiger->firsttimestamp = timestamp;
 zeiger->status = STATUS_PRESP;
 memcpy(zeiger->macap, macfrx->addr2, 6);
+memset(zeiger->macclient, 0xff, 6);
 gettags(apinfolen, apinfoptr, aplist);
 if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
 	{
@@ -2026,39 +2027,40 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 		{
 		if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
 			{
-			if((zeiger->timestamp - zeiger->firsttimestamp) > RESUMEINTERVALL) zeiger->firsttimestamp = zeiger->timestamp;
-			if((zeiger->timestamp - zeiger->firsttimestamp) > DURATIONINTERVALL)
-				{
-				memset(zeiger->macclient, 0xff, 6);
-				return;
-				}
 			zeiger->count += 1;
 			#ifdef GETM1
 			if((zeiger->eapolstatus &EAPOLM1) != EAPOLM1)
 				{
-				if(zeiger->count == 5) send_authentication_req_opensystem(macrgclient, macfrx->addr2);
+				if(zeiger->count == zeiger->count2 +5) send_authentication_req_opensystem(macrgclient, macfrx->addr2);
 				}
 			#endif
 			#ifdef GETM1234
 			if(zeiger->eapolstatus < EAPOLM2M3)
 				{
-				if(zeiger->count == 10)
+				if(zeiger->count == zeiger->count2 +10)
 					{
+					printf("%d %d\n", zeiger->count, zeiger->count2);
+					debugmac2(zeiger->macclient, macfrx->addr2, "plus 10");
 					if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa2(zeiger->macclient, zeiger);
 					else if ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_reassociation_req_wpa1(zeiger->macclient, zeiger);
 					else if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256)) send_reassociation_req_wpa2kv2(zeiger->macclient, zeiger);
 					}
-				else if(zeiger->count == 15)
+				else if(zeiger->count == zeiger->count2 +15)
 					{
 					send_deauthentication(zeiger->macclient, macfrx->addr2, WLAN_REASON_DISASSOC_AP_BUSY);
 					}
-				else if(zeiger->count == 20)
+				else if(zeiger->count == zeiger->count2 +20)
 					{
 					if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK)) send_association_req_wpa2(zeiger->macclient, zeiger);
 					else if ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_association_req_wpa1(zeiger->macclient, zeiger);
 					else if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256)) send_association_req_wpa2kv2(zeiger->macclient, zeiger);
 					}
-				else if(zeiger->count > 20) zeiger->count = 0;
+				else if(zeiger->count > zeiger->count2 +20)
+					{
+					memset(zeiger->macclient, 0xff, 6);
+					zeiger->count = 0;
+					zeiger->count2 += 1;
+					}
 				}
 			#endif
 			}

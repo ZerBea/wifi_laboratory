@@ -21,8 +21,7 @@
 #define STAYTIME		5
 
 #define LEDFLASHINTERVALL	10
-#define RESUMEINTERVALL		3600000000ULL
-#define DURATIONINTERVALL	120000000ULL
+//#define RESUMEINTERVALL		3600000000ULL
 
 /*===========================================================================*/
 #define	EAPOLM1M2TIMEOUT	20000
@@ -76,6 +75,7 @@ typedef struct
  uint8_t		macap[6];
  uint8_t		macclient[6];
  uint32_t		count;
+ uint32_t		count2;
  uint8_t		status;
 #define STATUS_BEACON	0b00000001
 #define STATUS_PRESP	0b00000010
