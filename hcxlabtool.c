@@ -1977,10 +1977,8 @@ if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_P
 		#endif
 		}
 	}
-if(zeiger->essidlen == 0)
-	{
-	send_proberequest_undirected_broadcast();
-	}
+if(zeiger->essidlen == 0) send_proberequest_undirected_broadcast();
+else if (zeiger->essid[0] == 0) send_proberequest_undirected_broadcast();
 qsort(aplist, zeiger -aplist +1, APLIST_SIZE, sort_aplist_by_time);
 writeepb(fd_pcapng);
 return;
