@@ -87,11 +87,12 @@ typedef struct
 #define STATUS_EAPDONE	0b10000000
  uint8_t		eapolstatus;
 #define EAPOLM1		0b00000001
-#define EAPOLM1M2	0b00000010
-#define EAPOLRGM2	0b00000100
+#define EAPOLM1M2RG	0b00000010
+#define EAPOLM1M2	0b00000100
 #define EAPOLM2M3	0b00001000
-#define EAPOLM3M4	0b00010000
-#define EAPOLPMKID	0b00100001
+#define EAPOLM1M2M3	0b00010000
+#define EAPOLM3M4	0b00100000
+#define EAPOLPMKID	0b01000001
  uint8_t		eapstatus;
  int			channel;
  uint8_t		kdversion;
