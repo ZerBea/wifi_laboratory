@@ -954,7 +954,7 @@ static inline void process80211action()
 {
 static aplist_t *zeiger;
 
-if(memcmp(&macrgclient, macfrx->addr2, 6) == 0)
+if(memcmp(&macrgclient, macfrx->addr1, 6) == 0)
 	{
 	send_ack();
 	return;
