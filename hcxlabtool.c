@@ -2039,8 +2039,6 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 				{
 				if(zeiger->count == zeiger->count2 +10)
 					{
-					printf("%d %d\n", zeiger->count, zeiger->count2);
-					debugmac2(zeiger->macclient, macfrx->addr2, "plus 10");
 					if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa2(zeiger->macclient, zeiger);
 					else if ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_reassociation_req_wpa1(zeiger->macclient, zeiger);
 					else if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256)) send_reassociation_req_wpa2kv2(zeiger->macclient, zeiger);
