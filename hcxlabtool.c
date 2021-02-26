@@ -1493,32 +1493,26 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 	zeiger->status |= STATUS_REASSOC;
 	#ifdef GETM2
 	if((zeiger->status &STATUS_M2DONE) == STATUS_M2DONE) return;
-	if((zeiger->akm &TAK_PSK) != TAK_PSK)
-		{
-		zeiger->status |= STATUS_M2DONE;
-		return;
-		}
-	if((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256)
-		{
-		zeiger->status |= STATUS_M2DONE;
-		return;
-		}
-	if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)
+	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK))
 		{
 		send_ack();
 		send_reassociation_resp(macfrx->addr2, macfrx->addr1);
 		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
-		return;
 		}
-	if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)
+	else if(((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK))
 		{
 		send_ack();
 		send_reassociation_resp(macfrx->addr2, macfrx->addr1);
 		send_m1_wpa1(macfrx->addr2, macfrx->addr1);
-		return;
 		}
+	else if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
+		{
+		send_ack();
+		send_reassociation_resp(macfrx->addr2, macfrx->addr1);
+		send_m1_wpa2kv2(macfrx->addr2, macfrx->addr1);
+		}
+	else zeiger->status |= STATUS_M2DONE;
 	#endif
-	zeiger->status |= STATUS_M2DONE;
 	return;
 	}
 memset(zeiger, 0, APLIST_SIZE);
@@ -1529,32 +1523,26 @@ zeiger->status = STATUS_ASSOC;
 memcpy(zeiger->macap, macfrx->addr1, 6);
 memcpy(zeiger->macclient, macfrx->addr2, 6);
 #ifdef GETM2
-if((zeiger->akm &TAK_PSK) != TAK_PSK)
-	{
-	zeiger->status |= STATUS_M2DONE;
-	return;
-	}
-if((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256)
-	{
-	zeiger->status |= STATUS_M2DONE;
-	return;
-	}
-if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)
+if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK))
 	{
 	send_ack();
 	send_reassociation_resp(macfrx->addr2, macfrx->addr1);
 	send_m1_wpa2(macfrx->addr2, macfrx->addr1);
-	return;
 	}
-if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)
+else if(((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK))
 	{
 	send_ack();
 	send_reassociation_resp(macfrx->addr2, macfrx->addr1);
 	send_m1_wpa1(macfrx->addr2, macfrx->addr1);
-	return;
 	}
+else if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
+	{
+	send_ack();
+	send_reassociation_resp(macfrx->addr2, macfrx->addr1);
+	send_m1_wpa2kv2(macfrx->addr2, macfrx->addr1);
+	}
+else zeiger->status |= STATUS_M2DONE;
 #endif
-zeiger->status |= STATUS_M2DONE;
 qsort(apm2list, zeiger -apm2list +1, APLIST_SIZE, sort_aplist_by_time);
 writeepb(fd_pcapng);
 return;
@@ -1615,36 +1603,28 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 	zeiger->timestamp = timestamp;
 	if((zeiger->status &STATUS_ASSOC) != STATUS_ASSOC) writeepb(fd_pcapng);
 	zeiger->status |= STATUS_ASSOC;
-	if((zeiger->status &STATUS_M2DONE) == STATUS_M2DONE) return;
 	#ifdef GETM2
-	if(((zeiger->akm &TAK_PSK) != TAK_PSK) && ((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256))
-		{
-		zeiger->status |= STATUS_M2DONE;
-		return;
-		}
-	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSK) != TAK_PSK))
+	if((zeiger->status &STATUS_M2DONE) == STATUS_M2DONE) return;
+	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK))
 		{
 		send_ack();
 		send_association_resp(macfrx->addr2, macfrx->addr1);
 		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
-		return;
 		}
-	if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)
+	else if(((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK))
 		{
 		send_ack();
 		send_association_resp(macfrx->addr2, macfrx->addr1);
 		send_m1_wpa1(macfrx->addr2, macfrx->addr1);
-		return;
 		}
-	if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256))
+	else if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
 		{
 		send_ack();
 		send_association_resp(macfrx->addr2, macfrx->addr1);
 		send_m1_wpa2kv2(macfrx->addr2, macfrx->addr1);
-		return;
 		}
+	else zeiger->status |= STATUS_M2DONE;
 	#endif
-	zeiger->status |= STATUS_M2DONE;
 	return;
 	}
 memset(zeiger, 0, APLIST_SIZE);
@@ -1655,27 +1635,26 @@ zeiger->status = STATUS_ASSOC;
 memcpy(zeiger->macap, macfrx->addr1, 6);
 memcpy(zeiger->macclient, macfrx->addr2, 6);
 #ifdef GETM2
-if(((zeiger->akm &TAK_PSK) != TAK_PSK) && ((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256))
-	{
-	zeiger->status |= STATUS_M2DONE;
-	return;
-	}
-if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE)
+if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK))
 	{
 	send_ack();
 	send_association_resp(macfrx->addr2, macfrx->addr1);
 	send_m1_wpa2(macfrx->addr2, macfrx->addr1);
-	return;
 	}
-if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)
+else if(((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) && ((zeiger->akm &TAK_PSK) == TAK_PSK))
 	{
 	send_ack();
 	send_association_resp(macfrx->addr2, macfrx->addr1);
 	send_m1_wpa1(macfrx->addr2, macfrx->addr1);
-	return;
 	}
+else if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
+	{
+	send_ack();
+	send_association_resp(macfrx->addr2, macfrx->addr1);
+	send_m1_wpa2kv2(macfrx->addr2, macfrx->addr1);
+	}
+else zeiger->status |= STATUS_M2DONE;
 #endif
-zeiger->status |= STATUS_M2DONE;
 qsort(apm2list, zeiger -apm2list +1, APLIST_SIZE, sort_aplist_by_time);
 writeepb(fd_pcapng);
 return;
