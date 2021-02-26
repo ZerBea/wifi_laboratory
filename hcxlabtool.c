@@ -1948,7 +1948,6 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	if(channelscanlist[csc] != zeiger->channel) return;
 	gettags(apinfolen, apinfoptr, aplist);
 	zeiger->timestamp = timestamp;
-	gettags(apinfolen, apinfoptr, aplist);
 	if((zeiger->status &STATUS_PRESP) != STATUS_PRESP) writeepb(fd_pcapng);
 	zeiger->status |= STATUS_PRESP;
 	return;
