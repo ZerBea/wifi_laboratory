@@ -1945,8 +1945,8 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
 	if(zeiger->timestamp == 0) break;
 	if(memcmp(zeiger->macap, macfrx->addr2, 6) != 0) continue;
-	gettags(apinfolen, apinfoptr, aplist);
 	if(channelscanlist[csc] != zeiger->channel) return;
+	gettags(apinfolen, apinfoptr, aplist);
 	zeiger->timestamp = timestamp;
 	gettags(apinfolen, apinfoptr, aplist);
 	if((zeiger->status &STATUS_PRESP) != STATUS_PRESP) writeepb(fd_pcapng);
@@ -2019,10 +2019,10 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
 	if(zeiger->timestamp == 0) break;
 	if(memcmp(zeiger->macap, macfrx->addr2, 6) != 0) continue;
+	if(channelscanlist[csc] != zeiger->channel) return;
 	zeiger->timestamp = timestamp;
 	if((zeiger->status &STATUS_BEACON) != STATUS_BEACON) writeepb(fd_pcapng);
 	zeiger->status |= STATUS_BEACON;
-	if(channelscanlist[csc] != zeiger->channel) return;
 	if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_PSKSHA256))
 		{
 		if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) || ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE))
