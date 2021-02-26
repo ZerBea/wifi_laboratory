@@ -923,6 +923,11 @@ static inline void process80211action()
 {
 static aplist_t *zeiger;
 
+if(memcmp(&macrgclient, macfrx->addr2, 6) == 0)
+	{
+	send_ack();
+	return;
+	}
 for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
 	if(zeiger->timestamp == 0) return;
