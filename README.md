@@ -48,6 +48,21 @@ hcxlabxxxx will create a pcapng file which contain the recorded traffic
 traffic can be monitored by tshark or Wireshark on the fly 
 
 
+Usual commandlines:
+--------------
+$ sudo ./hcxlabgetm1 --bpfc=own.bpfc <br /> we need to protect own devices
+
+$ sudo ./hcxlabgetm1 -c 1,6,11  <br /> scan this channels only
+
+$ sudo ./hcxlabgetm1 -c 1  <br /> use this channel only
+
+$ sudo ./hcxlabgetm1  <br /> use all available channels
+
+$ sudo ./hcxlabgetm1 -i interface <br /> use this interface - otherwise the first detected interface is used  <br /> on a RPI the internal WiFi chip must be disabled by boot options
+
+or a combination of this options.
+
+
 Lessons learned (to be continued)
 --------------
 
