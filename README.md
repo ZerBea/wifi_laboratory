@@ -50,15 +50,18 @@ traffic can be monitored by tshark or Wireshark on the fly
 
 Usual commandlines:
 --------------
-$ sudo ./hcxlabgetm1 --bpfc=own.bpfc <br /> we need to protect own devices
 
-$ sudo ./hcxlabgetm1 -c 1,6,11  <br /> scan this channels only
+$ sudo ./hcxlabgetmall -gpio_button=4 --gpio_statusled=17 <br />  control behavior on a modified RPI 
 
-$ sudo ./hcxlabgetm1 -c 1  <br /> use this channel only
+$ sudo ./hcxlabgetmall --bpfc=own.bpfc <br /> we need to protect own devices
 
-$ sudo ./hcxlabgetm1  <br /> use all available channels
+$ sudo ./hcxlabgetmall -c 1,6,11  <br /> scan this channels only
 
-$ sudo ./hcxlabgetm1 -i interface <br /> use this interface - otherwise the first detected interface is used  <br /> on a RPI the internal WiFi chip must be disabled by boot options
+$ sudo ./hcxlabgetmall -c 1  <br /> use this channel only
+
+$ sudo ./hcxlabgetmall  <br /> use all available channels
+
+$ sudo ./hcxlabgetmall -i interface <br /> use this interface - otherwise the first detected interface is used  <br /> on a RPI the internal WiFi chip must be disabled by boot options
 
 or a combination of this options.
 
