@@ -8,7 +8,7 @@
 #define HCX_TOT			4
 #define HCX_SHORT_PREAMBLE	5
 
-#define	HCX_INTERFACE_NAME	'i'
+#define HCX_INTERFACE_NAME	'i'
 #define HCX_CHANNEL		'c'
 #define HCX_STAYTIME		't'
 #define HCX_SET_MONITORMODE	'm'
