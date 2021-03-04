@@ -10,6 +10,8 @@
 #define	HCX_INTERFACE_NAME	'i'
 #define HCX_CHANNEL		'c'
 #define HCX_STAYTIME		't'
+#define HCX_SET_MONITORMODE	'm'
+#define HCX_SHOW_INTERFACES	'I'
 #define HCX_HELP		'h'
 #define HCX_VERSION		'v'
 

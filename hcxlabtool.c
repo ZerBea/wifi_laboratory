@@ -2819,6 +2819,101 @@ wantstopflag = false;
 signal(SIGINT, programmende);
 return true;
 }
+static inline bool get_perm_addr(char *ifname, uint8_t *permaddr, char *drivername)
+{
+static int fd_info;
+static struct iwreq iwr;
+static struct ifreq ifr;
+static struct ethtool_perm_addr *epmaddr;
+static struct ethtool_drvinfo drvinfo;
+
+if((fd_info = socket(AF_INET, SOCK_STREAM, 0)) == -1)
+	{
+	perror("socket info failed");
+	return false;
+	}
+memset(&iwr, 0, sizeof(iwr));
+strncpy(iwr.ifr_name, ifname, IFNAMSIZ -1);
+if(ioctl(fd_info, SIOCGIWNAME, &iwr) < 0)
+	{
+#ifdef DEBUG
+	printf("testing %s %s\n", ifname, drivername);
+	perror("not a wireless interface");
+#endif
+	close(fd_info);
+	return false;
+	}
+epmaddr = (struct ethtool_perm_addr *) malloc(sizeof(struct ethtool_perm_addr) +6);
+if(!epmaddr)
+	{
+	perror("failed to malloc memory for permanent hardware address");
+	close(fd_info);
+	return false;
+	}
+memset(&ifr, 0, sizeof(ifr));
+strncpy(ifr.ifr_name, ifname, IFNAMSIZ -1);
+epmaddr->cmd = ETHTOOL_GPERMADDR;
+epmaddr->size = 6;
+ifr.ifr_data = (char*)epmaddr;
+if(ioctl(fd_info, SIOCETHTOOL, &ifr) < 0)
+	{
+	perror("failed to get permanent hardware address, ioctl(SIOCETHTOOL) not supported by driver");
+	free(epmaddr);
+	close(fd_info);
+	return false;
+	}
+if(epmaddr->size != 6)
+	{
+	free(epmaddr);
+	close(fd_info);
+	return false;
+	}
+memcpy(permaddr, epmaddr->data, 6);
+memset(&ifr, 0, sizeof(ifr));
+strncpy(ifr.ifr_name, ifname, IFNAMSIZ -1);
+drvinfo.cmd = ETHTOOL_GDRVINFO;
+ifr.ifr_data = (char*)&drvinfo;
+if(ioctl(fd_info, SIOCETHTOOL, &ifr) < 0)
+	{
+	perror("failed to get driver information, ioctl(SIOCETHTOOL) not supported by driver");
+	free(epmaddr);
+	close(fd_info);
+	return false;
+	}
+memcpy(drivername, drvinfo.driver, 32);
+free(epmaddr);
+close(fd_info);
+return true;
+}
+/*===========================================================================*/
+static inline void show_wlaninterfaces()
+{
+static int p;
+static struct ifaddrs *ifaddr = NULL;
+static struct ifaddrs *ifa = NULL;
+static uint8_t permaddr[6];
+static char drivername[32];
+
+if(getifaddrs(&ifaddr) == -1) perror("failed to get ifaddrs");
+else
+	{
+	printf("wlan interfaces:\n");
+	for(ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+		{
+		if((ifa->ifa_addr) && (ifa->ifa_addr->sa_family == AF_PACKET))
+			{
+			memset(&drivername, 0, 32);
+			if(get_perm_addr(ifa->ifa_name, permaddr, drivername) == true)
+				{
+				for (p = 0; p < 6; p++) printf("%02x", (permaddr[p]));
+				printf(" %s (%s)\n", ifa->ifa_name, drivername);
+				}
+			}
+		}
+	freeifaddrs(ifaddr);
+	}
+return;
+}
 /*===========================================================================*/
 __attribute__ ((noreturn))
 static inline void version(char *eigenname)
@@ -2838,6 +2933,8 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"                 default: first discovered interface\n"
 	"-c <digit>     : set channel (1,2,3, ...)\n"
 	"-t <seconds>   : stay time on channel before hopping to the next channel\n"
+	"-m <interface> : set monitor mode by ioctl() system call and quit\n"
+	"-I             : show WLAN interfaces and quit\n"
 	"-h             : show this help\n"
 	"-v             : show version\n"
 	"\n"
@@ -2887,8 +2984,10 @@ static char *userscanlist;
 static char *tokptr;
 static int totvalue;
 static int cgc;
+static bool monitormodeflag;
+static bool showinterfaceflag;
 
-static const char *short_options = "i:c:t:hv";
+static const char *short_options = "i:c:t:m:Ihv";
 static const struct option long_options[] =
 {
 	{"gpio_button",			required_argument,	NULL,	HCX_GPIO_BUTTON},
@@ -2915,6 +3014,8 @@ tvtot.tv_sec = 2147483647L;
 tvtot.tv_usec = 0;
 totvalue = 0;
 cgc = 0;
+monitormodeflag = false;
+showinterfaceflag = false;
 
 while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) != -1)
 	{
@@ -2994,6 +3095,15 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		tvtot.tv_sec += totvalue *60;
 		break;
 
+		case HCX_SET_MONITORMODE:
+		interfacename = optarg;
+		monitormodeflag = true;
+		break;
+
+		case HCX_SHOW_INTERFACES:
+		showinterfaceflag = true;
+		break;
+
 		case HCX_HELP:
 		usage(basename(argv[0]));
 		break;
@@ -3008,17 +3118,39 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		}
 	}
 setbuf(stdout, NULL);
+if(showinterfaceflag == true)
+	{
+	show_wlaninterfaces();
+	return EXIT_SUCCESS;
+	}
 if(getuid() != 0)
 	{
 	fprintf(stderr, "this program requires root privileges\n");
 	exit(EXIT_FAILURE);
 	}
 
+if(monitormodeflag == true)
+	{
+	memset(&ifname, 0 , sizeof(ifname));
+	memset(&ifmac, 0 , sizeof(ifmac));
+	if(opensocket(interfacename) == true)
+		{
+		printf("monitor mode activated\n");
+		return EXIT_SUCCESS;
+		}
+	else
+		{
+		fprintf(stderr, "monitor mode failed\n");
+		exit(EXIT_FAILURE);
+		}
+	}
+
 if(globalinit() == false)
 	{
-	fprintf(stderr, "global inti failed\n");
+	fprintf(stderr, "global init failed\n");
 	exit(EXIT_FAILURE);
 	}
+
 
 if(bpfcname != NULL) readbpfc(bpfcname);
 if((bpfcname != NULL) && (bpf.len == 0)) fprintf(stderr, "BPF code not loaded\n");
