@@ -79,6 +79,9 @@ transmitting too many packets make a channel busy.
 
 a Raspberry Pi is not able to handle more than one interface!
 
-pselect doesn't like to be interrupted by another timer
+pselect doesn't like to be interrupted by another timer.
 
 it is mandatory to ACK NULL and ACTION frames within a 4way handshake!
+
+short preambles work with every wireless type other than older types with limited transmission rates in the 1 to 2 Mbps range.
+
