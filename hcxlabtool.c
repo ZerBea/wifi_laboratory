@@ -19,7 +19,6 @@
 #include "include/hcxlabtool.h"
 #include "include/wireless-lite.h"
 #include "include/rpigpio.h"
-#include "include/wireless-lite.h"
 #include "include/ieee80211.c"
 #include "include/pcap.c"
 
