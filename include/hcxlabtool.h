@@ -6,7 +6,6 @@
 #define HCX_GPIO_STATUSLED	2
 #define HCX_BPFC		3
 #define HCX_TOT			4
-#define HCX_SHORT_PREAMBLE	5
 
 #define HCX_INTERFACE_NAME	'i'
 #define HCX_CHANNEL		'c'

@@ -2936,8 +2936,6 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"-v             : show version\n"
 	"\n"
 	"long options:\n"
-	"--short_preamble          : use short preamble\n"
-	"                            default: use long preamble\n"
 	"--gpio_button=<digit>     : Raspberry Pi GPIO pin number of button (2...27)\n"
 	"                            push GIPO butto to power off system\n"
 	"                            default: GPIO not in use\n"
@@ -2989,7 +2987,6 @@ static bool showinterfaceflag;
 static const char *short_options = "i:c:t:m:Ihv";
 static const struct option long_options[] =
 {
-	{"short_preamble",		no_argument,		NULL,	HCX_SHORT_PREAMBLE},
 	{"gpio_button",			required_argument,	NULL,	HCX_GPIO_BUTTON},
 	{"gpio_statusled",		required_argument,	NULL,	HCX_GPIO_STATUSLED},
 	{"bpfc",			required_argument,	NULL,	HCX_BPFC},
@@ -3045,10 +3042,6 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 			fprintf(stderr, "stay time must be >= 2\n");
 			exit (EXIT_FAILURE);
 			}
-		break;
-
-		case HCX_SHORT_PREAMBLE:
-		hdradiotap[0x08] = IEEE80211_RADIOTAP_F_SHORTPRE;
 		break;
 
 		case HCX_GPIO_BUTTON:
