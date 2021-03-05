@@ -3155,7 +3155,6 @@ if(globalinit() == false)
 	exit(EXIT_FAILURE);
 	}
 
-
 if(bpfcname != NULL) readbpfc(bpfcname);
 if((bpfcname != NULL) && (bpf.len == 0)) fprintf(stderr, "BPF code not loaded\n");
 if(opensocket(interfacename) == false)
@@ -3169,6 +3168,7 @@ if(opensocket(interfacename) == false)
 		}
 	return EXIT_SUCCESS;
 	}
+
 if(openpcapng() == false)
 	{
 	fprintf(stderr, "open pcapng file failed\n");
