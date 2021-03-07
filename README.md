@@ -85,3 +85,4 @@ it is mandatory to ACK NULL and ACTION frames within a 4way handshake!
 
 short preambles work with every wireless type other than older types with limited transmission rates in the 1 to 2 Mbps range.
 
+unfortunately short preamble in radiotap header is ignored on tx
