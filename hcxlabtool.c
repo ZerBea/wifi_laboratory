@@ -631,6 +631,41 @@ if(exteap->type == EAP_TYPE_ID)
 return;
 }
 /*===========================================================================*/
+#ifdef GETM2
+static inline void send_eap_request_id(uint8_t *macclient, uint8_t *macap)
+{
+static mac_t *macftx;
+
+static const uint8_t eaprequestiddata[] =
+{
+/* LLC */
+0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x88, 0x8e,
+/* AUTHENTICATION */
+0x01, 0x00, 0x00, 0x05,
+/* EXTENSIBLE AUTHENTICATION */
+0x01, 0x0d, 0x00, 0x05, 0x01
+};
+#define EAPREQUESTIDDATA_SIZE sizeof(eaprequestiddata)
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +EAPREQUESTIDDATA_SIZE);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_DATA;
+macftx->subtype = IEEE80211_STYPE_DATA;
+macfrx->from_ds = 1;
+memcpy(macftx->addr1, macclient, 6);
+memcpy(macftx->addr2, macap, 6);
+memcpy(macftx->addr3, macap, 6);
+macftx->duration = 0x013a;
+macftx->sequence = apsequence++ << 4;
+if(clientsequence >= 4096) apsequence = 1;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &eaprequestiddata, EAPREQUESTIDDATA_SIZE);
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +EAPREQUESTIDDATA_SIZE) == -1) errorcount++;
+return;
+}
+#endif
+/*===========================================================================*/
 static inline void addeapolstatus(uint8_t *macap, uint8_t eapolstatus)
 {
 static aplist_t *zeiger; 
@@ -847,6 +882,13 @@ if(eapauth->type == EAPOL_KEY)
 	if(authlen >= WPAKEY_SIZE) process80211eapol(authlen);
 	}
 else if(eapauth->type == EAP_PACKET) process80211exteap(authlen);
+#ifdef GETM2
+else if(eapauth->type == EAPOL_START)
+	{
+	send_ack();
+	send_eap_request_id(macfrx->addr2, macfrx->addr1);
+	}
+#endif
 return;
 }
 /*===========================================================================*/
