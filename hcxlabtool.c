@@ -1228,15 +1228,15 @@ return;
 }
 /*===========================================================================*/
 #ifdef GETM2
-static inline void send_m1_wpa2kv2(uint8_t *macclient, uint8_t *macap)
+static inline void send_m1_wpa2kv3(uint8_t *macclient, uint8_t *macap)
 {
 static mac_t *macftx;
-static const uint8_t llcdata[] =
+
+static const uint8_t wpa2kv3data[] =
 {
-0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x88, 0x8e
-};
-static const uint8_t wpa2data[] =
-{
+/* LLC */
+0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x88, 0x8e,
+/* M1 WPA2 kv 3*/
 0x02,
 0x03,
 0x00, 0x5f,
@@ -1244,29 +1244,28 @@ static const uint8_t wpa2data[] =
 0x00, 0x8b,
 0x00, 0x10,
 };
-#define WPA2_SIZE sizeof(wpa2data)
+#define WPA2KV3_SIZE sizeof(wpa2kv3data)
 
 timestamp += 1;
 packetoutptr = epbown +EPB_SIZE;
-memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +100);
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +107);
 memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_DATA;
 macftx->subtype = IEEE80211_STYPE_DATA;
+macftx->from_ds = 1;
 memcpy(macftx->addr1, macclient, 6);
 memcpy(macftx->addr2, macap, 6);
 memcpy(macftx->addr3, macap, 6);
-macftx->from_ds = 1;
 macftx->duration = 0x013a;
 macftx->sequence = apsequence++ << 4;
 if(apsequence >= 4096) apsequence = 1;
-memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &llcdata, LLC_SIZE);
-memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE], &wpa2data, WPA2_SIZE);
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x0f] = (rgrc >> 8) &0xff;
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x10] = rgrc &0xff;
-memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x11], &anonce, 32);
-writeepbown(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99) == -1) errorcount++;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &wpa2kv3data, WPA2KV3_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x17] = (rgrc >> 8) &0xff;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x18] = rgrc &0xff;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x19], &anonce, 32);
+writeepbown(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +107);
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +107) == -1) errorcount++;
 return;
 }
 #endif
@@ -1275,12 +1274,12 @@ return;
 static inline void send_m1_wpa2(uint8_t *macclient, uint8_t *macap)
 {
 static mac_t *macftx;
-static const uint8_t llcdata[] =
-{
-0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x88, 0x8e
-};
+
 static const uint8_t wpa2data[] =
 {
+/* LLC */
+0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x88, 0x8e,
+/* M1 WPA2 */
 0x02,
 0x03,
 0x00, 0x5f,
@@ -1292,25 +1291,24 @@ static const uint8_t wpa2data[] =
 
 timestamp += 1;
 packetoutptr = epbown +EPB_SIZE;
-memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +100);
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +107);
 memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_DATA;
 macftx->subtype = IEEE80211_STYPE_DATA;
+macftx->from_ds = 1;
 memcpy(macftx->addr1, macclient, 6);
 memcpy(macftx->addr2, macap, 6);
 memcpy(macftx->addr3, macap, 6);
-macftx->from_ds = 1;
 macftx->duration = 0x013a;
 macftx->sequence = apsequence++ << 4;
 if(apsequence >= 4096) apsequence = 1;
-memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &llcdata, LLC_SIZE);
-memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE], &wpa2data, WPA2_SIZE);
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x0f] = (rgrc >> 8) &0xff;
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x10] = rgrc &0xff;
-memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x11], &anonce, 32);
-writeepbown(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99) == -1) errorcount++;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &wpa2data, WPA2_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x17] = (rgrc >> 8) &0xff;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x18] = rgrc &0xff;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x19], &anonce, 32);
+writeepbown(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +107);
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +107) == -1) errorcount++;
 return;
 }
 #endif
@@ -1319,12 +1317,11 @@ return;
 static inline void send_m1_wpa1(uint8_t *macclient, uint8_t *macap)
 {
 static mac_t *macftx;
-static const uint8_t llcdata[] =
-{
-0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x88, 0x8e
-};
+
 static const uint8_t wpa1data[] =
 {
+0xaa, 0xaa, 0x03, 0x00, 0x00, 0x00, 0x88, 0x8e,
+/* M1 WPA1 */
 0x02,
 0x03,
 0x00, 0x5f,
@@ -1336,25 +1333,24 @@ static const uint8_t wpa1data[] =
 
 timestamp += 1;
 packetoutptr = epbown +EPB_SIZE;
-memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +100);
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +107);
 memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_DATA;
 macftx->subtype = IEEE80211_STYPE_DATA;
+macftx->from_ds = 1;
 memcpy(macftx->addr1, macclient, 6);
 memcpy(macftx->addr2, macap, 6);
 memcpy(macftx->addr3, macap, 6);
-macftx->from_ds = 1;
 macftx->duration = 0x013a;
 macftx->sequence = apsequence++ << 4;
 if(apsequence >= 4096) apsequence = 1;
-memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &llcdata, LLC_SIZE);
-memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE], &wpa1data, WPA1_SIZE);
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x0f] = (rgrc >> 8) &0xff;
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x10] = rgrc &0xff;
-memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +0x11], &anonce, 32);
-writeepbown(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +LLC_SIZE +99) == -1) errorcount++;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &wpa1data, WPA1_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x17] = (rgrc >> 8) &0xff;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x18] = rgrc &0xff;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x19], &anonce, 32);
+writeepbown(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +107);
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +107) == -1) errorcount++;
 return;
 }
 #endif
@@ -1462,7 +1458,7 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 		{
 		send_ack();
 		send_reassociation_resp(macfrx->addr2, macfrx->addr1);
-		send_m1_wpa2kv2(macfrx->addr2, macfrx->addr1);
+		send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
 		}
 	else zeiger->status |= STATUS_M2DONE;
 	#endif
@@ -1492,7 +1488,7 @@ else if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA
 	{
 	send_ack();
 	send_reassociation_resp(macfrx->addr2, macfrx->addr1);
-	send_m1_wpa2kv2(macfrx->addr2, macfrx->addr1);
+	send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
 	}
 else zeiger->status |= STATUS_M2DONE;
 #endif
@@ -1574,7 +1570,7 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 		{
 		send_ack();
 		send_association_resp(macfrx->addr2, macfrx->addr1);
-		send_m1_wpa2kv2(macfrx->addr2, macfrx->addr1);
+		send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
 		}
 	else zeiger->status |= STATUS_M2DONE;
 	#endif
@@ -1604,7 +1600,7 @@ else if(((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) && ((zeiger->akm &TAK_PSKSHA
 	{
 	send_ack();
 	send_association_resp(macfrx->addr2, macfrx->addr1);
-	send_m1_wpa2kv2(macfrx->addr2, macfrx->addr1);
+	send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
 	}
 else zeiger->status |= STATUS_M2DONE;
 #endif
