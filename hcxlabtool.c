@@ -3044,6 +3044,7 @@ gpiobutton = 0;
 gpiostatusled = 0;
 interfacename = NULL;
 bpfcname = NULL;
+userscanlist = NULL;
 staytime = STAYTIME;
 tvtot.tv_sec = 2147483647L;
 tvtot.tv_usec = 0;
@@ -3062,7 +3063,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 
 		case HCX_CHANNEL:
 		cgc = 0;
-		userscanlist = strdupa(optarg);
+		userscanlist = strndupa(optarg, 4096);
 		tokptr = strtok(userscanlist, ",");
 		while((tokptr != NULL) && (cgc < 256))
 			{
@@ -3071,6 +3072,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 			cgc++;
 			}
 		channelscanlist[cgc] = 0;
+		if(userscanlist != NULL) free(userscanlist);
 		break;
 
 		case HCX_STAYTIME:
