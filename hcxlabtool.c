@@ -3063,7 +3063,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 
 		case HCX_CHANNEL:
 		cgc = 0;
-		userscanlist = strndupa(optarg, 4096);
+		userscanlist = strndup(optarg, 4096);
 		tokptr = strtok(userscanlist, ",");
 		while((tokptr != NULL) && (cgc < 256))
 			{
