@@ -21,9 +21,10 @@
 #define ESSID_LEN_MAX		32
 #define FDNSECTIMER		200000000
 #define STAYTIME		5
+#define STAYTIME		5
 
 #define LEDFLASHINTERVALL	10
-//#define RESUMEINTERVALL		3600000000ULL
+#define RESUMEINTERVALL		36000
 
 /*===========================================================================*/
 #define	EAPOLM1M2TIMEOUT	20000
@@ -73,7 +74,6 @@ return 0;
 typedef struct
 {
  uint64_t		timestamp;
- uint64_t		firsttimestamp;
  uint8_t		macap[6];
  uint8_t		macclient[6];
  uint32_t		count;

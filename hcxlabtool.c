@@ -903,6 +903,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 	memcpy(zeiger->macclient, macfrx->addr2, 6);
 	zeiger->timestamp = timestamp;
+	if(zeiger->count2 > RESUMEINTERVALL) zeiger->count2 = 0;
 	return;
 	}
 return;
@@ -918,6 +919,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 	memcpy(zeiger->macclient, macfrx->addr2, 6);
 	zeiger->timestamp = timestamp;
+	if(zeiger->count2 > RESUMEINTERVALL) zeiger->count2 = 0;
 	return;
 	}
 return;
@@ -935,6 +937,7 @@ if((macfrx->to_ds == 1) && (macfrx->from_ds == 0))
 		if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 		memcpy(zeiger->macclient, macfrx->addr2, 6);
 		zeiger->timestamp = timestamp;
+		if(zeiger->count2 > RESUMEINTERVALL) zeiger->count2 = 0;
 		return;
 		}
 	}
@@ -968,6 +971,7 @@ if((macfrx->to_ds == 1) && (macfrx->from_ds == 0))
 		if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 		memcpy(zeiger->macclient, macfrx->addr2, 6);
 		zeiger->timestamp = timestamp;
+		if(zeiger->count2 > RESUMEINTERVALL) zeiger->count2 = 0;
 		return;
 		}
 	}
@@ -984,6 +988,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 	memcpy(zeiger->macclient, macfrx->addr2, 6);
 	zeiger->timestamp = timestamp;
+	if(zeiger->count2 > RESUMEINTERVALL) zeiger->count2 = 0;
 	return;
 	}
 return;
@@ -1004,6 +1009,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 	memcpy(zeiger->macclient, macfrx->addr2, 6);
 	zeiger->timestamp = timestamp;
+	if(zeiger->count2 > RESUMEINTERVALL) zeiger->count2 = 0;
 	return;
 	}
 return;
@@ -1467,7 +1473,6 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 memset(zeiger, 0, APLIST_SIZE);
 gettags(clientinfolen, clientinfoptr, zeiger);
 zeiger->timestamp = timestamp;
-zeiger->firsttimestamp = timestamp;
 zeiger->status = STATUS_ASSOC;
 memcpy(zeiger->macap, macfrx->addr1, 6);
 memcpy(zeiger->macclient, macfrx->addr2, 6);
@@ -1579,7 +1584,6 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 memset(zeiger, 0, APLIST_SIZE);
 gettags(clientinfolen, clientinfoptr, zeiger);
 zeiger->timestamp = timestamp;
-zeiger->firsttimestamp = timestamp;
 zeiger->status = STATUS_ASSOC;
 memcpy(zeiger->macap, macfrx->addr1, 6);
 memcpy(zeiger->macclient, macfrx->addr2, 6);
@@ -1675,7 +1679,6 @@ if((auth->sequence %2) == 1)
 		}
 	memset(zeiger, 0, APLIST_SIZE);
 	zeiger->timestamp = timestamp;
-	zeiger->firsttimestamp = timestamp;
 	zeiger->status = STATUS_AUTH;
 	memcpy(zeiger->macap, macfrx->addr1, 6);
 	memcpy(zeiger->macclient, macfrx->addr2, 6);
@@ -1883,7 +1886,6 @@ memset(zeiger, 0, APLIST_SIZE);
 gettags(apinfolen, apinfoptr, zeiger);
 if(channelscanlist[csc] != zeiger->channel) return;
 zeiger->timestamp = timestamp;
-zeiger->firsttimestamp = timestamp;
 zeiger->status = STATUS_PRESP;
 memcpy(zeiger->macap, macfrx->addr2, 6);
 memset(zeiger->macclient, 0xff, 6);
@@ -1993,7 +1995,6 @@ memset(zeiger, 0, APLIST_SIZE);
 gettags(apinfolen, apinfoptr, zeiger);
 if(channelscanlist[csc] != zeiger->channel) return;
 zeiger->timestamp = timestamp;
-zeiger->firsttimestamp = timestamp;
 zeiger->count += 1;
 zeiger->status = STATUS_BEACON;
 memcpy(zeiger->macap, macfrx->addr2, 6);
