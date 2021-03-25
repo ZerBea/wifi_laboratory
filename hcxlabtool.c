@@ -39,6 +39,7 @@ static int staytime;
 static aplist_t *aplist;
 static aplist_t *apm2list;
 static rgaplist_t *rgaplist;
+static int rgaplistcount;
 static eapollist_t *eapolm1list;
 static eapollist_t *eapolm2list;
 static eapollist_t *eapolm3list;
@@ -2055,7 +2056,7 @@ const uint8_t beacon_data[] =
 };
 #define BEACON_DATA_SIZE sizeof(beacon_data)
 
-if(rgaplist->timestamp == 0) return;
+if((rgaplist +rgaplistcount)->timestamp == 0) return;
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +BEACON_DATA_SIZE +1);
 memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
@@ -2063,8 +2064,8 @@ macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_BEACON;
 memcpy(macftx->addr1, &mac_broadcast, 6);
-memcpy(macftx->addr2, rgaplist->macrgap, 6);
-memcpy(macftx->addr3, rgaplist->macrgap, 6);
+memcpy(macftx->addr2, (rgaplist +rgaplistcount)->macrgap, 6);
+memcpy(macftx->addr3, (rgaplist +rgaplistcount)->macrgap, 6);
 macftx->sequence = beaconsequence++ << 4;
 if(beaconsequence >= 4096) beaconsequence = 1;
 capap = (capap_t*)(packetoutptr +HDRRT_SIZE +MAC_SIZE_NORM);
@@ -2072,11 +2073,13 @@ capap->timestamp = mytime++;
 capap->beaconintervall = 0xc8;
 capap->capabilities = 0x431;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +1] = rgaplist->essidlen;
-memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE], rgaplist->essid, rgaplist->essidlen);
-memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +rgaplist->essidlen], beacon_data, BEACON_DATA_SIZE);
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +rgaplist->essidlen +0xc] = channelscanlist[csc];
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +rgaplist->essidlen +BEACON_DATA_SIZE) == -1) errorcount++;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +1] = (rgaplist +rgaplistcount)->essidlen;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE], (rgaplist +rgaplistcount)->essid, (rgaplist +rgaplistcount)->essidlen);
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgaplist +rgaplistcount)->essidlen], beacon_data, BEACON_DATA_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgaplist +rgaplistcount)->essidlen +0xc] = channelscanlist[csc];
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgaplist +rgaplistcount)->essidlen +BEACON_DATA_SIZE) == -1) errorcount++;
+rgaplistcount++;
+if(rgaplistcount > RGAPLISTCOUNT_MAX) rgaplistcount = 0; 
 return;
 }
 /*===========================================================================*/
@@ -2847,6 +2850,7 @@ rgrc = (rand()%0xfff) +0xf000;
 if((aplist = (aplist_t*)calloc((APLIST_MAX +1), APLIST_SIZE)) == NULL) return false;
 if((apm2list = (aplist_t*)calloc((APLIST_MAX +1), APLIST_SIZE)) == NULL) return false;
 if((rgaplist = (rgaplist_t*)calloc((RGAPLIST_MAX +1), RGAPLIST_SIZE)) == NULL) return false;
+rgaplistcount = 0;
 if((eapolm1list = (eapollist_t*)calloc((EAPOLLIST_MAX +1), EAPOLLIST_SIZE)) == NULL) return false;
 if((eapolm2list = (eapollist_t*)calloc((EAPOLLIST_MAX +1), EAPOLLIST_SIZE)) == NULL) return false;
 if((eapolm3list = (eapollist_t*)calloc((EAPOLLIST_MAX +1), EAPOLLIST_SIZE)) == NULL) return false;
