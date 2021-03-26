@@ -2785,7 +2785,7 @@ if((fh_essidlist = fopen(listname, "r")) == NULL)
 	return;
 	}
 gettimeofday(&etv, NULL);
-for(c = 0; c < RGAPLIST_MAX -50; c++)
+for(c = 0; c < RGAPLIST_MAX -RGAPLISTCOUNT; c++)
 	{
 	if((len = fgetline(fh_essidlist, ESSID_LEN_MAX, linein)) == -1) break;
 	if((len == 0) || (len > 32)) continue;
@@ -2801,6 +2801,8 @@ for(c = 0; c < RGAPLIST_MAX -50; c++)
 	nicrgap += 1;
 	etv.tv_usec++;
 	}
+rgaplistcountmax += c;
+if(rgaplistcountmax > RGAPLIST_MAX) rgaplistcountmax = RGAPLIST_MAX;
 fclose(fh_essidlist);
 return;
 }
@@ -3035,12 +3037,12 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"                             see man pcap-filter for a list of all filter options\n"
 	"--essidlist=<file>        : use ESSID from this list first\n"
 	"                             maximum entries: %d ESSIDs\n"
-	"--essidmax=<digit>        : BEACON first %d ESSIDs\n"
+	"--essidmax=<digit>        : BEACON first n ESSIDs\n"
 	"--tot=<digit>             : enable timeout timer in minutes (minimum = 2 minutes)\n"
 	"                             set TOT to reboot system\n"
 	"--help                    : show this help\n"
 	"--version                 : show version\n",
-	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, RGAPLIST_MAX, RGAPLISTCOUNT_BEACON);
+	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, RGAPLIST_MAX);
 exit(EXIT_SUCCESS);
 }
 /*---------------------------------------------------------------------------*/
@@ -3093,7 +3095,7 @@ essidlistname = NULL;
 bpfcname = NULL;
 userscanlist = NULL;
 staytime = STAYTIME;
-rgaplistcountmax = RGAPLIST_MAX;
+rgaplistcountmax = RGAPLISTCOUNT;
 tvtot.tv_sec = 2147483647L;
 tvtot.tv_usec = 0;
 totvalue = 0;

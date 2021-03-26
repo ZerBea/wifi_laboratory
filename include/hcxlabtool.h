@@ -22,7 +22,7 @@
 
 #define ESSID_LEN_MAX		32
 #define FDNSECTIMER		10000000 /* 10msec */
-#define RGAPLISTCOUNT_BEACON	2
+#define RGAPLISTCOUNT		2
 #define STAYTIME		5
 
 #define LEDFLASHINTERVALL	10
@@ -52,7 +52,7 @@ else if(ia->timestamp > ib->timestamp) return -1;
 return 0;
 }
 /*===========================================================================*/
-#define RGAPLIST_MAX	256
+#define RGAPLIST_MAX	1024
 typedef struct
 {
  uint64_t		timestamp;
