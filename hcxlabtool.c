@@ -2801,7 +2801,6 @@ for(c = 0; c < RGAPLIST_MAX -50; c++)
 	nicrgap += 1;
 	etv.tv_usec++;
 	}
-rgaplistcountmax += c;
 fclose(fh_essidlist);
 return;
 }
@@ -3094,7 +3093,7 @@ essidlistname = NULL;
 bpfcname = NULL;
 userscanlist = NULL;
 staytime = STAYTIME;
-rgaplistcountmax = RGAPLISTCOUNT_BEACON;
+rgaplistcountmax = RGAPLIST_MAX;
 tvtot.tv_sec = 2147483647L;
 tvtot.tv_usec = 0;
 totvalue = 0;
