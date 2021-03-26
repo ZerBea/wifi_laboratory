@@ -3266,7 +3266,7 @@ if(globalinit() == false)
 if(bpfcname != NULL) readbpfc(bpfcname);
 if((bpfcname != NULL) && (bpf.len == 0)) fprintf(stderr, "BPF code not loaded\n");
 
-rgaplistcountmax = rgaplistcounthold +RGAPLISTCOUNT_AKT;
+rgaplistcountmax += rgaplistcounthold;
 if(essidlistname != NULL) readessidlist(essidlistname);
 if(opensocket(interfacename) == false)
 	{
