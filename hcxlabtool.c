@@ -2790,8 +2790,8 @@ for(c = 0; c < RGAPLIST_MAX; c++)
 	{
 	if((len = fgetline(fh_essidlist, ESSID_LEN_MAX, linein)) == -1) break;
 	if((len == 0) || (len > 32)) continue;
-	if(c < rgaplistcounthold) (rgaplist +c)->timestamp = ((uint64_t)etv.tv_sec *1000000) +etv.tv_usec;
-	else (rgaplist +c)->timestamp = ((uint64_t)(etv.tv_sec +7200) *1000000) +etv.tv_usec;
+	if(c < rgaplistcounthold) (rgaplist +c)->timestamp = ((uint64_t)(etv.tv_sec +7200) *1000000) +etv.tv_usec;
+	else(rgaplist +c)->timestamp = ((uint64_t)etv.tv_sec *1000000) +etv.tv_usec;
 	(rgaplist +c)->essidlen = len;
 	memcpy((rgaplist +c)->essid, linein, len);
 	(rgaplist +c)->macrgap[5] = nicrgap & 0xff;
@@ -3097,8 +3097,8 @@ essidlistname = NULL;
 bpfcname = NULL;
 userscanlist = NULL;
 staytime = STAYTIME;
-rgaplistcountmax = RGAPLISTCOUNT_MAX;
-rgaplistcounthold = RGAPLISTCOUNT_MAX -5;
+rgaplistcountmax = RGAPLISTCOUNT_AKT;
+rgaplistcounthold = 0;
 tvtot.tv_sec = 2147483647L;
 tvtot.tv_usec = 0;
 totvalue = 0;
@@ -3175,22 +3175,20 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 
 		case HCX_ESSIDMAX:
 		rgaplistcountmax = strtol(optarg, NULL, 10);
-		if(rgaplistcounthold > RGAPLISTCOUNT_MAX)
+		if(rgaplistcountmax > RGAPLISTCOUNT_MAX)
 			{
-			fprintf(stderr, "too many ESSIDs\n");
+			fprintf(stderr, "too many ESSIDs to transmit\n");
 			exit(EXIT_FAILURE);
 			}
-		rgaplistcountmax = rgaplistcounthold +5;
 		break;
 
 		case HCX_ESSIDHOLD:
 		rgaplistcounthold = strtol(optarg, NULL, 10);
-		if(rgaplistcounthold > RGAPLISTCOUNT_HOLD)
+		if(rgaplistcounthold > RGAPLISTCOUNT_MAX -2)
 			{
 			fprintf(stderr, "too many ESSIDs to hold\n");
 			exit(EXIT_FAILURE);
 			}
-		rgaplistcountmax = rgaplistcounthold +5;
 		break;
 
 		case HCX_TOT:
@@ -3268,6 +3266,7 @@ if(globalinit() == false)
 if(bpfcname != NULL) readbpfc(bpfcname);
 if((bpfcname != NULL) && (bpf.len == 0)) fprintf(stderr, "BPF code not loaded\n");
 
+rgaplistcountmax = rgaplistcounthold +RGAPLISTCOUNT_AKT;
 if(essidlistname != NULL) readessidlist(essidlistname);
 if(opensocket(interfacename) == false)
 	{
