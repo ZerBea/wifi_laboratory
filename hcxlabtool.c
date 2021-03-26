@@ -1843,7 +1843,7 @@ for(zeiger = rgaplist; zeiger < rgaplist +RGAPLIST_MAX; zeiger++)
 	if(zeiger->timestamp == 0) break;
 	if(zeiger->essidlen != essidlen) continue;
 	if(memcmp(zeiger->essid, essidptr, essidlen) != 0) continue;
-	zeiger->timestamp = timestamp;
+	if(timestamp > zeiger->timestamp) zeiger->timestamp = timestamp;
 	send_probe_resp(macfrx->addr2, macfrx->addr1, zeiger);
 	return;
 	}
