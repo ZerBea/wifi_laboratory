@@ -6,9 +6,8 @@
 #define HCX_GPIO_STATUSLED	2
 #define HCX_BPFC		3
 #define HCX_ESSIDLIST		4
-#define HCX_ESSIDHOLD		5
-#define HCX_ESSIDMAX		6
-#define HCX_TOT			7
+#define HCX_ESSIDMAX		5
+#define HCX_TOT			6
 
 #define HCX_INTERFACE_NAME	'i'
 #define HCX_CHANNEL		'c'
@@ -22,11 +21,8 @@
 #define WATCHDOG		600
 
 #define ESSID_LEN_MAX		32
-#define FDNSECTIMER		20000000 /* 20msec */
-#define RGAPLISTCOUNT_MAX	22
-#define RGAPLISTCOUNT_AKT	5
-#define RGAPLISTCOUNT_HOLD	20
-
+#define FDNSECTIMER		10000000 /* 10msec */
+#define RGAPLISTCOUNT_BEACON	2
 #define STAYTIME		5
 
 #define LEDFLASHINTERVALL	10

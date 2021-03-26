@@ -40,7 +40,6 @@ static aplist_t *aplist;
 static aplist_t *apm2list;
 static rgaplist_t *rgaplist;
 static int rgaplistcountmax;
-static int rgaplistcounthold;
 static int rgaplistcount;
 static eapollist_t *eapolm1list;
 static eapollist_t *eapolm2list;
@@ -2786,12 +2785,11 @@ if((fh_essidlist = fopen(listname, "r")) == NULL)
 	return;
 	}
 gettimeofday(&etv, NULL);
-for(c = 0; c < RGAPLIST_MAX; c++)
+for(c = 0; c < RGAPLIST_MAX -50; c++)
 	{
 	if((len = fgetline(fh_essidlist, ESSID_LEN_MAX, linein)) == -1) break;
 	if((len == 0) || (len > 32)) continue;
-	if(c < rgaplistcounthold) (rgaplist +c)->timestamp = ((uint64_t)(etv.tv_sec +7200) *1000000) +etv.tv_usec;
-	else(rgaplist +c)->timestamp = ((uint64_t)etv.tv_sec *1000000) +etv.tv_usec;
+	(rgaplist +c)->timestamp = ((uint64_t)(etv.tv_sec +14400) *1000000) +etv.tv_usec;
 	(rgaplist +c)->essidlen = len;
 	memcpy((rgaplist +c)->essid, linein, len);
 	(rgaplist +c)->macrgap[5] = nicrgap & 0xff;
@@ -2803,6 +2801,7 @@ for(c = 0; c < RGAPLIST_MAX; c++)
 	nicrgap += 1;
 	etv.tv_usec++;
 	}
+rgaplistcountmax += c;
 fclose(fh_essidlist);
 return;
 }
@@ -3038,12 +3037,11 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"--essidlist=<file>        : use ESSID from this list first\n"
 	"                             maximum entries: %d ESSIDs\n"
 	"--essidmax=<digit>        : BEACON first %d ESSIDs\n"
-	"--essidhold=<digit>       : hold this ESSIDs\n"
 	"--tot=<digit>             : enable timeout timer in minutes (minimum = 2 minutes)\n"
 	"                             set TOT to reboot system\n"
 	"--help                    : show this help\n"
 	"--version                 : show version\n",
-	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, RGAPLIST_MAX, RGAPLISTCOUNT_MAX);
+	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, RGAPLIST_MAX, RGAPLISTCOUNT_BEACON);
 exit(EXIT_SUCCESS);
 }
 /*---------------------------------------------------------------------------*/
@@ -3077,7 +3075,6 @@ static const struct option long_options[] =
 	{"bpfc",			required_argument,	NULL,	HCX_BPFC},
 	{"essidlist",			required_argument,	NULL,	HCX_ESSIDLIST},
 	{"essidmax",			required_argument,	NULL,	HCX_ESSIDMAX},
-	{"essidhold",			required_argument,	NULL,	HCX_ESSIDHOLD},
 	{"tot",				required_argument,	NULL,	HCX_TOT},
 	{"version",			no_argument,		NULL,	HCX_VERSION},
 	{"help",			no_argument,		NULL,	HCX_HELP},
@@ -3097,8 +3094,7 @@ essidlistname = NULL;
 bpfcname = NULL;
 userscanlist = NULL;
 staytime = STAYTIME;
-rgaplistcountmax = RGAPLISTCOUNT_AKT;
-rgaplistcounthold = 0;
+rgaplistcountmax = RGAPLISTCOUNT_BEACON;
 tvtot.tv_sec = 2147483647L;
 tvtot.tv_usec = 0;
 totvalue = 0;
@@ -3175,18 +3171,9 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 
 		case HCX_ESSIDMAX:
 		rgaplistcountmax = strtol(optarg, NULL, 10);
-		if(rgaplistcountmax > RGAPLISTCOUNT_MAX)
+		if(rgaplistcountmax > RGAPLIST_MAX)
 			{
 			fprintf(stderr, "too many ESSIDs to transmit\n");
-			exit(EXIT_FAILURE);
-			}
-		break;
-
-		case HCX_ESSIDHOLD:
-		rgaplistcounthold = strtol(optarg, NULL, 10);
-		if(rgaplistcounthold > RGAPLISTCOUNT_MAX -2)
-			{
-			fprintf(stderr, "too many ESSIDs to hold\n");
 			exit(EXIT_FAILURE);
 			}
 		break;
@@ -3266,7 +3253,6 @@ if(globalinit() == false)
 if(bpfcname != NULL) readbpfc(bpfcname);
 if((bpfcname != NULL) && (bpf.len == 0)) fprintf(stderr, "BPF code not loaded\n");
 
-rgaplistcountmax += rgaplistcounthold;
 if(essidlistname != NULL) readessidlist(essidlistname);
 if(opensocket(interfacename) == false)
 	{
