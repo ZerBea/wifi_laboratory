@@ -2785,11 +2785,11 @@ if((fh_essidlist = fopen(listname, "r")) == NULL)
 	return;
 	}
 gettimeofday(&etv, NULL);
-for(c = 0; c < RGAPLIST_MAX -RGAPLISTCOUNT; c++)
+for(c = 0; c < RGAPLIST_MAX -rgaplistcountmax; c++)
 	{
 	if((len = fgetline(fh_essidlist, ESSID_LEN_MAX, linein)) == -1) break;
 	if((len == 0) || (len > 32)) continue;
-	(rgaplist +c)->timestamp = ((uint64_t)(etv.tv_sec +14400) *1000000) +etv.tv_usec;
+	(rgaplist +c)->timestamp = ((uint64_t)(etv.tv_sec +RGAPLISTHOLDTIME) *1000000) +etv.tv_usec;
 	(rgaplist +c)->essidlen = len;
 	memcpy((rgaplist +c)->essid, linein, len);
 	(rgaplist +c)->macrgap[5] = nicrgap & 0xff;
