@@ -23,7 +23,6 @@
 #define ESSID_LEN_MAX		32
 #define FDNSECTIMER		10000000 /* 10msec */
 #define RGAPLISTCOUNT		10
-#define RGAPLISTHOLDTIME	604800 /* 7 days */
 #define STAYTIME		5
 
 #define LEDFLASHINTERVALL	10

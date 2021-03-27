@@ -2889,20 +2889,19 @@ static inline void readessidlist(char *listname)
 static int len;
 static int c;
 static FILE *fh_essidlist;
-static struct timeval etv;
 static char linein[ESSID_LEN_MAX];
+static uint64_t timestampcount = 0xFFFFFFFFFFFFF000ULL;
 
 if((fh_essidlist = fopen(listname, "r")) == NULL)
 	{
 	fprintf(stderr, "failed to open beacon list %s\n", listname);
 	return;
 	}
-gettimeofday(&etv, NULL);
 for(c = 0; c < RGAPLIST_MAX -rgaplistcountmax; c++)
 	{
 	if((len = fgetline(fh_essidlist, ESSID_LEN_MAX, linein)) == -1) break;
 	if((len == 0) || (len > 32)) continue;
-	(rgaplist +c)->timestamp = ((uint64_t)(etv.tv_sec +RGAPLISTHOLDTIME) *1000000) +etv.tv_usec;
+	(rgaplist +c)->timestamp = timestampcount;
 	(rgaplist +c)->sequence = 1;
 	(rgaplist +c)->essidlen = len;
 	memcpy((rgaplist +c)->essid, linein, len);
@@ -2913,7 +2912,7 @@ for(c = 0; c < RGAPLIST_MAX -rgaplistcountmax; c++)
 	(rgaplist +c)->macrgap[1] = (ouirgap >> 8) & 0xff;
 	(rgaplist +c)->macrgap[0] = (ouirgap >> 16) & 0xff;
 	nicrgap += 1;
-	etv.tv_usec++;
+	timestampcount++;
 	}
 rgaplistcountmax += c;
 if(rgaplistcountmax > RGAPLIST_MAX) rgaplistcountmax = RGAPLIST_MAX;
