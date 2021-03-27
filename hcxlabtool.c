@@ -2429,6 +2429,7 @@ while(wantstopflag == false)
 	if((tv.tv_sec -tvold.tv_sec) >= LEDFLASHINTERVALL)
 		{
 		tvold.tv_sec = tv.tv_sec;
+		send_beacon_wildcard();
 		if(gpiostatusled > 0)
 			{
 			GPIO_SET = 1 << gpiostatusled;
