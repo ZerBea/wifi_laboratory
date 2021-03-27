@@ -2325,6 +2325,7 @@ tsfd.tv_nsec = FDNSECTIMER;
 csc = 0;
 if(set_channel() == false) return;
 send_beacon_wildcard();
+send_proberequest_undirected_broadcast();
 while(wantstopflag == false)
 	{
 	if(gpiobutton > 0)
@@ -2365,6 +2366,8 @@ while(wantstopflag == false)
 		csc++;
 		if(channelscanlist[csc] == 0) csc = 0;
 		set_channel();
+		send_beacon_wildcard();
+		send_proberequest_undirected_broadcast();
 		}
 	FD_ZERO(&readfds);
 	sd_socket = fd_socket;
@@ -2405,6 +2408,7 @@ tsfd.tv_nsec = FDNSECTIMER;
 csc = 0;
 if(set_channel() == false) return;
 send_beacon_wildcard();
+send_proberequest_undirected_broadcast();
 while(wantstopflag == false)
 	{
 	if(gpiobutton > 0)
