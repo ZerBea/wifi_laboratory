@@ -2890,7 +2890,7 @@ static int len;
 static int c;
 static FILE *fh_essidlist;
 static char linein[ESSID_LEN_MAX];
-static uint64_t timestampcount = 0xFFFFFFFFFFFFF000ULL;
+static uint64_t timestampcount = 0xFFFFFFFFFFFFFFFFULL -RGAPLIST_MAX -1;
 
 if((fh_essidlist = fopen(listname, "r")) == NULL)
 	{
