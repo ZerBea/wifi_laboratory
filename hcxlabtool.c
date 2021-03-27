@@ -1835,6 +1835,47 @@ if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE
 return;
 }
 /*===========================================================================*/
+static inline void send_probe_resp_wildcard(uint8_t *macclient)
+{
+static mac_t *macftx;
+static capap_t *capap;
+const uint8_t proberesponse_data[] =
+{
+/* Tag: Wildcard */
+0x00, 0x00,
+/* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6, 9, 12, 18, [Mbit/sec] */
+0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x0c, 0x12, 0x18, 0x24,
+/* Tag: DS Parameter set: Current Channel: 1 */
+0x03, 0x01, 0x01,
+/* Tag: ERP Information */
+0x2a, 0x01, 0x04,
+/* Tag: Extended Supported Rates 24, 36, 48, 54, [Mbit/sec] */
+0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
+};
+#define PROBERESPONSE_DATA_SIZE sizeof(proberesponse_data)
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +ESSID_LEN_MAX +IETAG_SIZE +1);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_PROBE_RESP;
+memcpy(macftx->addr1, macclient, 6);
+memcpy(macftx->addr2, &macrgbcwap, 6);
+memcpy(macftx->addr3, &macrgbcwap, 6);
+macftx->sequence = apsequence++ << 4;
+if(apsequence >= 4096) apsequence = 1;
+capap = (capap_t*)(packetoutptr +HDRRT_SIZE +MAC_SIZE_NORM);
+capap->timestamp = mytime++;
+capap->beaconintervall = 0xc8;
+capap->capabilities = 0x431;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE], &proberesponse_data, PROBERESPONSE_DATA_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +0x0e] = channelscanlist[csc];
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +PROBERESPONSE_DATA_SIZE) == -1) errorcount++;
+return;
+}
+/*===========================================================================*/
 static inline void process80211probe_req()
 {
 static rgaplist_t *zeiger;
@@ -1843,7 +1884,16 @@ static uint8_t *essidptr;
 
 if(payloadlen < IETAG_SIZE) return;
 essidlen = gettagessid(payloadlen, payloadptr, &essidptr);
-if(essidlen == 0) return;
+if(essidlen == 0)
+	{
+	send_probe_resp_wildcard(macfrx->addr2);
+	return;
+	}
+if(essidptr[0] == 0)
+	{
+	send_probe_resp_wildcard(macfrx->addr2);
+	return;
+	}
 for(zeiger = rgaplist; zeiger < rgaplist +RGAPLIST_MAX; zeiger++)
 	{
 	if(zeiger->timestamp == 0) break;
