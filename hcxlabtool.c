@@ -76,6 +76,7 @@ static mpdu_t *mpdu;
 #endif
 static uint32_t ouirgap;
 static uint32_t nicrgap;
+static uint8_t macrgbcwap[6];
 static uint8_t macrgap[6];
 static uint8_t anonce[32];
 static uint32_t ouirgclient;
@@ -1809,6 +1810,11 @@ if(memcmp(&mac_broadcast, macap, 6) == 0)
 	memcpy(macftx->addr2, zeigerrgap->macrgap, 6);
 	memcpy(macftx->addr3, zeigerrgap->macrgap, 6);
 	}
+else if(memcmp(&macrgbcwap, macap, 6) == 0)
+	{
+	memcpy(macftx->addr2, zeigerrgap->macrgap, 6);
+	memcpy(macftx->addr3, zeigerrgap->macrgap, 6);
+	}
 else
 	{
 	memcpy(macftx->addr2, macap, 6);
@@ -1849,6 +1855,7 @@ for(zeiger = rgaplist; zeiger < rgaplist +RGAPLIST_MAX; zeiger++)
 	}
 memset(zeiger, 0, RGAPLIST_SIZE);
 zeiger->timestamp = timestamp;
+zeiger->sequence = 1;
 zeiger->essidlen = essidlen;
 memcpy(zeiger->essid, essidptr, essidlen);
 zeiger->macrgap[5] = nicrgap & 0xff;
@@ -2057,8 +2064,10 @@ const uint8_t beacon_data[] =
 };
 #define BEACON_DATA_SIZE sizeof(beacon_data)
 
+
 if(rgaplistcount > rgaplistcountmax) rgaplistcount = 0; 
 if((rgaplist +rgaplistcount)->timestamp == 0) rgaplistcount = 0;
+if((rgaplist +rgaplistcount)->timestamp == 0) return;
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +BEACON_DATA_SIZE +1);
 memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
@@ -2068,8 +2077,8 @@ macftx->subtype = IEEE80211_STYPE_BEACON;
 memcpy(macftx->addr1, &mac_broadcast, 6);
 memcpy(macftx->addr2, (rgaplist +rgaplistcount)->macrgap, 6);
 memcpy(macftx->addr3, (rgaplist +rgaplistcount)->macrgap, 6);
-macftx->sequence = beaconsequence++ << 4;
-if(beaconsequence >= 4096) beaconsequence = 1;
+macftx->sequence = (rgaplist +rgaplistcount)->sequence++ << 4;
+if((rgaplist +rgaplistcount)->sequence >= 4096) (rgaplist +rgaplistcount)->sequence = 1;
 capap = (capap_t*)(packetoutptr +HDRRT_SIZE +MAC_SIZE_NORM);
 capap->timestamp = mytime++;
 capap->beaconintervall = 0xc8;
@@ -2080,6 +2089,53 @@ memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE]
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgaplist +rgaplistcount)->essidlen], beacon_data, BEACON_DATA_SIZE);
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgaplist +rgaplistcount)->essidlen +0xc] = channelscanlist[csc];
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgaplist +rgaplistcount)->essidlen +BEACON_DATA_SIZE) == -1) errorcount++;
+rgaplistcount++;
+return;
+}
+/*===========================================================================*/
+static inline void send_beacon_wildcard()
+{
+static mac_t *macftx;
+static capap_t *capap;
+
+const uint8_t beacon_data[] =
+{
+/* Tag: Wildcard */
+0x00, 0x00,
+/* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6, 9, 12, 18, [Mbit/sec] */
+0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x0c, 0x12, 0x18, 0x24,
+/* Tag: DS Parameter set: Current Channel: 1 */
+0x03, 0x01, 0x01,
+/* Tag: TIM Information */
+0x05, 0x04, 0x00, 0x01, 0x00, 0x00,
+/* Tag: ERP Information */
+0x2a, 0x01, 0x04,
+/* Tag: Extended Supported Rates 24, 36, 48, 54, [Mbit/sec] */
+0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
+};
+#define BEACON_DATA_SIZE sizeof(beacon_data)
+
+if(rgaplistcount > rgaplistcountmax) rgaplistcount = 0; 
+if((rgaplist +rgaplistcount)->timestamp == 0) rgaplistcount = 0;
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +BEACON_DATA_SIZE +1);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_BEACON;
+memcpy(macftx->addr1, &mac_broadcast, 6);
+memcpy(macftx->addr2, &macrgbcwap, 6);
+memcpy(macftx->addr3, &macrgbcwap, 6);
+macftx->sequence = beaconsequence++ << 4;
+if(beaconsequence >= 4096) beaconsequence = 1;
+capap = (capap_t*)(packetoutptr +HDRRT_SIZE +MAC_SIZE_NORM);
+capap->timestamp = mytime++;
+capap->beaconintervall = 0xc8;
+capap->capabilities = 0x431;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE], beacon_data, BEACON_DATA_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +0xe] = channelscanlist[csc];
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +BEACON_DATA_SIZE) == -1) errorcount++;
 rgaplistcount++;
 return;
 }
@@ -2268,6 +2324,7 @@ tsfd.tv_sec = 0;
 tsfd.tv_nsec = FDNSECTIMER;
 csc = 0;
 if(set_channel() == false) return;
+send_beacon_wildcard();
 while(wantstopflag == false)
 	{
 	if(gpiobutton > 0)
@@ -2347,6 +2404,7 @@ tsfd.tv_sec = 0;
 tsfd.tv_nsec = FDNSECTIMER;
 csc = 0;
 if(set_channel() == false) return;
+send_beacon_wildcard();
 while(wantstopflag == false)
 	{
 	if(gpiobutton > 0)
@@ -2862,6 +2920,13 @@ memset(&ifmac, 0 , sizeof(ifmac));
 
 ouirgap = (myvendorap[rand() %((MYVENDORAP_SIZE /sizeof(int)))]) &0xfcffff;
 nicrgap = (rand() & 0x0fffff);
+macrgbcwap[5] = nicrgap & 0xff;
+macrgbcwap[4] = (nicrgap >> 8) & 0xff;
+macrgbcwap[3] = (nicrgap >> 16) & 0xff;
+macrgbcwap[2] = ouirgap & 0xff;
+macrgbcwap[1] = (ouirgap >> 8) & 0xff;
+macrgbcwap[0] = (ouirgap >> 16) & 0xff;
+nicrgap += 1;
 macrgap[5] = nicrgap & 0xff;
 macrgap[4] = (nicrgap >> 8) & 0xff;
 macrgap[3] = (nicrgap >> 16) & 0xff;

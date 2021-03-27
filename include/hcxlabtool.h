@@ -57,6 +57,7 @@ return 0;
 typedef struct
 {
  uint64_t		timestamp;
+ int			sequence;
  uint8_t		macrgap[6];
  uint8_t		essidlen;
  uint8_t		essid[ESSID_LEN_MAX];
