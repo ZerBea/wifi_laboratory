@@ -2412,6 +2412,9 @@ while(wantstopflag == false)
 		}
 	if((tv.tv_sec -tvold.tv_sec) >= staytime)
 		{
+		#ifdef STATUSOUT
+		if(errorcount > 0) printf("ERROR: %d\n", errorcount);
+		#endif
 		tvold.tv_sec = tv.tv_sec;
 		csc++;
 		if(channelscanlist[csc] == 0) csc = 0;
@@ -2478,6 +2481,9 @@ while(wantstopflag == false)
 		}
 	if((tv.tv_sec -tvold.tv_sec) >= LEDFLASHINTERVALL)
 		{
+		#ifdef STATUSOUT
+		if(errorcount > 0) printf("ERROR: %d\n", errorcount);
+		#endif
 		tvold.tv_sec = tv.tv_sec;
 		send_beacon_wildcard();
 		if(gpiostatusled > 0)
