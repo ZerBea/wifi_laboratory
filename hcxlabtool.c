@@ -2068,12 +2068,14 @@ if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_P
 		#ifdef GETM1234
 		if((zeiger->kdversion &KV_RSNIE) == KV_RSNIE) send_association_req_wpa2(macfrx->addr1, zeiger);
 		else if((zeiger->kdversion &KV_WPAIE) == KV_WPAIE) send_association_req_wpa1(macfrx->addr1, zeiger);
-		send_deauthentication(macfrx->addr1, macfrx->addr2, WLAN_REASON_UNSPECIFIED);
 		#endif
 		}
 	}
 if(zeiger->essidlen == 0) send_proberequest_undirected_broadcast();
 else if (zeiger->essid[0] == 0) send_proberequest_undirected_broadcast();
+#ifdef GETM1234
+send_deauthentication(macfrx->addr1, macfrx->addr2, WLAN_REASON_UNSPECIFIED);
+#endif
 qsort(aplist, zeiger -aplist +1, APLIST_SIZE, sort_aplist_by_time);
 writeepb(fd_pcapng);
 return;
