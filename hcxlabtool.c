@@ -2562,6 +2562,10 @@ while(wantstopflag == false)
 		GPIO_SET = 1 << gpiostatusled;
 		nanosleep(&sleepled, NULL);
 		GPIO_CLR = 1 << gpiostatusled;
+		nanosleep(&sleepled, NULL);
+		GPIO_SET = 1 << gpiostatusled;
+		nanosleep(&sleepled, NULL);
+		GPIO_CLR = 1 << gpiostatusled;
 		}
 	nanosleep(&standbytime, NULL);
 	}
