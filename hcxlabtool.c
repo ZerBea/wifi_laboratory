@@ -2015,7 +2015,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	zeiger->status |= STATUS_BEACON;
 	if((zeiger->eapolstatus &EAPOLPMKID) == EAPOLPMKID) return;
 	if(((zeiger->akm &TAK_PSK) != TAK_PSK) && ((zeiger->akm &TAK_PSKSHA256) != TAK_PSKSHA256)) return;
-	if(((zeiger->kdversion &KV_RSNIE) != KV_RSNIE) && ((zeiger->kdversion &KV_WPAIE) == KV_WPAIE)) return;
+	if(((zeiger->kdversion &KV_RSNIE) != KV_RSNIE) && ((zeiger->kdversion &KV_WPAIE) != KV_WPAIE)) return;
 	zeiger->count += 1;
 	#ifdef GETM1
 	if((zeiger->eapolstatus &EAPOLM1) != EAPOLM1)
