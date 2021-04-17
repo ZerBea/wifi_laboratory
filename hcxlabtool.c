@@ -2351,6 +2351,9 @@ pwrq.u.freq.flags = IW_FREQ_FIXED;
 pwrq.u.freq.m = channelscanlist[csc];
 pwrq.u.freq.e = 0;
 if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) return false;
+
+if(channelscanlist[csc] <= 13) hdradiotap[9] = 0x02;
+else hdradiotap[9] = 0x0c;
 return true;
 }
 /*===========================================================================*/
