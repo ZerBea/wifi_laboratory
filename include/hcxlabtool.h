@@ -52,7 +52,7 @@ else if(ia->timestamp > ib->timestamp) return -1;
 return 0;
 }
 /*===========================================================================*/
-#define RGAPLIST_MAX	2048
+#define RGAPLIST_MAX	4096
 typedef struct
 {
  uint64_t		timestamp;
