@@ -723,7 +723,6 @@ zeiger->timestamp = timestamp;
 memcpy(zeiger->macap, macfrx->addr2, 6);
 memcpy(zeiger->macclient, macfrx->addr1, 6);
 zeiger->rc = be64toh(wpak->replaycount);
-
 qsort(eapolm3list, EAPOLLIST_MAX +1, EAPOLLIST_SIZE, sort_eapollist_by_time);
 for(zeigerm2 = eapolm2list; zeigerm2 < eapolm2list +EAPOLLIST_MAX; zeigerm2++)
 	{
@@ -731,10 +730,13 @@ for(zeigerm2 = eapolm2list; zeigerm2 < eapolm2list +EAPOLLIST_MAX; zeigerm2++)
 	if(memcmp(eapolm3list->macclient, zeigerm2->macclient, 6) != 0) continue;
 	if(eapolm3list->timestamp - zeigerm2->timestamp > EAPOLM2M3TIMEOUT) break;
 	if(eapolm3list->rc != (zeigerm2->rc +1)) continue;
-	addeapolstatus(macfrx->addr2, EAPOLM2M3);
-	#ifdef STATUSOUT
-	debugmac2(macfrx->addr1, macfrx->addr2, "M2M3");
-	#endif
+	if(macfrx->retry == 0)
+		{
+		addeapolstatus(macfrx->addr2, EAPOLM2M3);
+		#ifdef STATUSOUT
+		debugmac2(macfrx->addr1, macfrx->addr2, "M2M3");
+		#endif
+		}
 	return;
 	}
 addeapolstatus(macfrx->addr2, 0);
