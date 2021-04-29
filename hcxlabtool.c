@@ -814,7 +814,6 @@ memcpy(zeiger->macap, macfrx->addr2, 6);
 memcpy(zeiger->macclient, macfrx->addr1, 6);
 zeiger->rc = be64toh(wpak->replaycount);
 qsort(eapolm1list, EAPOLLIST_MAX +1, EAPOLLIST_SIZE, sort_eapollist_by_time);
-
 if(memcmp(&macrgclient, macfrx->addr1, 6) == 0)
 	{
 	send_ack();
