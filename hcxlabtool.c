@@ -717,6 +717,7 @@ static wpakey_t *wpak;
 static eapollist_t *zeiger, *zeigerm2;
 
 writeepb(fd_pcapng);
+if(macfrx->retry != 0) return;
 wpak = (wpakey_t*)wpakptr;
 zeiger = eapolm3list +EAPOLLIST_MAX;
 zeiger->timestamp = timestamp;
@@ -730,13 +731,10 @@ for(zeigerm2 = eapolm2list; zeigerm2 < eapolm2list +EAPOLLIST_MAX; zeigerm2++)
 	if(memcmp(eapolm3list->macclient, zeigerm2->macclient, 6) != 0) continue;
 	if(eapolm3list->timestamp - zeigerm2->timestamp > EAPOLM2M3TIMEOUT) break;
 	if(eapolm3list->rc != (zeigerm2->rc +1)) continue;
-	if(macfrx->retry == 0)
-		{
-		addeapolstatus(macfrx->addr2, EAPOLM2M3);
-		#ifdef STATUSOUT
-		debugmac2(macfrx->addr1, macfrx->addr2, "M2M3");
-		#endif
-		}
+	addeapolstatus(macfrx->addr2, EAPOLM2M3);
+	#ifdef STATUSOUT
+	debugmac2(macfrx->addr1, macfrx->addr2, "M2M3");
+	#endif
 	return;
 	}
 addeapolstatus(macfrx->addr2, 0);
@@ -768,6 +766,7 @@ static eapollist_t *zeiger, *zeigerm1;
 static uint8_t m2status;
 
 writeepb(fd_pcapng);
+if(macfrx->retry != 0) return;
 wpak = (wpakey_t*)wpakptr;
 zeiger = eapolm2list +EAPOLLIST_MAX;
 zeiger->timestamp = timestamp;
@@ -775,7 +774,7 @@ memcpy(zeiger->macap, macfrx->addr1, 6);
 memcpy(zeiger->macclient, macfrx->addr2, 6);
 zeiger->rc = be64toh(wpak->replaycount);
 m2status = 0;
-if((zeiger->rc == rgrc) && (macfrx->retry == 0))
+if(zeiger->rc == rgrc)
 	{
 	m2status |= EAPOLM1M2RG;
 	addapm2(macfrx->addr1, macfrx->addr2);
@@ -790,14 +789,11 @@ for(zeigerm1 = eapolm1list; zeigerm1 < eapolm1list +EAPOLLIST_MAX; zeigerm1++)
 	if(memcmp(eapolm2list->macclient, zeigerm1->macclient, 6) != 0) continue;
 	if(eapolm2list->timestamp - zeigerm1->timestamp > EAPOLM1M2TIMEOUT) break;
 	if(eapolm2list->rc != zeigerm1->rc) continue;
-	if(macfrx->retry == 0)
-		{
-		m2status |= EAPOLM1M2;
-		addeapolstatus(macfrx->addr1, m2status);
-		#ifdef STATUSOUT
-		debugmac2(macfrx->addr1, macfrx->addr2, "M1M2");
-		#endif
-		}
+	m2status |= EAPOLM1M2;
+	addeapolstatus(macfrx->addr1, m2status);
+	#ifdef STATUSOUT
+	debugmac2(macfrx->addr1, macfrx->addr2, "M1M2");
+	#endif
 	return;
 	}
 addeapolstatus(macfrx->addr1, m2status);
@@ -824,6 +820,7 @@ if(memcmp(&macrgclient, macfrx->addr1, 6) == 0)
 	send_ack();
 	send_deauthentication_client(macfrx->addr1, macfrx->addr2, WLAN_REASON_DISASSOC_STA_HAS_LEFT);
 	}
+if(macfrx->retry != 0) return;
 if(authlen < WPAKEY_SIZE +PMKID_SIZE)
 	{
 	addeapolstatus(macfrx->addr2, EAPOLM1);
