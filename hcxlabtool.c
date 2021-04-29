@@ -773,13 +773,13 @@ memcpy(zeiger->macap, macfrx->addr1, 6);
 memcpy(zeiger->macclient, macfrx->addr2, 6);
 zeiger->rc = be64toh(wpak->replaycount);
 m2status = 0;
-if(zeiger->rc == rgrc)
+if((zeiger->rc == rgrc) && (macfrx->retry == 0))
 	{
+	m2status |= EAPOLM1M2RG;
+	addapm2(macfrx->addr1, macfrx->addr2);
 	#ifdef STATUSOUT
 	debugmac2(macfrx->addr1, macfrx->addr2, "M1M2ROGUE");
 	#endif
-	m2status |= EAPOLM1M2RG;
-	addapm2(macfrx->addr1, macfrx->addr2);
 	}
 qsort(eapolm2list, EAPOLLIST_MAX +1, EAPOLLIST_SIZE, sort_eapollist_by_time);
 for(zeigerm1 = eapolm1list; zeigerm1 < eapolm1list +EAPOLLIST_MAX; zeigerm1++)
@@ -788,11 +788,14 @@ for(zeigerm1 = eapolm1list; zeigerm1 < eapolm1list +EAPOLLIST_MAX; zeigerm1++)
 	if(memcmp(eapolm2list->macclient, zeigerm1->macclient, 6) != 0) continue;
 	if(eapolm2list->timestamp - zeigerm1->timestamp > EAPOLM1M2TIMEOUT) break;
 	if(eapolm2list->rc != zeigerm1->rc) continue;
-	m2status |= EAPOLM1M2;
-	addeapolstatus(macfrx->addr1, m2status);
-	#ifdef STATUSOUT
-	debugmac2(macfrx->addr1, macfrx->addr2, "M1M2");
-	#endif
+	if(macfrx->retry == 0)
+		{
+		m2status |= EAPOLM1M2;
+		addeapolstatus(macfrx->addr1, m2status);
+		#ifdef STATUSOUT
+		debugmac2(macfrx->addr1, macfrx->addr2, "M1M2");
+		#endif
+		}
 	return;
 	}
 addeapolstatus(macfrx->addr1, m2status);
