@@ -767,6 +767,7 @@ static uint8_t m2status;
 
 writeepb(fd_pcapng);
 if(macfrx->retry != 0) return;
+if(memcmp(&mac_broadcast, macfrx->addr1, 6) == 0) return;
 wpak = (wpakey_t*)wpakptr;
 zeiger = eapolm2list +EAPOLLIST_MAX;
 zeiger->timestamp = timestamp;
@@ -807,6 +808,7 @@ static pmkid_t *pmkid;
 static eapollist_t *zeiger;
 
 writeepb(fd_pcapng);
+if(memcmp(&mac_broadcast,macfrx->addr1, 6) == 0) return;
 wpak = (wpakey_t*)wpakptr;
 zeiger = eapolm1list +EAPOLLIST_MAX;
 zeiger->timestamp = timestamp;
