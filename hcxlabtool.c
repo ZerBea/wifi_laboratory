@@ -2075,7 +2075,7 @@ if(((zeiger->akm &TAK_PSK) == TAK_PSK) || ((zeiger->akm &TAK_PSKSHA256) == TAK_P
 		}
 	}
 if(zeiger->essidlen == 0) send_proberequest_undirected_broadcast();
-else if (zeiger->essid[0] == 0) send_proberequest_undirected_broadcast();
+else if(zeiger->essid[0] == 0) send_proberequest_undirected_broadcast();
 #ifdef GETM1234
 send_deauthentication(macfrx->addr1, macfrx->addr2, WLAN_REASON_UNSPECIFIED);
 #endif
@@ -2577,13 +2577,13 @@ static char *ptr;
 ptr = buffer +len -1;
 while(len)
 	{
-	if (*ptr != '\n') break;
+	if(*ptr != '\n') break;
 	*ptr-- = 0;
 	len--;
 	}
 while(len)
 	{
-	if (*ptr != '\r') break;
+	if(*ptr != '\r') break;
 	*ptr-- = 0;
 	len--;
 	}
