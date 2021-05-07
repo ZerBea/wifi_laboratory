@@ -35,6 +35,7 @@ static struct timeval tvlast;
 static uint64_t timestamp;
 static uint64_t mytime;
 static int staytime;
+static uint32_t m2attempts;
 
 static aplist_t *aplist;
 static aplist_t *apm2list;
@@ -751,7 +752,7 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 	zeiger->timestamp = timestamp;
 	zeiger->status = STATUS_M2;
 	zeiger->count += 1;
-	if(zeiger->count >= 10) zeiger->status |= STATUS_M2DONE;
+	if(zeiger->count >= m2attempts) zeiger->status |= STATUS_M2DONE;
 	return;
 	}
 return;
@@ -3154,11 +3155,13 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"--essidlist=<file>        : use ESSID from this list first\n"
 	"                             maximum entries: %d ESSIDs\n"
 	"--essidmax=<digit>        : BEACON first n ESSIDs\n"
+	"--m2attempt=<digit>       : reject CLIENT request after n received M2 frames\n"
+	"                            default: %d received M2 frames\n" 
 	"--tot=<digit>             : enable timeout timer in minutes (minimum = 2 minutes)\n"
 	"                             set TOT to reboot system\n"
 	"--help                    : show this help\n"
 	"--version                 : show version\n",
-	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, RGAPLIST_MAX);
+	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, RGAPLIST_MAX, M2ATTEMTS);
 exit(EXIT_SUCCESS);
 }
 /*---------------------------------------------------------------------------*/
@@ -3191,6 +3194,7 @@ static const struct option long_options[] =
 	{"gpio_statusled",		required_argument,	NULL,	HCX_GPIO_STATUSLED},
 	{"bpfc",			required_argument,	NULL,	HCX_BPFC},
 	{"essidlist",			required_argument,	NULL,	HCX_ESSIDLIST},
+	{"m2attempt",			required_argument,	NULL,	HCX_M2ATTEMPT},
 	{"essidmax",			required_argument,	NULL,	HCX_ESSIDMAX},
 	{"tot",				required_argument,	NULL,	HCX_TOT},
 	{"version",			no_argument,		NULL,	HCX_VERSION},
@@ -3211,6 +3215,7 @@ essidlistname = NULL;
 bpfcname = NULL;
 userscanlist = NULL;
 staytime = STAYTIME;
+m2attempts = m2attempts;
 rgaplistcountmax = RGAPLISTCOUNT;
 tvtot.tv_sec = 2147483647L;
 tvtot.tv_usec = 0;
@@ -3291,6 +3296,15 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		if(rgaplistcountmax > RGAPLIST_MAX)
 			{
 			fprintf(stderr, "too many ESSIDs to transmit\n");
+			exit(EXIT_FAILURE);
+			}
+		break;
+
+		case HCX_M2ATTEMPT:
+		m2attempts = strtol(optarg, NULL, 10);
+		if(m2attempts == 0)
+			{
+			fprintf(stderr, "value must be greater than 0\n");
 			exit(EXIT_FAILURE);
 			}
 		break;

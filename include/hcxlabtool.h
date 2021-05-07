@@ -1,4 +1,4 @@
-#define VERSIONTAG		"0.0.1"
+#define VERSIONTAG		"0.1.0"
 #define VERSIONYEAR		"2021"
 #define VERSIONNAME		"hcxlabtool"
 
@@ -7,7 +7,8 @@
 #define HCX_BPFC		3
 #define HCX_ESSIDLIST		4
 #define HCX_ESSIDMAX		5
-#define HCX_TOT			6
+#define HCX_M2ATTEMPT		7
+#define HCX_TOT			8
 
 #define HCX_INTERFACE_NAME	'i'
 #define HCX_CHANNEL		'c'
@@ -19,6 +20,8 @@
 
 #define ERROR_MAX		100
 #define WATCHDOG		600
+
+#define M2ATTEMTS		10
 
 #define ESSID_LEN_MAX		32
 #define FDNSECTIMER		10000000 /* 10msec */
