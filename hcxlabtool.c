@@ -245,7 +245,6 @@ if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +2) == -1) errorcoun
 return;
 }
 /*===========================================================================*/
-#ifdef GETM1234
 static inline void send_deauthentication(uint8_t *macclient, uint8_t *macap, uint8_t reason)
 {
 static mac_t *macftx;
@@ -266,7 +265,6 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM] = reason;
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +2) == -1) errorcount++;
 return;
 }
-#endif
 /*===========================================================================*/
 static inline void send_ack()
 {
@@ -778,7 +776,8 @@ m2status = 0;
 if(zeiger->rc == rgrc)
 	{
 	m2status |= EAPOLM1M2RG;
-	addapm2(macfrx->addr1, macfrx->addr2);
+	addapm2(macfrx->addr2, macfrx->addr1);
+	send_deauthentication(macfrx->addr2, macfrx->addr1, WLAN_REASON_DISASSOC_AP_BUSY);
 	#ifdef STATUSOUT
 	debugmac2(macfrx->addr1, macfrx->addr2, "M1M2ROGUE");
 	#endif
