@@ -3161,7 +3161,7 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"                             set TOT to reboot system\n"
 	"--help                    : show this help\n"
 	"--version                 : show version\n",
-	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, RGAPLIST_MAX, M2ATTEMTS);
+	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, RGAPLIST_MAX, M2ATTEMPTS);
 exit(EXIT_SUCCESS);
 }
 /*---------------------------------------------------------------------------*/

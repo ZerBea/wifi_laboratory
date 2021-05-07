@@ -21,7 +21,7 @@
 #define ERROR_MAX		100
 #define WATCHDOG		600
 
-#define M2ATTEMTS		10
+#define M2ATTEMPTS		10
 
 #define ESSID_LEN_MAX		32
 #define FDNSECTIMER		10000000 /* 10msec */
