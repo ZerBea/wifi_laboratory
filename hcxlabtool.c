@@ -750,7 +750,7 @@ for(zeiger = apm2list; zeiger < apm2list +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macap, macap, 6) != 0) continue;
 	if(memcmp(zeiger->macclient, macclient, 6) != 0) continue;
 	zeiger->timestamp = timestamp;
-	zeiger->status = STATUS_M2;
+	zeiger->status |= STATUS_M2;
 	zeiger->count += 1;
 	if(zeiger->count >= m2attempts) zeiger->status |= STATUS_M2DONE;
 	return;
