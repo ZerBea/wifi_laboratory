@@ -3142,7 +3142,7 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"                            affected: incoming and outgoing traffic - that include rca scan\n"
 	"                            steps to create a BPF (it only has to be done once):\n"
 	"                             set monitormode\n"
-	"                             $ hcxumptool -m <interface>\n"
+	"                             $ %s -m <interface>\n"
 	"                             create BPF to protect a MAC\n"
 	"                             $ tcpdump -i <interface> not wlan addr1 11:22:33:44:55:66 and not wlan addr2 11:22:33:44:55:66 -ddd > protect.bpf\n"
 	"                             recommended to protect own devices\n"
@@ -3161,7 +3161,7 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"                             set TOT to reboot system\n"
 	"--help                    : show this help\n"
 	"--version                 : show version\n",
-	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, RGAPLIST_MAX, M2ATTEMPTS);
+	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, eigenname, RGAPLIST_MAX, M2ATTEMPTS);
 exit(EXIT_SUCCESS);
 }
 /*---------------------------------------------------------------------------*/
