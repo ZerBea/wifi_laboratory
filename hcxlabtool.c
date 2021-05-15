@@ -105,6 +105,8 @@ static uint8_t hdradiotap[] =
 static int csc;
 static int channelscanlist[256];
 
+static uint8_t lastmic[16];
+
 static uint8_t epb[PCAPNG_MAXSNAPLEN *2];
 static uint8_t epbown[PCAPNG_MAXSNAPLEN *2];
 
@@ -776,9 +778,12 @@ zeiger->rc = be64toh(wpak->replaycount);
 m2status = 0;
 if(zeiger->rc == rgrc)
 	{
-	m2status |= EAPOLM1M2RG;
-	addapm2(macfrx->addr2, macfrx->addr1);
 	send_deauthentication(macfrx->addr2, macfrx->addr1, WLAN_REASON_DISASSOC_AP_BUSY);
+	m2status |= EAPOLM1M2RG;
+	if(macfrx->retry != 0) return;
+	if(memcmp(&lastmic, wpak->keymic, 16) == 0) return;
+	memcpy(&lastmic, wpak->keymic, 16);
+	addapm2(macfrx->addr2, macfrx->addr1);
 	#ifdef STATUSOUT
 	debugmac2(macfrx->addr1, macfrx->addr2, "M1M2ROGUE");
 	#endif
@@ -2967,9 +2972,8 @@ apsequence = 1;
 beaconsequence = 1;
 
 memset(&bpf, 0, sizeof(bpf));
-memset(&ifname, 0 , sizeof(ifname));
-memset(&ifmac, 0 , sizeof(ifmac));
-
+memset(&ifname, 0, sizeof(ifname));
+memset(&ifmac, 0, sizeof(ifmac));
 ouirgap = (myvendorap[rand() %((MYVENDORAP_SIZE /sizeof(int)))]) &0xfcffff;
 nicrgap = (rand() & 0x0fffff);
 macrgbcwap[5] = nicrgap & 0xff;
@@ -2994,13 +2998,13 @@ macrgclient[3] = (nicrgclient >> 16) & 0xff;
 macrgclient[2] = ouirgclient & 0xff;
 macrgclient[1] = (ouirgclient >> 8) & 0xff;
 macrgclient[0] = (ouirgclient >> 16) & 0xff;
-
 for(c = 0; c < 32; c++)
 	{
 	anonce[c] = rand() %0xff;
 	snonce[c] = rand() %0xff;
 	}
 rgrc = (rand()%0xfff) +0xf000;
+memset(&lastmic, 0, 16);
 if((aplist = (aplist_t*)calloc((APLIST_MAX +1), APLIST_SIZE)) == NULL) return false;
 if((apm2list = (aplist_t*)calloc((APLIST_MAX +1), APLIST_SIZE)) == NULL) return false;
 if((rgaplist = (rgaplist_t*)calloc((RGAPLIST_MAX +1), RGAPLIST_SIZE)) == NULL) return false;
