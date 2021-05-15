@@ -780,7 +780,6 @@ if(zeiger->rc == rgrc)
 	{
 	send_deauthentication(macfrx->addr2, macfrx->addr1, WLAN_REASON_DISASSOC_AP_BUSY);
 	m2status |= EAPOLM1M2RG;
-	if(macfrx->retry != 0) return;
 	if(memcmp(&lastmic, wpak->keymic, 16) == 0) return;
 	memcpy(&lastmic, wpak->keymic, 16);
 	addapm2(macfrx->addr2, macfrx->addr1);
