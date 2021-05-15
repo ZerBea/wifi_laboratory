@@ -767,7 +767,6 @@ static eapollist_t *zeiger, *zeigerm1;
 static uint8_t m2status;
 
 writeepb(fd_pcapng);
-if(macfrx->retry != 0) return;
 if(memcmp(&mac_broadcast, macfrx->addr1, 6) == 0) return;
 wpak = (wpakey_t*)wpakptr;
 zeiger = eapolm2list +EAPOLLIST_MAX;
@@ -779,14 +778,17 @@ m2status = 0;
 if(zeiger->rc == rgrc)
 	{
 	send_deauthentication(macfrx->addr2, macfrx->addr1, WLAN_REASON_DISASSOC_AP_BUSY);
-	m2status |= EAPOLM1M2RG;
+	if(macfrx->retry != 0) return;
 	if(memcmp(&lastmic, wpak->keymic, 16) == 0) return;
+	m2status |= EAPOLM1M2RG;
 	memcpy(&lastmic, wpak->keymic, 16);
 	addapm2(macfrx->addr2, macfrx->addr1);
 	#ifdef STATUSOUT
 	debugmac2(macfrx->addr1, macfrx->addr2, "M1M2ROGUE");
 	#endif
+	return;
 	}
+if(macfrx->retry != 0) return;
 qsort(eapolm2list, EAPOLLIST_MAX +1, EAPOLLIST_SIZE, sort_eapollist_by_time);
 for(zeigerm1 = eapolm1list; zeigerm1 < eapolm1list +EAPOLLIST_MAX; zeigerm1++)
 	{
