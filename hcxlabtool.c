@@ -91,6 +91,8 @@ static uint16_t clientsequence;
 static uint16_t apsequence;
 static uint16_t beaconsequence;
 
+static uint8_t weakcandidatelen;
+
 static uint8_t hdradiotap[] =
 {
 0x00, 0x00, /* radiotap version and padding */
@@ -104,6 +106,8 @@ static uint8_t hdradiotap[] =
 
 static int csc;
 static int channelscanlist[256];
+
+static char weakcandidate[64];
 
 static uint8_t lastmic[16];
 
@@ -2883,7 +2887,7 @@ static char filename[PATH_MAX];
 
 strftime(timestring, PATH_MAX, "%Y%m%d%H%M%S", localtime(&tv.tv_sec));
 snprintf(filename, PATH_MAX, "%s-%s", timestring, ifname);
-fd_pcapng = hcxcreatepcapngdump(filename, ifmac, ifname, macrgap, rgrc, anonce, macrgclient, snonce, 8, "12345678");
+fd_pcapng = hcxcreatepcapngdump(filename, ifmac, ifname, macrgap, rgrc, anonce, macrgclient, snonce, weakcandidatelen, weakcandidate);
 if(fd_pcapng == -1) return false;
 return true;
 }
@@ -3165,9 +3169,12 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"                            default: %d received M2 frames\n" 
 	"--tot=<digit>             : enable timeout timer in minutes (minimum = 2 minutes)\n"
 	"                            set TOT to reboot system\n"
+	"--weakcandidate=<password>: use this pre shared key (8...63 characters) for weak candidate alert\n"
+	"                            will be saved to pcapng to inform hcxpcaptool\n"
+	"                            default: %s\n"
 	"--help                    : show this help\n"
 	"--version                 : show version\n",
-	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, eigenname, RGAPLIST_MAX, M2ATTEMPTS);
+	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, eigenname, RGAPLIST_MAX, M2ATTEMPTS, weakcandidate);
 exit(EXIT_SUCCESS);
 }
 /*---------------------------------------------------------------------------*/
@@ -3193,6 +3200,7 @@ static int cgc;
 static bool monitormodeflag;
 static bool showinterfaceflag;
 
+static const char *weakcandidatedefault = "12345678";
 static const char *short_options = "i:c:t:m:Ihv";
 static const struct option long_options[] =
 {
@@ -3203,6 +3211,7 @@ static const struct option long_options[] =
 	{"m2attempt",			required_argument,	NULL,	HCX_M2ATTEMPT},
 	{"essidmax",			required_argument,	NULL,	HCX_ESSIDMAX},
 	{"tot",				required_argument,	NULL,	HCX_TOT},
+	{"weakcandidate	",		required_argument,	NULL,	HCX_WEAKCANDIDATE},
 	{"version",			no_argument,		NULL,	HCX_VERSION},
 	{"help",			no_argument,		NULL,	HCX_HELP},
 	{NULL,				0,			NULL,	0}
@@ -3227,6 +3236,8 @@ tvtot.tv_sec = 2147483647L;
 tvtot.tv_usec = 0;
 totvalue = 0;
 cgc = 0;
+weakcandidatelen = 8;
+strncpy(weakcandidate, weakcandidatedefault, 64);
 monitormodeflag = false;
 showinterfaceflag = false;
 
@@ -3329,6 +3340,16 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 			}
 		gettimeofday(&tvtot, NULL);
 		tvtot.tv_sec += totvalue *60;
+		break;
+
+		case HCX_WEAKCANDIDATE:
+		weakcandidatelen = strlen(optarg);
+		if((weakcandidatelen < 8) || (weakcandidatelen > 63))
+			{
+			fprintf(stderr, "only length 8...63 characters allowed\n");
+			exit(EXIT_FAILURE);
+			}
+		strncpy(weakcandidate, optarg, 64);
 		break;
 
 		case HCX_SET_MONITORMODE:

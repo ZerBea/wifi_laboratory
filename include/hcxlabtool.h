@@ -9,6 +9,7 @@
 #define HCX_ESSIDMAX		5
 #define HCX_M2ATTEMPT		7
 #define HCX_TOT			8
+#define HCX_WEAKCANDIDATE	9
 
 #define HCX_INTERFACE_NAME	'i'
 #define HCX_CHANNEL		'c'
