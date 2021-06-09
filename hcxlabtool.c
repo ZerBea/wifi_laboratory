@@ -861,7 +861,8 @@ if(memcmp(pmkid->pmkid, &zeroed32, 16) == 0)
 	}
 addeapolstatus(macfrx->addr2, EAPOLPMKID);
 #ifdef STATUSOUT
-debugmac2(macfrx->addr1, macfrx->addr2, "PMKID");
+if(memcmp(&macrgclient, macfrx->addr1, 6) == 0) debugmac2(macfrx->addr1, macfrx->addr2, "PMKIDROGUE"); 
+else debugmac2(macfrx->addr1, macfrx->addr2, "PMKID");
 #endif
 return;
 }
