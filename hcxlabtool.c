@@ -136,7 +136,7 @@ static uint32_t p;
 for(p = 0; p < 6; p++) printf("%02x", mac1[p]);
 printf(" ");
 for(p = 0; p < 6; p++) printf("%02x", mac2[p]);
-printf(" %s\n", message);
+printf(" [%3d] %s\n", channelscanlist[csc], message);
 return;
 }
 /*===========================================================================*/
