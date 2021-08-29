@@ -921,7 +921,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 	memcpy(zeiger->macclient, macfrx->addr2, 6);
 	zeiger->timestamp = timestamp;
-	if(zeiger->count2 > RESUMEINTERVALL) zeiger->count2 = 0;
+	if(zeiger->count2 > RESUMEINTERVAL) zeiger->count2 = 0;
 	return;
 	}
 return;
@@ -937,7 +937,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 	memcpy(zeiger->macclient, macfrx->addr2, 6);
 	zeiger->timestamp = timestamp;
-	if(zeiger->count2 > RESUMEINTERVALL) zeiger->count2 = 0;
+	if(zeiger->count2 > RESUMEINTERVAL) zeiger->count2 = 0;
 	return;
 	}
 return;
@@ -955,7 +955,7 @@ if((macfrx->to_ds == 1) && (macfrx->from_ds == 0))
 		if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 		memcpy(zeiger->macclient, macfrx->addr2, 6);
 		zeiger->timestamp = timestamp;
-		if(zeiger->count2 > RESUMEINTERVALL) zeiger->count2 = 0;
+		if(zeiger->count2 > RESUMEINTERVAL) zeiger->count2 = 0;
 		return;
 		}
 	}
@@ -989,7 +989,7 @@ if((macfrx->to_ds == 1) && (macfrx->from_ds == 0))
 		if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 		memcpy(zeiger->macclient, macfrx->addr2, 6);
 		zeiger->timestamp = timestamp;
-		if(zeiger->count2 > RESUMEINTERVALL) zeiger->count2 = 0;
+		if(zeiger->count2 > RESUMEINTERVAL) zeiger->count2 = 0;
 		return;
 		}
 	}
@@ -1006,7 +1006,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 	memcpy(zeiger->macclient, macfrx->addr2, 6);
 	zeiger->timestamp = timestamp;
-	if(zeiger->count2 > RESUMEINTERVALL) zeiger->count2 = 0;
+	if(zeiger->count2 > RESUMEINTERVAL) zeiger->count2 = 0;
 	return;
 	}
 return;
@@ -1027,7 +1027,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	if(memcmp(zeiger->macap, macfrx->addr1, 6) != 0) continue;
 	memcpy(zeiger->macclient, macfrx->addr2, 6);
 	zeiger->timestamp = timestamp;
-	if(zeiger->count2 > RESUMEINTERVALL) zeiger->count2 = 0;
+	if(zeiger->count2 > RESUMEINTERVAL) zeiger->count2 = 0;
 	return;
 	}
 return;
@@ -2409,7 +2409,7 @@ while(wantstopflag == false)
 		rebootflag = true;
 		wantstopflag = true;
 		}
-	if((tv.tv_sec -tvoldled.tv_sec) >= LEDFLASHINTERVALL)
+	if((tv.tv_sec -tvoldled.tv_sec) >= LEDFLASHINTERVAL)
 		{
 		tvoldled.tv_sec = tv.tv_sec;
 		if(gpiostatusled > 0)
@@ -2491,7 +2491,7 @@ while(wantstopflag == false)
 		rebootflag = true;
 		wantstopflag = true;
 		}
-	if((tv.tv_sec -tvold.tv_sec) >= LEDFLASHINTERVALL)
+	if((tv.tv_sec -tvold.tv_sec) >= LEDFLASHINTERVAL)
 		{
 		#ifdef STATUSOUT
 		if(errorcount > 0) printf("ERROR: %d\n", errorcount);
@@ -2541,7 +2541,7 @@ static struct timespec standbytime;
 fprintf(stdout, "entering standby loop\n");
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
-standbytime.tv_sec = LEDFLASHINTERVALL;
+standbytime.tv_sec = LEDFLASHINTERVAL;
 standbytime.tv_nsec = 0;
 while(wantstopflag == false)
 	{

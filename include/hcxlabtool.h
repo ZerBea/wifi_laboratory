@@ -29,8 +29,8 @@
 #define RGAPLISTCOUNT		10
 #define STAYTIME		5
 
-#define LEDFLASHINTERVALL	10
-#define RESUMEINTERVALL		36000
+#define LEDFLASHINTERVAL	10
+#define RESUMEINTERVAL		36000
 
 /*===========================================================================*/
 #define	EAPOLM1M2TIMEOUT	20000
