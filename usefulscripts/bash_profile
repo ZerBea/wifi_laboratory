@@ -1,0 +1,15 @@
+#!/bin/bash
+
+cd /home
+hcxlabgetmall --gpio_button=4 --gpio_statusled=17 --bpfc=own.bpfc --essidlist=standard.essidlist --m2attempt=1000 -c 1,6,11,2,1,6,11,3,1,6,11,4,1,6,11,5,1,6,11,7,1,6,11,8,1,6,11,9,1,6,11,10,1,6,1,12,1,6,11,13 &
+#hcxlabgetmall --gpio_button=4 --gpio_statusled=17 --bpfc=own.bpfc --essidlist=standard.essidlist --m2attempt=1000 -c 1,36,6,2,11,1,40,6,3,11,1,44,6,4,11,1,48,6,5,11,1,7,6,52,11,1,8,6,56,11,1,9,6,60,11,1,10,6,64,11,1,12,6,100,11,1,13,6,104,11,1,108,6,2,11,1,112,6,3,11,1,116,6,4,11,1,120,6,5,11,1,7,6,124,11,1,8,6,128,11,1,9,6,132,11,1,10,6,136,11,1,12,6,140,11 &
+#hcxlabgetmall --gpio_button=4 --gpio_statusled=17 --bpfc=own.bpfc --essidlist=standard.essidlist --m2attempt=1000 -c 1,6,11 &
+#hcxlabgetmall --gpio_button=4 --gpio_statusled=17 --bpfc=own.bpfc --essidlist=standard.essidlist --m2attempt=1000 -c 1 &
+#hcxlabgetmall --gpio_button=4 --gpio_statusled=17 --bpfc=own.bpfc --essidlist=standard.essidlist --m2attempt=1000 -c 2,36,3,40,4,44,5,48,7,52,8,56,9,60,10,64,12,100,13,104,2,108,3,112,4,116,5,120,7,124,8,128,9,132,10,136,12,140,13 &
+#hcxlabgetmall --gpio_button=4 --gpio_statusled=17 --bpfc=own.bpfc --essidlist=standard.essidlist --m2attempt=1000 -c 36,40,44,48,52,56,60,64,100,104,108,112,116,120,124,128,132,136,140 &
+#hcxlabgetm1 --gpio_button=4 --gpio_statusled=17 --bpfc=own.bpfc -c 1,6,11 &
+#hcxlabgetm2 --gpio_button=4 --gpio_statusled=17 --tot=4320 --bpfc=own.bpfc --essidlist=standard.essidlist --essidmax=2 -c 1,2,3,6,7,8 -t 300 &
+#hcxlabgetm1234  --gpio_button=4 --gpio_statusled=17 --bpfc=own.bpfc -c 1,6,11 &
+#loadkeys de
+#dhclient -nw
+#systemctl start sshd.service
