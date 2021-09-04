@@ -19,6 +19,8 @@ There are only a few basic options and there is no status output.
 
 All additional test functions must be compiled individually (gcc -D - see Makefile).
 
+It is also designed to run headless on a modified (GPIO push button and LED) Raspberry Pi
+
 
 Requirements
 --------------
@@ -85,4 +87,4 @@ it is mandatory to ACK NULL and ACTION frames within a 4way handshake!
 
 short preambles work with every wireless type other than older types with limited transmission rates in the 1 to 2 Mbps range.
 
-unfortunately short preamble in radiotap header is ignored on tx
+unfortunately setting a short preamble in radiotap header is ignored on tx.
