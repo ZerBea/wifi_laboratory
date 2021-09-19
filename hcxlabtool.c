@@ -1025,7 +1025,7 @@ if(memcmp(&macrgclient, macfrx->addr1, 6) == 0)
 if(payloadlen > ACTIONMEASUREMENTFRAME_SIZE)
 	{
 	actmm = (actmm_t*)payloadptr;
-	if(actmm->actioncode == ACT_MM_NRR) writeepb(fd_pcapng);
+	if((actmm->actioncode == ACT_MM_NRREQ) || (actmm->actioncode == ACT_MM_NRRESP)) writeepb(fd_pcapng);
 	}
 for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
