@@ -1015,11 +1015,17 @@ return;
 static inline void process80211action()
 {
 static aplist_t *zeiger;
+static actmm_t *actmm;
 
 if(memcmp(&macrgclient, macfrx->addr1, 6) == 0)
 	{
 	send_ack();
 	return;
+	}
+if(payloadlen > ACTIONMEASUREMENTFRAME_SIZE)
+	{
+	actmm = (actmm_t*)payloadptr;
+	if(actmm->actioncode == ACT_MM_NRR) writeepb(fd_pcapng);
 	}
 for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
