@@ -1,7 +1,8 @@
 INSTALLDIR	= /usr/local/bin
 
-CC	= gcc
-CFLAGS	= -O3 -Wall -Wextra -ggdb -fsanitize=address
+CC	?= gcc
+#CFLAGS	= -O3 -Wall -Wextra -ggdb -fsanitize=address
+CFLAGS	= -O3 -Wall -Wextra
 
 all: build
 
