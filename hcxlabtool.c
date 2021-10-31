@@ -1637,6 +1637,32 @@ writeepb(fd_pcapng);
 return;
 }
 /*===========================================================================*/
+static inline void send_authentication_sae_failure(int saesequence)
+{
+static mac_t *macftx;
+static const uint8_t authenticationresponsedata[] =
+{
+0x00, 0x00, 0x02, 0x00, 0x00, 0x00
+};
+#define AUTHENTICATIONRESPONSE_SIZE sizeof(authenticationresponsedata)
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +AUTHENTICATIONRESPONSE_SIZE +1);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_AUTH;
+memcpy(macftx->addr1, macfrx->addr2, 6);
+memcpy(macftx->addr2, macfrx->addr1, 6);
+memcpy(macftx->addr3, macfrx->addr3, 6);
+macftx->duration = 0x013a;
+macftx->sequence = apsequence++ << 4;
+if(apsequence >= 4096) apsequence = 0;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &authenticationresponsedata, AUTHENTICATIONRESPONSE_SIZE);
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +AUTHENTICATIONRESPONSE_SIZE) == -1) errorcount++;
+return;
+}
+/*===========================================================================*/
 static inline void process80211authentication_sae()
 {
 static sae_authenticationf_t *saeauth;
@@ -1644,12 +1670,9 @@ static sae_authenticationf_t *saeauth;
 saeauth = (sae_authenticationf_t*)payloadptr;
 if(payloadlen < SAEAUTHENTICATIONFRAME_SIZE) return;
 if(saeauth->statuscode != AUTH_OK) return;
-
-if((saeauth->sequence) == 1)
+if((saeauth->messagetype) == SAE_MT_CONFIRM)
 	{
-	}
-else if((saeauth->sequence) == 2)
-	{
+//	printf("%d\n", macfrx->sequence >> 4);
 	}
 writeepb(fd_pcapng);
 return;
