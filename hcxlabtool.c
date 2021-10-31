@@ -1637,6 +1637,7 @@ writeepb(fd_pcapng);
 return;
 }
 /*===========================================================================*/
+/*
 static inline void send_authentication_sae_failure(int saesequence)
 {
 static mac_t *macftx;
@@ -1662,6 +1663,7 @@ memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &authenticationresponsedata, AU
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +AUTHENTICATIONRESPONSE_SIZE) == -1) errorcount++;
 return;
 }
+*/
 /*===========================================================================*/
 static inline void process80211authentication_sae()
 {
