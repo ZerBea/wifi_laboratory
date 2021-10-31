@@ -484,32 +484,48 @@ typedef struct llc_frame llc_t;
 /*===========================================================================*/
 struct authentication_frame
 {
- uint16_t			algorithm;
-#define	OPEN_SYSTEM		0
-#define	SHARED_KEY		1
-#define	FBT			2
-#define	SAE			3
-#define	FILS			4
-#define	FILSPFS			5
-#define	FILSPK			6
-#define	NETWORKEAP		128
- uint16_t			sequence;
- uint16_t			statuscode;
-#define AUTH_OK			0
-#define AUTH_FAILURE		1
-#define AUTH_UNSUPPORTED	10
-#define AUTH_REASSOC_DENIED	11
-#define AUTH_UNSECIFIED		12
+ uint16_t				algorithm;
+#define	OPEN_SYSTEM			0
+#define	SHARED_KEY			1
+#define	FBT				2
+#define	SAE				3
+#define	FILS				4
+#define	FILSPFS				5
+#define	FILSPK				6
+#define	NETWORKEAP			128
+ uint16_t				sequence;
+ uint16_t				statuscode;
+#define AUTH_OK				0
+#define AUTH_FAILURE			1
+#define AUTH_UNACCEPTABLE_LIFETIME	6
+#define AUTH_UNSUPPORTED		10
+#define AUTH_REASSOC_DENIED		11
+#define AUTH_ASSOC_DENIED		12
+#define AUTH_OUTSIDE_SEQUENCE		14
+#define AUTH_CHALLENGE_FAILURE		15
+#define AUTH_ANTI_GLOG_REQUIRED		76
+#define AUTH_ANTI_FFE_UNSUPPORTED	77
 } __attribute__((__packed__));
 typedef struct authentication_frame authf_t;
 #define	AUTHENTICATIONFRAME_SIZE (sizeof(authf_t))
+/*===========================================================================*/
+struct sae_authentication_frame
+{
+ uint16_t	algorithm;
+ uint16_t	sequence;
+ uint16_t	statuscode;
+ uint16_t	messagetype;
+#define		SEA_MT_COMMIT	1
+#define		SEA_MT_CONFIRM	2
+} __attribute__((__packed__));
+typedef struct sae_authentication_frame sae_authenticationf_t;
+#define	SAEAUTHENTICATIONFRAME_SIZE (sizeof(sae_authenticationf_t))
 /*===========================================================================*/
 struct sae_commit_authentication_frame
 {
  uint16_t	group_id;
  uint8_t	scalar[32];
- uint8_t	commit_element_x[32];
- uint8_t	commit_element_y[32];
+ uint8_t	ffe[64];
 } __attribute__((__packed__));
 typedef struct sae_commit_authentication_frame saecommitauthf_t;
 #define	SAECOMMITAUTHENTICATIONFRAME_SIZE (sizeof(saecommitauthf_t))

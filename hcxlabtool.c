@@ -1639,14 +1639,16 @@ return;
 /*===========================================================================*/
 static inline void process80211authentication_sae()
 {
-static authf_t *auth;
+static sae_authenticationf_t *saeauth;
 
-auth = (authf_t*)payloadptr;
-if(payloadlen < AUTHENTICATIONFRAME_SIZE) return;
-if((auth->sequence %2) == 1)
+saeauth = (sae_authenticationf_t*)payloadptr;
+if(payloadlen < SAEAUTHENTICATIONFRAME_SIZE) return;
+if(saeauth->statuscode != AUTH_OK) return;
+
+if((saeauth->sequence) == 1)
 	{
 	}
-else if((auth->sequence %2) == 0)
+else if((saeauth->sequence) == 2)
 	{
 	}
 writeepb(fd_pcapng);
