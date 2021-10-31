@@ -516,8 +516,8 @@ struct sae_authentication_frame
  uint16_t	sequence;
  uint16_t	statuscode;
  uint16_t	messagetype;
-#define		SEA_MT_COMMIT	1
-#define		SEA_MT_CONFIRM	2
+#define		SAE_MT_COMMIT	1
+#define		SAE_MT_CONFIRM	2
 } __attribute__((__packed__));
 typedef struct sae_authentication_frame sae_authenticationf_t;
 #define	SAEAUTHENTICATIONFRAME_SIZE (sizeof(sae_authenticationf_t))
