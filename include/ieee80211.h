@@ -493,6 +493,7 @@ struct authentication_frame
 #define	FILSPFS				5
 #define	FILSPK				6
 #define	NETWORKEAP			128
+#define	VENDOR_SPECIFIC			65535
  uint16_t				sequence;
  uint16_t				statuscode;
 #define AUTH_OK				0
