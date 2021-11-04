@@ -25,7 +25,7 @@ It is also designed to run headless on a modified (GPIO push button and LED) Ras
 Requirements
 --------------
 
-* detailed knowledge of radiofrequency technology
+* detailed knowledge of radio technology
 
 * detailed knowledge of electromagnetic-wave engineering
 
@@ -33,7 +33,7 @@ Requirements
 
 * detailed knowledge of key derivation functions
 
-* detailed kowlege of Linux
+* detailed knowledge of Linux
 
 * latest Linux Kernel
 
