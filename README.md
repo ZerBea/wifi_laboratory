@@ -25,15 +25,25 @@ It is also designed to run headless on a modified (GPIO push button and LED) Ras
 Requirements
 --------------
 
-latest Linux Kernel
+* detailed knowledge of radiofrequency technology
 
-driver must support full monitor mode and full packet injection
+* detailed knowledge of electromagnetic-wave engineering
 
-diver must not depend on NETLINK
+* detailed knowledge of 802.11 protocol
 
-tshark or Wireshark to monitor interface
+* detailed knowledge of key derivation functions
 
-tcpdump to create BPF code
+* detailed kowlege of Linux
+
+* latest Linux Kernel
+
+* driver must support full monitor mode and full packet injection
+
+* diver must not depend on NETLINK
+
+* tshark or Wireshark to monitor interface
+
+* tcpdump to create BPF code
 
 Raspberry Pi onboard WiFi chip must be disabled by boot options: dtoverlay=pi3-disable-wifi
 
