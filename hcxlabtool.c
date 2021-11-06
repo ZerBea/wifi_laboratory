@@ -105,7 +105,7 @@ static uint8_t hdradiotap[] =
 #define HDRRT_SIZE sizeof(hdradiotap)
 
 static int csc;
-static int channelscanlist[256];
+static int channelscanlist[1000];
 
 static char weakcandidate[64];
 
@@ -1672,6 +1672,11 @@ static sae_authenticationf_t *saeauth;
 saeauth = (sae_authenticationf_t*)payloadptr;
 if(payloadlen < SAEAUTHENTICATIONFRAME_SIZE) return;
 if(saeauth->statuscode != AUTH_OK) return;
+if((saeauth->messagetype) == SAE_MT_COMMIT)
+	{
+//	printf("%d\n", macfrx->sequence >> 4);
+	}
+
 if((saeauth->messagetype) == SAE_MT_CONFIRM)
 	{
 //	printf("%d\n", macfrx->sequence >> 4);
@@ -3287,7 +3292,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		cgc = 0;
 		userscanlist = strndup(optarg, 4096);
 		tokptr = strtok(userscanlist, ",");
-		while((tokptr != NULL) && (cgc < 256))
+		while((tokptr != NULL) && (cgc < 1000))
 			{
 			channelscanlist[cgc] = atoi(tokptr);
 			tokptr = strtok(NULL, ",");
