@@ -2670,7 +2670,7 @@ while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 	ptrscanlist->frequency = pwrq.u.freq.m;
 	if((pwrq.u.freq.m >= 2407) && (pwrq.u.freq.m <= 2474)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
 	else if((pwrq.u.freq.m >= 2481) && (pwrq.u.freq.m <= 2487)) ptrscanlist->channel = (pwrq.u.freq.m -2412)/5;
-	else if((pwrq.u.freq.m >= 5035) && (pwrq.u.freq.m <= 5980)) ptrscanlist->channel = (pwrq.u.freq.m -5000)/5;
+	else if((pwrq.u.freq.m >= 5005) && (pwrq.u.freq.m <= 5980)) ptrscanlist->channel = (pwrq.u.freq.m -5000)/5;
 	else if((pwrq.u.freq.m >= 5955) && (pwrq.u.freq.m <= 6415)) ptrscanlist->channel = (pwrq.u.freq.m -5950)/5;
 	else continue;
 	fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
@@ -2707,7 +2707,7 @@ for(c = 2407; c < 2488; c++)
 	}
 if(ptrscanlist > scanlist) fprintf(stdout, "\n");
 ptrold = ptrscanlist;
-for(c = 5035; c < 5981; c++)
+for(c = 5005; c < 5981; c++)
 	{
 	memset(&pwrq, 0, sizeof(pwrq));
 	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
@@ -2716,7 +2716,7 @@ for(c = 5035; c < 5981; c++)
 	pwrq.u.freq.e = 6;
 	if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) continue;
 	ptrscanlist->frequency = c;
-	if((ptrscanlist->frequency >= 5035) && (ptrscanlist->frequency <= 5980)) ptrscanlist->channel = (ptrscanlist->frequency -5000)/5;
+	if((ptrscanlist->frequency >= 5005) && (ptrscanlist->frequency <= 5980)) ptrscanlist->channel = (ptrscanlist->frequency -5000)/5;
 	else continue;
 	fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
 	ptrscanlist++;
