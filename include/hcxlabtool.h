@@ -22,7 +22,7 @@
 #define ERROR_MAX		100
 #define WATCHDOG		600
 
-#define CHANNEL_MAX		256
+#define SCANLIST_MAX		256
 
 #define M2ATTEMPTS		10
 
@@ -142,4 +142,12 @@ else if(ia->timestamp > ib->timestamp) return -1;
 return 0;
 }
 /*===========================================================================*/
+typedef struct
+{
+int	frequency;
+int	channel;
+}scanlist_t;
+#define	SCANLIST_SIZE (sizeof(scanlist_t))
+/*===========================================================================*/
+
 

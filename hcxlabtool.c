@@ -104,8 +104,8 @@ static uint8_t hdradiotap[] =
 };
 #define HDRRT_SIZE sizeof(hdradiotap)
 
-static int csc;
-static int channelscanlist[CHANNEL_MAX];
+static scanlist_t scanlist[SCANLIST_MAX];
+static scanlist_t *ptrscanlist;
 
 static char weakcandidate[64];
 
@@ -131,12 +131,16 @@ return;
 /*===========================================================================*/
 static inline void debugmac2(uint8_t *mac1, uint8_t *mac2, char *message)
 {
+static int sp = 0;
 static uint32_t p;
+static char *leer = "   ";
 
 for(p = 0; p < 6; p++) printf("%02x", mac1[p]);
 printf(" ");
 for(p = 0; p < 6; p++) printf("%02x", mac2[p]);
-printf(" [%4d] %s\n", channelscanlist[csc], message);
+if(ptrscanlist->channel < 100) sp = 1;
+if(ptrscanlist->channel < 10) sp++;
+printf(" %4d/%d%.*s %s\n", ptrscanlist->frequency, ptrscanlist->channel, sp, leer, message);
 return;
 }
 /*===========================================================================*/
@@ -1883,7 +1887,7 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +1] = zeigerrgap->essidlen;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE], zeigerrgap->essid, zeigerrgap->essidlen);
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +zeigerrgap->essidlen], &proberesponse_data, PROBERESPONSE_DATA_SIZE);
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +zeigerrgap->essidlen +0x0c] = channelscanlist[csc];
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +zeigerrgap->essidlen +0x0c] = ptrscanlist->channel;
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +zeigerrgap->essidlen +PROBERESPONSE_DATA_SIZE) == -1) errorcount++;
 return;
 }
@@ -1924,7 +1928,7 @@ capap->beaconintervall = 0xc8;
 capap->capabilities = 0x431;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE], &proberesponse_data, PROBERESPONSE_DATA_SIZE);
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +0x0e] = channelscanlist[csc];
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +0x0e] = ptrscanlist->channel ;
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +PROBERESPONSE_DATA_SIZE) == -1) errorcount++;
 return;
 }
@@ -1987,7 +1991,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
 	if(zeiger->timestamp == 0) break;
 	if(memcmp(zeiger->macap, macfrx->addr2, 6) != 0) continue;
-	if(channelscanlist[csc] != zeiger->channel) return;
+	if(ptrscanlist->channel != zeiger->channel) return;
 	gettags(apinfolen, apinfoptr, aplist);
 	zeiger->timestamp = timestamp;
 	if((zeiger->status &STATUS_PRESP) != STATUS_PRESP) writeepb(fd_pcapng);
@@ -1996,7 +2000,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	}
 memset(zeiger, 0, APLIST_SIZE);
 gettags(apinfolen, apinfoptr, zeiger);
-if(channelscanlist[csc] != zeiger->channel) return;
+if(ptrscanlist->channel != zeiger->channel) return;
 zeiger->timestamp = timestamp;
 zeiger->status = STATUS_PRESP;
 memcpy(zeiger->macap, macfrx->addr2, 6);
@@ -2062,7 +2066,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	{
 	if(zeiger->timestamp == 0) break;
 	if(memcmp(zeiger->macap, macfrx->addr2, 6) != 0) continue;
-	if(channelscanlist[csc] != zeiger->channel) return;
+	if(ptrscanlist->channel != zeiger->channel) return;
 	zeiger->timestamp = timestamp;
 	if((zeiger->status &STATUS_BEACON) != STATUS_BEACON) writeepb(fd_pcapng);
 	zeiger->status |= STATUS_BEACON;
@@ -2105,7 +2109,7 @@ for(zeiger = aplist; zeiger < aplist +APLIST_MAX; zeiger++)
 	}
 memset(zeiger, 0, APLIST_SIZE);
 gettags(apinfolen, apinfoptr, zeiger);
-if(channelscanlist[csc] != zeiger->channel) return;
+if(ptrscanlist->channel != zeiger->channel) return;
 zeiger->timestamp = timestamp;
 zeiger->count += 1;
 zeiger->status = STATUS_BEACON;
@@ -2191,7 +2195,7 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +1] = (rgaplist +rgaplistcount)->essidlen;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE], (rgaplist +rgaplistcount)->essid, (rgaplist +rgaplistcount)->essidlen);
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgaplist +rgaplistcount)->essidlen], beacon_data, BEACON_DATA_SIZE);
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgaplist +rgaplistcount)->essidlen +0xc] = channelscanlist[csc];
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgaplist +rgaplistcount)->essidlen +0xc] = ptrscanlist->channel;
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgaplist +rgaplistcount)->essidlen +BEACON_DATA_SIZE) == -1) errorcount++;
 rgaplistcount++;
 return;
@@ -2238,7 +2242,7 @@ capap->beaconintervall = 0xc8;
 capap->capabilities = 0x431;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE], beacon_data, BEACON_DATA_SIZE);
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +0xe] = channelscanlist[csc];
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +0xe] = ptrscanlist->channel;
 if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +BEACON_DATA_SIZE) == -1) errorcount++;
 rgaplistcount++;
 return;
@@ -2400,7 +2404,8 @@ static struct iwreq pwrq;
 memset(&pwrq, 0, sizeof(pwrq));
 memcpy(pwrq.ifr_name, ifname, IFNAMSIZ);
 pwrq.u.freq.flags = IW_FREQ_FIXED;
-pwrq.u.freq.m = channelscanlist[csc];
+pwrq.u.freq.m = ptrscanlist->frequency;
+pwrq.u.freq.e = 6;
 if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) return false;
 return true;
 }
@@ -2411,21 +2416,12 @@ static int fdnum;
 static fd_set readfds;
 static struct timespec tsfd;
 static struct timespec sleepled;
-static int cgc;
 
-fprintf(stdout, "%s entered loop on channels ", ifname);
-cgc = 0;
-while(channelscanlist[cgc] != 0)
-	{
-	fprintf(stdout, "%d ", channelscanlist[cgc]);
-	cgc++;
-	}
-fprintf(stdout, "\n");
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
 tsfd.tv_sec = 0;
 tsfd.tv_nsec = FDNSECTIMER;
-csc = 0;
+ptrscanlist = scanlist;
 if(set_channel() == false) return;
 send_beacon_wildcard();
 send_proberequest_undirected_broadcast();
@@ -2469,8 +2465,8 @@ while(wantstopflag == false)
 		if(errorcount > 0) printf("ERROR: %d\n", errorcount);
 		#endif
 		tvold.tv_sec = tv.tv_sec;
-		csc++;
-		if(channelscanlist[csc] == 0) csc = 0;
+		ptrscanlist++;
+		if(ptrscanlist->frequency == 0) ptrscanlist = scanlist;
 		set_channel();
 		send_beacon_wildcard();
 		send_proberequest_undirected_broadcast();
@@ -2502,12 +2498,12 @@ static fd_set readfds;
 static struct timespec tsfd;
 static struct timespec sleepled;
 
-fprintf(stdout, "%s entered loop on channel %d\n", ifname, channelscanlist[0]);
+fprintf(stdout, "%s entered loop on %d/%d\n", ifname, scanlist->frequency, scanlist->channel);
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
 tsfd.tv_sec = 0;
 tsfd.tv_nsec = FDNSECTIMER;
-csc = 0;
+ptrscanlist = scanlist;
 if(set_channel() == false) return;
 send_beacon_wildcard();
 send_proberequest_undirected_broadcast();
@@ -2653,27 +2649,98 @@ return len;
 }
 /*===========================================================================*/
 /*===========================================================================*/
-static inline int getscanlist()
+static inline void getchannel(char *userscanlist)
+{
+static struct iwreq pwrq;
+static char *tokptr;
+
+fprintf(stdout, "get frequency range from interface %s:\n", ifname);
+tokptr = strtok(userscanlist, ",");
+ptrscanlist = scanlist;
+while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
+	{
+	memset(&pwrq, 0, sizeof(pwrq));
+	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
+	pwrq.u.freq.flags = IW_FREQ_FIXED;
+	pwrq.u.freq.m = atoi(tokptr);
+	tokptr = strtok(NULL, ",");
+	if(pwrq.u.freq.m > 1000) pwrq.u.freq.e = 6;
+	if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) return;
+	if(ioctl(fd_socket , SIOCGIWFREQ, &pwrq) < 0) return;
+	ptrscanlist->frequency = pwrq.u.freq.m;
+	if((pwrq.u.freq.m >= 2407) && (pwrq.u.freq.m <= 2474)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
+	else if((pwrq.u.freq.m >= 2481) && (pwrq.u.freq.m <= 2487)) ptrscanlist->channel = (pwrq.u.freq.m -2412)/5;
+	else if((pwrq.u.freq.m >= 5035) && (pwrq.u.freq.m <= 5980)) ptrscanlist->channel = (pwrq.u.freq.m -5000)/5;
+	else if((pwrq.u.freq.m >= 5955) && (pwrq.u.freq.m <= 6415)) ptrscanlist->channel = (pwrq.u.freq.m -5950)/5;
+	else continue;
+	fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	ptrscanlist++;
+	}
+if(ptrscanlist > scanlist) fprintf(stdout, "\n");
+ptrscanlist->frequency = 0;
+ptrscanlist->channel = 0;
+return;
+}
+/*===========================================================================*/
+static inline void getscanlist()
 {
 static int c;
-static int cgc;
 static struct iwreq pwrq;
+static scanlist_t *ptrold;
 
-cgc = 0;
-for(c = 1; c < 256; c++)
+fprintf(stdout, "get frequency range from interface %s:\n", ifname);
+ptrscanlist = scanlist;
+for(c = 2407; c < 2488; c++)
 	{
 	memset(&pwrq, 0, sizeof(pwrq));
 	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
 	pwrq.u.freq.flags = IW_FREQ_FIXED;
 	pwrq.u.freq.m = c;
-	pwrq.u.freq.e = 0;
+	pwrq.u.freq.e = 6;
 	if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) continue;
-	if(c == 14) continue;
-	channelscanlist[cgc] = c;
-	cgc++;
+	ptrscanlist->frequency = c;
+	if((ptrscanlist->frequency >= 2407) && (ptrscanlist->frequency <= 2474)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
+	else if((ptrscanlist->frequency >= 2481) && (ptrscanlist->frequency <= 2487)) ptrscanlist->channel = (ptrscanlist->frequency -2412)/5;
+	else continue;
+	fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	ptrscanlist++;
 	}
-channelscanlist[cgc] = 0;
-return cgc;
+if(ptrscanlist > scanlist) fprintf(stdout, "\n");
+ptrold = ptrscanlist;
+for(c = 5035; c < 5981; c++)
+	{
+	memset(&pwrq, 0, sizeof(pwrq));
+	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
+	pwrq.u.freq.flags = IW_FREQ_FIXED;
+	pwrq.u.freq.m = c;
+	pwrq.u.freq.e = 6;
+	if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) continue;
+	ptrscanlist->frequency = c;
+	if((ptrscanlist->frequency >= 5035) && (ptrscanlist->frequency <= 5980)) ptrscanlist->channel = (ptrscanlist->frequency -5000)/5;
+	else continue;
+	fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	ptrscanlist++;
+	}
+if(ptrscanlist > ptrold) fprintf(stdout, "\n");
+ptrold = ptrscanlist;
+for(c = 5955; c < 6416; c++)
+	{
+	memset(&pwrq, 0, sizeof(pwrq));
+	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
+	pwrq.u.freq.flags = IW_FREQ_FIXED;
+	pwrq.u.freq.m = c;
+	pwrq.u.freq.e = 6;
+	if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) continue;
+	ptrscanlist->frequency = c;
+	if((ptrscanlist->frequency >= 5955) && (ptrscanlist->frequency <= 6415)) ptrscanlist->channel = (ptrscanlist->frequency -5950)/5;
+	else continue;
+	fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	ptrscanlist++;
+	}
+if(ptrscanlist > ptrold) fprintf(stdout, "\n");
+ptrscanlist->frequency = 0;
+ptrscanlist->channel = 0;
+return;
 }
 /*===========================================================================*/
 static inline bool opensocket(char *interfacename)
@@ -3173,7 +3240,9 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"short options:\n"
 	"-i <interface> : interface (monitor mode will be enabled by hcxlabtool)\n"
 	"                 default: first discovered interface\n"
-	"-c <digit>     : set channel (1,2,3, ...)\n"
+	"-c <digit>     : set channel (1,2,3, ...) or frequency (2437,2462,5600,...)\n"
+	"                 0 - 1000 treated as channel\n"
+	"                   > 1000 treated as frequency in MHz\n"
 	"-t <seconds>   : stay time on channel before hopping to the next channel\n"
 	"-m <interface> : set monitor mode by ioctl() system call and quit\n"
 	"-I             : show WLAN interfaces and quit\n"
@@ -3228,13 +3297,11 @@ int main(int argc, char *argv[])
 {
 static int auswahl;
 static int index;
+static int totvalue;
 static char *interfacename;
 static char *bpfcname;
 static char *essidlistname;
 static char *userscanlist;
-static char *tokptr;
-static int totvalue;
-static int cgc;
 static bool monitormodeflag;
 static bool showinterfaceflag;
 
@@ -3273,7 +3340,6 @@ rgaplistcountmax = RGAPLISTCOUNT;
 tvtot.tv_sec = 2147483647L;
 tvtot.tv_usec = 0;
 totvalue = 0;
-cgc = 0;
 weakcandidatelen = 8;
 strncpy(weakcandidate, weakcandidatedefault, 64);
 monitormodeflag = false;
@@ -3288,17 +3354,12 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		break;
 
 		case HCX_CHANNEL:
-		cgc = 0;
 		userscanlist = strndup(optarg, 4096);
-		tokptr = strtok(userscanlist, ",");
-		while((tokptr != NULL) && (cgc < CHANNEL_MAX))
+		if(userscanlist == NULL)
 			{
-			channelscanlist[cgc] = atoi(tokptr);
-			tokptr = strtok(NULL, ",");
-			cgc++;
+			fprintf(stderr, "no scanlist entry\n");
+			exit (EXIT_FAILURE);
 			}
-		channelscanlist[cgc] = 0;
-		if(userscanlist != NULL) free(userscanlist);
 		break;
 
 		case HCX_STAYTIME:
@@ -3468,13 +3529,18 @@ if(openpcapng() == false)
 	exit(EXIT_FAILURE);
 	}
 
-if(cgc == 0)
+if(userscanlist == NULL)
 	{
-	printf("detecting available channels\n");
-	cgc = getscanlist();
+	getscanlist();
+	if(ptrscanlist != scanlist) fdloopscan();
 	}
-if(cgc > 1) fdloopscan();
-else fdloop();
+else
+	{
+	getchannel(userscanlist);
+	free(userscanlist);
+	if(ptrscanlist == scanlist +1) fdloop();
+	else if(ptrscanlist > scanlist +1) fdloopscan();
+	}
 
 globalclose();
 fprintf(stdout, "\n%d error(s) encountered\n", errorcount);
