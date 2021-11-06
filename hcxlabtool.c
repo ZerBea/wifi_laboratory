@@ -105,7 +105,7 @@ static uint8_t hdradiotap[] =
 #define HDRRT_SIZE sizeof(hdradiotap)
 
 static int csc;
-static int channelscanlist[1000];
+static int channelscanlist[CHANNEL_MAX];
 
 static char weakcandidate[64];
 
@@ -3292,7 +3292,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		cgc = 0;
 		userscanlist = strndup(optarg, 4096);
 		tokptr = strtok(userscanlist, ",");
-		while((tokptr != NULL) && (cgc < 1000))
+		while((tokptr != NULL) && (cgc < CHANNEL_MAX))
 			{
 			channelscanlist[cgc] = atoi(tokptr);
 			tokptr = strtok(NULL, ",");

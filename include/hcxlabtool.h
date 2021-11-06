@@ -22,6 +22,8 @@
 #define ERROR_MAX		100
 #define WATCHDOG		600
 
+#define CHANNEL_MAX		256
+
 #define M2ATTEMPTS		10
 
 #define ESSID_LEN_MAX		32
