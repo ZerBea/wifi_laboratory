@@ -2401,8 +2401,9 @@ memset(&pwrq, 0, sizeof(pwrq));
 memcpy(pwrq.ifr_name, ifname, IFNAMSIZ);
 pwrq.u.freq.flags = IW_FREQ_FIXED;
 pwrq.u.freq.m = channelscanlist[csc];
-pwrq.u.freq.e = 0;
+if(channelscanlist[csc] > 1000) pwrq.u.freq.e = 6;
 if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) return false;
+if(ioctl(fd_socket, SIOCGIWFREQ, &pwrq) < 0) return false;
 return true;
 }
 /*===========================================================================*/
@@ -3174,7 +3175,9 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"short options:\n"
 	"-i <interface> : interface (monitor mode will be enabled by hcxlabtool)\n"
 	"                 default: first discovered interface\n"
-	"-c <digit>     : set channel (1,2,3, ...)\n"
+	"-c <digit>     : set channel (1,2,3, ...) or frequency (2437,2462,5600,...)\n"
+	"                 0 - 1000 treated as channel\n"
+	"                   > 1000 treated as frequency in MHz\n"
 	"-t <seconds>   : stay time on channel before hopping to the next channel\n"
 	"-m <interface> : set monitor mode by ioctl() system call and quit\n"
 	"-I             : show WLAN interfaces and quit\n"
