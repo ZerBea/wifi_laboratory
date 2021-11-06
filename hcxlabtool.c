@@ -2665,8 +2665,8 @@ while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 	pwrq.u.freq.m = atoi(tokptr);
 	tokptr = strtok(NULL, ",");
 	if(pwrq.u.freq.m > 1000) pwrq.u.freq.e = 6;
-	if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) return;
-	if(ioctl(fd_socket , SIOCGIWFREQ, &pwrq) < 0) return;
+	if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
+	if(ioctl(fd_socket, SIOCGIWFREQ, &pwrq) < 0) continue;
 	ptrscanlist->frequency = pwrq.u.freq.m;
 	if((pwrq.u.freq.m >= 2407) && (pwrq.u.freq.m <= 2474)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
 	else if((pwrq.u.freq.m >= 2481) && (pwrq.u.freq.m <= 2487)) ptrscanlist->channel = (pwrq.u.freq.m -2412)/5;
@@ -2697,7 +2697,7 @@ for(c = 2407; c < 2488; c++)
 	pwrq.u.freq.flags = IW_FREQ_FIXED;
 	pwrq.u.freq.m = c;
 	pwrq.u.freq.e = 6;
-	if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) continue;
+	if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
 	ptrscanlist->frequency = c;
 	if((ptrscanlist->frequency >= 2407) && (ptrscanlist->frequency <= 2474)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
 	else if((ptrscanlist->frequency >= 2481) && (ptrscanlist->frequency <= 2487)) ptrscanlist->channel = (ptrscanlist->frequency -2412)/5;
