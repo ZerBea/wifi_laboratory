@@ -2652,14 +2652,17 @@ return len;
 }
 /*===========================================================================*/
 /*===========================================================================*/
-static inline void getchannel(char *userscanlist)
+static inline void getchannel(char *scanlistin)
 {
 static int lf;
 static struct iwreq pwrq;
+static char *scanlistdup;
 static char *tokptr;
 
 fprintf(stdout, "get frequency from interface %s:\n", ifname);
-tokptr = strtok(userscanlist, ",");
+scanlistdup = strndup(scanlistin, 4096);
+if(scanlistdup == NULL) return;
+tokptr = strtok(scanlistdup, ",");
 ptrscanlist = scanlist;
 lf = 1;
 while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
@@ -2693,6 +2696,7 @@ while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 if((ptrscanlist > scanlist) && (lf > 1)) fprintf(stdout, "\n");
 ptrscanlist->frequency = 0;
 ptrscanlist->channel = 0;
+free(scanlistdup);
 return;
 }
 /*===========================================================================*/
@@ -3407,12 +3411,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		break;
 
 		case HCX_CHANNEL:
-		userscanlist = strndup(optarg, 4096);
-		if(userscanlist == NULL)
-			{
-			fprintf(stderr, "no scanlist entry\n");
-			exit (EXIT_FAILURE);
-			}
+		userscanlist = optarg;
 		break;
 
 		case HCX_SHOW_CHANNEL:
@@ -3596,7 +3595,6 @@ else if(userscanlist == NULL)
 else
 	{
 	getchannel(userscanlist);
-	free(userscanlist);
 	if(ptrscanlist == scanlist +1) fdloop();
 	else if(ptrscanlist > scanlist +1) fdloopscan();
 	else fprintf(stderr, "interface doesn't support selected frequencies/channels\n");
