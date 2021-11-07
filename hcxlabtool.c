@@ -2501,7 +2501,6 @@ static struct timespec tsfd;
 static struct timespec sleepled;
 
 lasterrorcount = 0;
-fprintf(stdout, "%s entered loop on %d/%d\n", ifname, scanlist->frequency, scanlist->channel);
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
 tsfd.tv_sec = 0;
@@ -2659,7 +2658,7 @@ static int lf;
 static struct iwreq pwrq;
 static char *tokptr;
 
-fprintf(stdout, "get frequency range from interface %s:\n", ifname);
+fprintf(stdout, "get frequency from interface %s:\n", ifname);
 tokptr = strtok(userscanlist, ",");
 ptrscanlist = scanlist;
 lf = 1;
