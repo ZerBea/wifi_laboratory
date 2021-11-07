@@ -3591,6 +3591,7 @@ else if(userscanlist == NULL)
 	{
 	getscanlist();
 	if(ptrscanlist != scanlist) fdloopscan();
+	else fprintf(stderr, "interface doesn't support frequency scan\n");
 	}
 else
 	{
@@ -3598,6 +3599,7 @@ else
 	free(userscanlist);
 	if(ptrscanlist == scanlist +1) fdloop();
 	else if(ptrscanlist > scanlist +1) fdloopscan();
+	else fprintf(stderr, "interface doesn't support selected frequencies/channels\n");
 	}
 
 globalclose();
