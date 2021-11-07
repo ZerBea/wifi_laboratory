@@ -3288,6 +3288,9 @@ printf("%s %s  (C) %s ZeroBeat\n"
 	"                 channel numbers are not longer unique\n"
 	"                 on 5GHz and GGhz it is recommended to use frequency instead of channel number\n"
 	"                 https://en.wikipedia.org/wiki/List_of_WLAN_channels\n"
+	"-C             : show available device channels and quit\n"
+	"                 if no channels are available, interface is probably in use or doesn't support monitor mode\n"
+	"                 if more channels are available, firmware, driver and regulatory domain is probably patched\n"
 	"-t <seconds>   : stay time on channel before hopping to the next channel\n"
 	"-m <interface> : set monitor mode by ioctl() system call and quit\n"
 	"-I             : show WLAN interfaces and quit\n"
@@ -3349,9 +3352,10 @@ static char *essidlistname;
 static char *userscanlist;
 static bool monitormodeflag;
 static bool showinterfaceflag;
+static bool showchannelflag;
 
 static const char *weakcandidatedefault = "12345678";
-static const char *short_options = "i:c:t:m:Ihv";
+static const char *short_options = "i:c:t:m:IChv";
 static const struct option long_options[] =
 {
 	{"gpio_button",			required_argument,	NULL,	HCX_GPIO_BUTTON},
@@ -3389,6 +3393,7 @@ weakcandidatelen = 8;
 strncpy(weakcandidate, weakcandidatedefault, 64);
 monitormodeflag = false;
 showinterfaceflag = false;
+showchannelflag = false;
 
 while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) != -1)
 	{
@@ -3405,6 +3410,10 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 			fprintf(stderr, "no scanlist entry\n");
 			exit (EXIT_FAILURE);
 			}
+		break;
+
+		case HCX_SHOW_CHANNEL:
+		showchannelflag = true;
 		break;
 
 		case HCX_STAYTIME:
@@ -3574,7 +3583,8 @@ if(openpcapng() == false)
 	exit(EXIT_FAILURE);
 	}
 
-if(userscanlist == NULL)
+if(showchannelflag == true) getscanlist();
+else if(userscanlist == NULL)
 	{
 	getscanlist();
 	if(ptrscanlist != scanlist) fdloopscan();

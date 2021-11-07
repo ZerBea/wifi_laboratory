@@ -10,9 +10,9 @@
 #define HCX_M2ATTEMPT		7
 #define HCX_TOT			8
 #define HCX_WEAKCANDIDATE	9
-
 #define HCX_INTERFACE_NAME	'i'
 #define HCX_CHANNEL		'c'
+#define HCX_SHOW_CHANNEL	'C'
 #define HCX_STAYTIME		't'
 #define HCX_SET_MONITORMODE	'm'
 #define HCX_SHOW_INTERFACES	'I'
