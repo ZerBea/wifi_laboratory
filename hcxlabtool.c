@@ -37,6 +37,7 @@ static uint64_t mytime;
 static int staytime;
 static uint32_t m2attempts;
 
+static scanlist_t *ptrscanlist;
 static aplist_t *aplist;
 static aplist_t *apm2list;
 static rgaplist_t *rgaplist;
@@ -105,7 +106,6 @@ static uint8_t hdradiotap[] =
 #define HDRRT_SIZE sizeof(hdradiotap)
 
 static scanlist_t scanlist[SCANLIST_MAX];
-static scanlist_t *ptrscanlist;
 
 static char weakcandidate[64];
 
