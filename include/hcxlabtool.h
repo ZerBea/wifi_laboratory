@@ -1,4 +1,4 @@
-#define VERSIONTAG		"0.1.0"
+#define VERSIONTAG		"0.5.0"
 #define VERSIONYEAR		"2021"
 #define VERSIONNAME		"hcxlabtool"
 
