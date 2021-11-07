@@ -59,6 +59,7 @@ static bool wantstopflag;
 static int gpiostatusled;
 static int gpiobutton;
 static int errorcount;
+static int lasterrorcount;
 
 static enhanced_packet_block_t *epbhdr;
 static enhanced_packet_block_t *epbhdrown;
@@ -105,7 +106,7 @@ static uint8_t hdradiotap[] =
 };
 #define HDRRT_SIZE sizeof(hdradiotap)
 
-static scanlist_t scanlist[SCANLIST_MAX];
+static scanlist_t scanlist[SCANLIST_MAX +1];
 
 static char weakcandidate[64];
 
@@ -131,16 +132,14 @@ return;
 /*===========================================================================*/
 static inline void debugmac2(uint8_t *mac1, uint8_t *mac2, char *message)
 {
-static int sp = 0;
 static uint32_t p;
-static char *leer = "   ";
 
 for(p = 0; p < 6; p++) printf("%02x", mac1[p]);
 printf(" ");
 for(p = 0; p < 6; p++) printf("%02x", mac2[p]);
-if(ptrscanlist->channel < 100) sp = 1;
-if(ptrscanlist->channel < 10) sp++;
-printf(" %4d/%d%.*s %s\n", ptrscanlist->frequency, ptrscanlist->channel, sp, leer, message);
+if(ptrscanlist->channel >= 100) printf(" %4d/%d %s\n", ptrscanlist->frequency, ptrscanlist->channel, message);
+else if(ptrscanlist->channel >= 10) printf(" %4d/%d  %s\n", ptrscanlist->frequency, ptrscanlist->channel, message);
+else printf(" %4d/%d   %s\n", ptrscanlist->frequency, ptrscanlist->channel, message);
 return;
 }
 /*===========================================================================*/
@@ -2292,6 +2291,7 @@ rthl = le16toh(rth->it_len);
 if(rthl > packetlen)
 	{
 	errorcount++;
+	printf("debug error 6\n");
 	return;
 	}
 rthp = le32toh(rth->it_present);
@@ -2417,6 +2417,7 @@ static fd_set readfds;
 static struct timespec tsfd;
 static struct timespec sleepled;
 
+lasterrorcount = 0;
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
 tsfd.tv_sec = 0;
@@ -2462,7 +2463,8 @@ while(wantstopflag == false)
 	if((tv.tv_sec -tvold.tv_sec) >= staytime)
 		{
 		#ifdef STATUSOUT
-		if(errorcount > 0) printf("ERROR: %d\n", errorcount);
+		if(errorcount > lasterrorcount) printf("ERROR: %d\n", errorcount);
+		lasterrorcount = errorcount;
 		#endif
 		tvold.tv_sec = tv.tv_sec;
 		ptrscanlist++;
@@ -2498,6 +2500,7 @@ static fd_set readfds;
 static struct timespec tsfd;
 static struct timespec sleepled;
 
+lasterrorcount = 0;
 fprintf(stdout, "%s entered loop on %d/%d\n", ifname, scanlist->frequency, scanlist->channel);
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
@@ -2527,7 +2530,8 @@ while(wantstopflag == false)
 	if((tv.tv_sec -tvold.tv_sec) >= LEDFLASHINTERVAL)
 		{
 		#ifdef STATUSOUT
-		if(errorcount > 0) printf("ERROR: %d\n", errorcount);
+		if(errorcount > lasterrorcount) printf("ERROR: %d\n", errorcount);
+		lasterrorcount = errorcount;
 		#endif
 		tvold.tv_sec = tv.tv_sec;
 		send_beacon_wildcard();
@@ -2651,12 +2655,14 @@ return len;
 /*===========================================================================*/
 static inline void getchannel(char *userscanlist)
 {
+static int lf;
 static struct iwreq pwrq;
 static char *tokptr;
 
 fprintf(stdout, "get frequency range from interface %s:\n", ifname);
 tokptr = strtok(userscanlist, ",");
 ptrscanlist = scanlist;
+lf = 1;
 while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 	{
 	memset(&pwrq, 0, sizeof(pwrq));
@@ -2673,10 +2679,18 @@ while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 	else if((pwrq.u.freq.m >= 5005) && (pwrq.u.freq.m <= 5980)) ptrscanlist->channel = (pwrq.u.freq.m -5000)/5;
 	else if((pwrq.u.freq.m >= 5955) && (pwrq.u.freq.m <= 6415)) ptrscanlist->channel = (pwrq.u.freq.m -5950)/5;
 	else continue;
-	fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	if(ptrscanlist->channel >= 100) fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	else if(ptrscanlist->channel >= 10) fprintf(stdout, "%d/%d  ", ptrscanlist->frequency, ptrscanlist->channel);
+	else fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	lf++;
+	if(lf > 14)
+		{
+		fprintf(stdout, "\n");
+		lf = 0;
+		}
 	ptrscanlist++;
 	}
-if(ptrscanlist > scanlist) fprintf(stdout, "\n");
+if((ptrscanlist > scanlist) && (lf > 0)) fprintf(stdout, "\n");
 ptrscanlist->frequency = 0;
 ptrscanlist->channel = 0;
 return;
@@ -2685,11 +2699,13 @@ return;
 static inline void getscanlist()
 {
 static int c;
+static int lf;
 static struct iwreq pwrq;
 static scanlist_t *ptrold;
 
 fprintf(stdout, "get frequency range from interface %s:\n", ifname);
 ptrscanlist = scanlist;
+lf = 1;
 for(c = 2407; c < 2488; c++)
 	{
 	memset(&pwrq, 0, sizeof(pwrq));
@@ -2702,11 +2718,20 @@ for(c = 2407; c < 2488; c++)
 	if((ptrscanlist->frequency >= 2407) && (ptrscanlist->frequency <= 2474)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
 	else if((ptrscanlist->frequency >= 2481) && (ptrscanlist->frequency <= 2487)) ptrscanlist->channel = (ptrscanlist->frequency -2412)/5;
 	else continue;
-	fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	if(ptrscanlist->channel >= 100) fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	else if(ptrscanlist->channel >= 10) fprintf(stdout, "%d/%d  ", ptrscanlist->frequency, ptrscanlist->channel);
+	else fprintf(stdout, "%d/%d   ", ptrscanlist->frequency, ptrscanlist->channel);
+	lf++;
+	if(lf > 14)
+		{
+		fprintf(stdout, "\n");
+		lf = 0;
+		}
 	ptrscanlist++;
 	}
-if(ptrscanlist > scanlist) fprintf(stdout, "\n");
+if((ptrscanlist > scanlist) && (lf > 0)) fprintf(stdout, "\n");
 ptrold = ptrscanlist;
+lf = 1;
 for(c = 5005; c < 5981; c++)
 	{
 	memset(&pwrq, 0, sizeof(pwrq));
@@ -2718,11 +2743,20 @@ for(c = 5005; c < 5981; c++)
 	ptrscanlist->frequency = c;
 	if((ptrscanlist->frequency >= 5005) && (ptrscanlist->frequency <= 5980)) ptrscanlist->channel = (ptrscanlist->frequency -5000)/5;
 	else continue;
-	fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	if(ptrscanlist->channel >= 100) fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	else if(ptrscanlist->channel >= 10) fprintf(stdout, "%d/%d  ", ptrscanlist->frequency, ptrscanlist->channel);
+	else fprintf(stdout, "%d/%d   ", ptrscanlist->frequency, ptrscanlist->channel);
+	lf++;
+	if(lf > 14)
+		{
+		fprintf(stdout, "\n");
+		lf = 0;
+		}
 	ptrscanlist++;
 	}
-if(ptrscanlist > ptrold) fprintf(stdout, "\n");
+if((ptrscanlist > ptrold) && (lf > 0)) fprintf(stdout, "\n");
 ptrold = ptrscanlist;
+lf = 1;
 for(c = 5955; c < 6416; c++)
 	{
 	memset(&pwrq, 0, sizeof(pwrq));
@@ -2734,10 +2768,18 @@ for(c = 5955; c < 6416; c++)
 	ptrscanlist->frequency = c;
 	if((ptrscanlist->frequency >= 5955) && (ptrscanlist->frequency <= 6415)) ptrscanlist->channel = (ptrscanlist->frequency -5950)/5;
 	else continue;
-	fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	if(ptrscanlist->channel >= 100) fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
+	else if(ptrscanlist->channel >= 10) fprintf(stdout, "%d/%d  ", ptrscanlist->frequency, ptrscanlist->channel);
+	else fprintf(stdout, "%d/%d   ", ptrscanlist->frequency, ptrscanlist->channel);
+	lf++;
+	if(lf > 14)
+		{
+		fprintf(stdout, "\n");
+		lf = 0;
+		}
 	ptrscanlist++;
 	}
-if(ptrscanlist > ptrold) fprintf(stdout, "\n");
+if((ptrscanlist > ptrold) && (lf > 0)) fprintf(stdout, "\n");
 ptrscanlist->frequency = 0;
 ptrscanlist->channel = 0;
 return;
