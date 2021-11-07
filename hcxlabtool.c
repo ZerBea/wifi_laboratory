@@ -2686,11 +2686,11 @@ while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 	if(lf > 14)
 		{
 		fprintf(stdout, "\n");
-		lf = 0;
+		lf = 1;
 		}
 	ptrscanlist++;
 	}
-if((ptrscanlist > scanlist) && (lf > 0)) fprintf(stdout, "\n");
+if((ptrscanlist > scanlist) && (lf > 1)) fprintf(stdout, "\n");
 ptrscanlist->frequency = 0;
 ptrscanlist->channel = 0;
 return;
@@ -2725,11 +2725,11 @@ for(c = 2407; c < 2488; c++)
 	if(lf > 14)
 		{
 		fprintf(stdout, "\n");
-		lf = 0;
+		lf = 1;
 		}
 	ptrscanlist++;
 	}
-if((ptrscanlist > scanlist) && (lf > 0)) fprintf(stdout, "\n");
+if((ptrscanlist > scanlist) && (lf > 1)) fprintf(stdout, "\n");
 ptrold = ptrscanlist;
 lf = 1;
 for(c = 5005; c < 5981; c++)
@@ -2750,11 +2750,11 @@ for(c = 5005; c < 5981; c++)
 	if(lf > 14)
 		{
 		fprintf(stdout, "\n");
-		lf = 0;
+		lf = 1;
 		}
 	ptrscanlist++;
 	}
-if((ptrscanlist > ptrold) && (lf > 0)) fprintf(stdout, "\n");
+if((ptrscanlist > ptrold) && (lf > 1)) fprintf(stdout, "\n");
 ptrold = ptrscanlist;
 lf = 1;
 for(c = 5955; c < 6416; c++)
@@ -2775,11 +2775,11 @@ for(c = 5955; c < 6416; c++)
 	if(lf > 14)
 		{
 		fprintf(stdout, "\n");
-		lf = 0;
+		lf = 1;
 		}
 	ptrscanlist++;
 	}
-if((ptrscanlist > ptrold) && (lf > 0)) fprintf(stdout, "\n");
+if((ptrscanlist > ptrold) && (lf > 1)) fprintf(stdout, "\n");
 ptrscanlist->frequency = 0;
 ptrscanlist->channel = 0;
 return;
