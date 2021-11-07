@@ -2679,7 +2679,7 @@ while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 	else if((pwrq.u.freq.m >= 5005) && (pwrq.u.freq.m <= 5980)) ptrscanlist->channel = (pwrq.u.freq.m -5000)/5;
 	else if((pwrq.u.freq.m >= 5955) && (pwrq.u.freq.m <= 6415)) ptrscanlist->channel = (pwrq.u.freq.m -5950)/5;
 	else continue;
-	if(ptrscanlist->channel) > 255) continue;
+	if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
 	if(ptrscanlist->channel >= 100) fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
 	else if(ptrscanlist->channel >= 10) fprintf(stdout, "%d/%d  ", ptrscanlist->frequency, ptrscanlist->channel);
 	else fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
@@ -2719,7 +2719,7 @@ for(c = 2407; c < 2488; c++)
 	if((ptrscanlist->frequency >= 2407) && (ptrscanlist->frequency <= 2474)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
 	else if((ptrscanlist->frequency >= 2481) && (ptrscanlist->frequency <= 2487)) ptrscanlist->channel = (ptrscanlist->frequency -2412)/5;
 	else continue;
-	if(ptrscanlist->channel) > 255) continue;
+	if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
 	if(ptrscanlist->channel >= 100) fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
 	else if(ptrscanlist->channel >= 10) fprintf(stdout, "%d/%d  ", ptrscanlist->frequency, ptrscanlist->channel);
 	else fprintf(stdout, "%d/%d   ", ptrscanlist->frequency, ptrscanlist->channel);
@@ -2745,7 +2745,7 @@ for(c = 5005; c < 5981; c++)
 	ptrscanlist->frequency = c;
 	if((ptrscanlist->frequency >= 5005) && (ptrscanlist->frequency <= 5980)) ptrscanlist->channel = (ptrscanlist->frequency -5000)/5;
 	else continue;
-	if(ptrscanlist->channel) > 255) continue;
+	if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
 	if(ptrscanlist->channel >= 100) fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
 	else if(ptrscanlist->channel >= 10) fprintf(stdout, "%d/%d  ", ptrscanlist->frequency, ptrscanlist->channel);
 	else fprintf(stdout, "%d/%d   ", ptrscanlist->frequency, ptrscanlist->channel);
@@ -2771,7 +2771,7 @@ for(c = 5955; c < 6416; c++)
 	ptrscanlist->frequency = c;
 	if((ptrscanlist->frequency >= 5955) && (ptrscanlist->frequency <= 6415)) ptrscanlist->channel = (ptrscanlist->frequency -5950)/5;
 	else continue;
-	if(ptrscanlist->channel) > 255) continue;
+	if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
 	if(ptrscanlist->channel >= 100) fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
 	else if(ptrscanlist->channel >= 10) fprintf(stdout, "%d/%d  ", ptrscanlist->frequency, ptrscanlist->channel);
 	else fprintf(stdout, "%d/%d   ", ptrscanlist->frequency, ptrscanlist->channel);
