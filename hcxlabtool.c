@@ -2712,6 +2712,7 @@ ptrscanlist = scanlist;
 lf = 1;
 for(c = 2407; c < 2488; c++)
 	{
+	if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
 	memset(&pwrq, 0, sizeof(pwrq));
 	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
 	pwrq.u.freq.flags = IW_FREQ_FIXED;
@@ -2739,6 +2740,7 @@ ptrold = ptrscanlist;
 lf = 1;
 for(c = 5005; c < 5981; c++)
 	{
+	if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
 	memset(&pwrq, 0, sizeof(pwrq));
 	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
 	pwrq.u.freq.flags = IW_FREQ_FIXED;
@@ -2765,6 +2767,7 @@ ptrold = ptrscanlist;
 lf = 1;
 for(c = 5955; c < 6416; c++)
 	{
+	if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
 	memset(&pwrq, 0, sizeof(pwrq));
 	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
 	pwrq.u.freq.flags = IW_FREQ_FIXED;
