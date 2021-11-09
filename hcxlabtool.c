@@ -121,12 +121,12 @@ static inline void debugmac3(uint8_t *mac1, uint8_t *mac2, uint8_t *mac3, char *
 {
 static uint32_t p;
 
-for(p = 0; p < 6; p++) printf("%02x", mac1[p]);
-printf(" ");
-for(p = 0; p < 6; p++) printf("%02x", mac2[p]);
-printf(" ");
-for(p = 0; p < 6; p++) printf("%02x", mac3[p]);
-printf(" %s\n", message);
+for(p = 0; p < 6; p++) fprintf(stdout, "%02x", mac1[p]);
+fprintf(stdout, " ");
+for(p = 0; p < 6; p++) fprintf(stdout, "%02x", mac2[p]);
+fprintf(stdout, " ");
+for(p = 0; p < 6; p++) fprintf(stdout, "%02x", mac3[p]);
+fprintf(stdout, " %s\n", message);
 return;
 }
 /*===========================================================================*/
@@ -134,12 +134,10 @@ static inline void debugmac2(uint8_t *mac1, uint8_t *mac2, char *message)
 {
 static uint32_t p;
 
-for(p = 0; p < 6; p++) printf("%02x", mac1[p]);
-printf(" ");
-for(p = 0; p < 6; p++) printf("%02x", mac2[p]);
-if(ptrscanlist->channel >= 100) printf(" %4d/%d %s\n", ptrscanlist->frequency, ptrscanlist->channel, message);
-else if(ptrscanlist->channel >= 10) printf(" %4d/%d  %s\n", ptrscanlist->frequency, ptrscanlist->channel, message);
-else printf(" %4d/%d   %s\n", ptrscanlist->frequency, ptrscanlist->channel, message);
+for(p = 0; p < 6; p++) fprintf(stdout, "%02x", mac1[p]);
+fprintf(stdout, " ");
+for(p = 0; p < 6; p++) fprintf(stdout, "%02x", mac2[p]);
+fprintf(stdout, " %4d/%3d %s\n", ptrscanlist->frequency, ptrscanlist->channel, message);
 return;
 }
 /*===========================================================================*/
@@ -147,8 +145,8 @@ static inline void debugmac1(uint8_t *mac1, char *message)
 {
 static uint32_t p;
 
-for(p = 0; p < 6; p++) printf("%02x", mac1[p]);
-printf(" %s\n", message);
+for(p = 0; p < 6; p++) fprintf(stdout, "%02x", mac1[p]);
+fprintf(stdout, " %s\n", message);
 return;
 }
 /*===========================================================================*/
@@ -1677,12 +1675,12 @@ if(payloadlen < SAEAUTHENTICATIONFRAME_SIZE) return;
 if(saeauth->statuscode != AUTH_OK) return;
 if((saeauth->messagetype) == SAE_MT_COMMIT)
 	{
-//	printf("%d\n", macfrx->sequence >> 4);
+//	fprintf(stdout, "%d\n", macfrx->sequence >> 4);
 	}
 
 if((saeauth->messagetype) == SAE_MT_CONFIRM)
 	{
-//	printf("%d\n", macfrx->sequence >> 4);
+//	fprintf(stdout, "%d\n", macfrx->sequence >> 4);
 	}
 writeepb(fd_pcapng);
 return;
@@ -2291,7 +2289,6 @@ rthl = le16toh(rth->it_len);
 if(rthl > packetlen)
 	{
 	errorcount++;
-	printf("debug error 6\n");
 	return;
 	}
 rthp = le32toh(rth->it_present);
@@ -2463,7 +2460,7 @@ while(wantstopflag == false)
 	if((tv.tv_sec -tvold.tv_sec) >= staytime)
 		{
 		#ifdef STATUSOUT
-		if(errorcount > lasterrorcount) printf("ERROR: %d\n", errorcount);
+		if(errorcount > lasterrorcount) fprintf(stderr, "ERROR: %d\n", errorcount);
 		lasterrorcount = errorcount;
 		#endif
 		tvold.tv_sec = tv.tv_sec;
@@ -2529,7 +2526,7 @@ while(wantstopflag == false)
 	if((tv.tv_sec -tvold.tv_sec) >= LEDFLASHINTERVAL)
 		{
 		#ifdef STATUSOUT
-		if(errorcount > lasterrorcount) printf("ERROR: %d\n", errorcount);
+		if(errorcount > lasterrorcount) fprintf(stderr, "ERROR: %d\n", errorcount);
 		lasterrorcount = errorcount;
 		#endif
 		tvold.tv_sec = tv.tv_sec;
@@ -2654,17 +2651,14 @@ return len;
 /*===========================================================================*/
 static inline void getchannel(char *scanlistin)
 {
-static int lf;
 static struct iwreq pwrq;
 static char *scanlistdup;
 static char *tokptr;
 
-fprintf(stdout, "get frequency from interface %s:\n", ifname);
 scanlistdup = strndup(scanlistin, 4096);
 if(scanlistdup == NULL) return;
 tokptr = strtok(scanlistdup, ",");
 ptrscanlist = scanlist;
-lf = 1;
 while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 	{
 	memset(&pwrq, 0, sizeof(pwrq));
@@ -2682,18 +2676,8 @@ while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 	else if((pwrq.u.freq.m >= 5955) && (pwrq.u.freq.m <= 6415)) ptrscanlist->channel = (pwrq.u.freq.m -5950)/5;
 	else continue;
 	if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
-	if(ptrscanlist->channel >= 100) fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
-	else if(ptrscanlist->channel >= 10) fprintf(stdout, "%d/%d  ", ptrscanlist->frequency, ptrscanlist->channel);
-	else fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
-	lf++;
-	if(lf > 14)
-		{
-		fprintf(stdout, "\n");
-		lf = 1;
-		}
 	ptrscanlist++;
 	}
-if((ptrscanlist > scanlist) && (lf > 1)) fprintf(stdout, "\n");
 ptrscanlist->frequency = 0;
 ptrscanlist->channel = 0;
 free(scanlistdup);
@@ -2703,13 +2687,9 @@ return;
 static inline void getscanlist()
 {
 static int c;
-static int lf;
 static struct iwreq pwrq;
-static scanlist_t *ptrold;
 
-fprintf(stdout, "get frequency range from interface %s:\n", ifname);
 ptrscanlist = scanlist;
-lf = 1;
 for(c = 2407; c < 2488; c++)
 	{
 	if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
@@ -2724,20 +2704,8 @@ for(c = 2407; c < 2488; c++)
 	else if((ptrscanlist->frequency >= 2481) && (ptrscanlist->frequency <= 2487)) ptrscanlist->channel = (ptrscanlist->frequency -2412)/5;
 	else continue;
 	if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
-	if(ptrscanlist->channel >= 100) fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
-	else if(ptrscanlist->channel >= 10) fprintf(stdout, "%d/%d  ", ptrscanlist->frequency, ptrscanlist->channel);
-	else fprintf(stdout, "%d/%d   ", ptrscanlist->frequency, ptrscanlist->channel);
-	lf++;
-	if(lf > 14)
-		{
-		fprintf(stdout, "\n");
-		lf = 1;
-		}
 	ptrscanlist++;
 	}
-if((ptrscanlist > scanlist) && (lf > 1)) fprintf(stdout, "\n");
-ptrold = ptrscanlist;
-lf = 1;
 for(c = 5005; c < 5981; c++)
 	{
 	if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
@@ -2751,20 +2719,8 @@ for(c = 5005; c < 5981; c++)
 	if((ptrscanlist->frequency >= 5005) && (ptrscanlist->frequency <= 5980)) ptrscanlist->channel = (ptrscanlist->frequency -5000)/5;
 	else continue;
 	if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
-	if(ptrscanlist->channel >= 100) fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
-	else if(ptrscanlist->channel >= 10) fprintf(stdout, "%d/%d  ", ptrscanlist->frequency, ptrscanlist->channel);
-	else fprintf(stdout, "%d/%d   ", ptrscanlist->frequency, ptrscanlist->channel);
-	lf++;
-	if(lf > 14)
-		{
-		fprintf(stdout, "\n");
-		lf = 1;
-		}
 	ptrscanlist++;
 	}
-if((ptrscanlist > ptrold) && (lf > 1)) fprintf(stdout, "\n");
-ptrold = ptrscanlist;
-lf = 1;
 for(c = 5955; c < 6416; c++)
 	{
 	if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
@@ -2778,18 +2734,8 @@ for(c = 5955; c < 6416; c++)
 	if((ptrscanlist->frequency >= 5955) && (ptrscanlist->frequency <= 6415)) ptrscanlist->channel = (ptrscanlist->frequency -5950)/5;
 	else continue;
 	if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
-	if(ptrscanlist->channel >= 100) fprintf(stdout, "%d/%d ", ptrscanlist->frequency, ptrscanlist->channel);
-	else if(ptrscanlist->channel >= 10) fprintf(stdout, "%d/%d  ", ptrscanlist->frequency, ptrscanlist->channel);
-	else fprintf(stdout, "%d/%d   ", ptrscanlist->frequency, ptrscanlist->channel);
-	lf++;
-	if(lf > 14)
-		{
-		fprintf(stdout, "\n");
-		lf = 1;
-		}
 	ptrscanlist++;
 	}
-if((ptrscanlist > ptrold) && (lf > 1)) fprintf(stdout, "\n");
 ptrscanlist->frequency = 0;
 ptrscanlist->channel = 0;
 return;
@@ -3258,7 +3204,7 @@ static char drivername[32];
 if(getifaddrs(&ifaddr) == -1) perror("failed to get ifaddrs");
 else
 	{
-	printf("wlan interfaces:\n");
+	fprintf(stdout, "wlan interfaces:\n");
 	for(ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
 		{
 		if((ifa->ifa_addr) && (ifa->ifa_addr->sa_family == AF_PACKET))
@@ -3266,8 +3212,8 @@ else
 			memset(&drivername, 0, 32);
 			if(get_perm_addr(ifa->ifa_name, permaddr, drivername) == true)
 				{
-				for (p = 0; p < 6; p++) printf("%02x", (permaddr[p]));
-				printf(" %s (%s)\n", ifa->ifa_name, drivername);
+				for (p = 0; p < 6; p++) fprintf(stdout, "%02x", (permaddr[p]));
+				fprintf(stdout, " %s (%s)\n", ifa->ifa_name, drivername);
 				}
 			}
 		}
@@ -3279,14 +3225,14 @@ return;
 __attribute__ ((noreturn))
 static inline void version(char *eigenname)
 {
-printf("%s %s (C) %s ZeroBeat\n", eigenname, VERSIONTAG, VERSIONYEAR);
+fprintf(stdout, "%s %s (C) %s ZeroBeat\n", eigenname, VERSIONTAG, VERSIONYEAR);
 exit(EXIT_SUCCESS);
 }
 /*---------------------------------------------------------------------------*/
 __attribute__ ((noreturn))
 static inline void usage(char *eigenname)
 {
-printf("%s %s  (C) %s ZeroBeat\n"
+fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"usage  : %s <options>\n"
 	"\n"
 	"short options:\n"
@@ -3346,7 +3292,7 @@ exit(EXIT_SUCCESS);
 __attribute__ ((noreturn))
 static inline void usageerror(char *eigenname)
 {
-printf("%s %s (C) %s by ZeroBeat\n"
+fprintf(stdout, "%s %s (C) %s by ZeroBeat\n"
 	"usage: %s -h for help\n", eigenname, VERSIONTAG, VERSIONYEAR, eigenname);
 exit(EXIT_FAILURE);
 }
@@ -3550,7 +3496,7 @@ if(monitormodeflag == true)
 	memset(&ifmac, 0 , sizeof(ifmac));
 	if(opensocket(interfacename) == true)
 		{
-		printf("monitor mode activated\n");
+		fprintf(stdout, "monitor mode activated\n");
 		return EXIT_SUCCESS;
 		}
 	else
