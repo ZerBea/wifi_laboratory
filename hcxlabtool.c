@@ -137,7 +137,7 @@ static uint32_t p;
 for(p = 0; p < 6; p++) fprintf(stdout, "%02x", mac1[p]);
 fprintf(stdout, " ");
 for(p = 0; p < 6; p++) fprintf(stdout, "%02x", mac2[p]);
-fprintf(stdout, " %4d/%3d %s\n", ptrscanlist->frequency, ptrscanlist->channel, message);
+fprintf(stdout, " %4d %3d %s\n", ptrscanlist->frequency, ptrscanlist->channel, message);
 return;
 }
 /*===========================================================================*/
