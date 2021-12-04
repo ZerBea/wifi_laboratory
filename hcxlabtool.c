@@ -2399,7 +2399,7 @@ static inline bool set_channel()
 static struct iwreq pwrq;
 
 memset(&pwrq, 0, sizeof(pwrq));
-memcpy(pwrq.ifr_name, ifname, IFNAMSIZ);
+memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
 pwrq.u.freq.flags = IW_FREQ_FIXED;
 pwrq.u.freq.m = ptrscanlist->frequency;
 pwrq.u.freq.e = 6;
@@ -2765,7 +2765,7 @@ for(c = 2407; c < 2488; c++)
 	exponent = pwrq.u.freq.e;
 
 	memset(&pwrq, 0, sizeof(pwrq));
-	memcpy(pwrq.ifr_name, ifname, IFNAMSIZ);
+	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
 	pwrq.u.txpower.value = -1;
 	pwrq.u.txpower.fixed = 1;
 	pwrq.u.txpower.disabled = 0;
@@ -2793,7 +2793,7 @@ for(c = 5005; c < 5981; c++)
 	exponent = pwrq.u.freq.e;
 
 	memset(&pwrq, 0, sizeof(pwrq));
-	memcpy(pwrq.ifr_name, ifname, IFNAMSIZ);
+	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
 	pwrq.u.txpower.value = -1;
 	pwrq.u.txpower.fixed = 1;
 	pwrq.u.txpower.disabled = 0;
@@ -2820,7 +2820,7 @@ for(c = 5955; c < 6416; c++)
 	exponent = pwrq.u.freq.e;
 
 	memset(&pwrq, 0, sizeof(pwrq));
-	memcpy(pwrq.ifr_name, ifname, IFNAMSIZ);
+	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
 	pwrq.u.txpower.value = -1;
 	pwrq.u.txpower.fixed = 1;
 	pwrq.u.txpower.disabled = 0;
@@ -2845,10 +2845,10 @@ static struct sockaddr_ll ll;
 static struct packet_mreq mr;
 static struct ethtool_perm_addr *epmaddr;
 
+memset(&ifname, 0, IFNAMSIZ +1);
 if(interfacename != NULL) strncpy(ifname, interfacename, IFNAMSIZ);
 else
 	{
-	memset(&ifname, 0, IFNAMSIZ);
 	if(getifaddrs(&ifaddr) == -1) return false;
 	for(ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
 		{
@@ -2860,7 +2860,7 @@ else
 				memcpy(&iwrinfo.ifr_name, ifa->ifa_name, IFNAMSIZ);
 				if(ioctl(fd_info, SIOCGIWNAME, &iwrinfo) != -1)
 					{
-					memcpy(ifname, ifa->ifa_name, IFNAMSIZ);
+					memcpy(&ifname, ifa->ifa_name, IFNAMSIZ);
 					break;
 					}
 				}
@@ -2922,7 +2922,7 @@ if((fd_socket = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) return false
 	ifr.ifr_data = (char*)epmaddr;
 	if(ioctl(fd_socket, SIOCETHTOOL, &ifr) < 0) return false;
 	if(epmaddr->size != 6) return false;
-	memcpy(ifmac, epmaddr->data, 6);
+	memcpy(&ifmac, epmaddr->data, 6);
 	free(epmaddr);
 	}
 return true;
@@ -3218,6 +3218,7 @@ wantstopflag = false;
 signal(SIGINT, programmende);
 return true;
 }
+/*===========================================================================*/
 static inline bool get_perm_addr(char *ifname, uint8_t *permaddr, char *drivername)
 {
 static int fd_info;
@@ -3232,7 +3233,7 @@ if((fd_info = socket(AF_INET, SOCK_STREAM, 0)) == -1)
 	return false;
 	}
 memset(&iwr, 0, sizeof(iwr));
-strncpy(iwr.ifr_name, ifname, IFNAMSIZ -1);
+memcpy(&iwr.ifr_name, ifname, IFNAMSIZ);
 if(ioctl(fd_info, SIOCGIWNAME, &iwr) < 0)
 	{
 #ifdef DEBUG
@@ -3250,7 +3251,7 @@ if(!epmaddr)
 	return false;
 	}
 memset(&ifr, 0, sizeof(ifr));
-strncpy(ifr.ifr_name, ifname, IFNAMSIZ -1);
+memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
 epmaddr->cmd = ETHTOOL_GPERMADDR;
 epmaddr->size = 6;
 ifr.ifr_data = (char*)epmaddr;
@@ -3269,7 +3270,7 @@ if(epmaddr->size != 6)
 	}
 memcpy(permaddr, epmaddr->data, 6);
 memset(&ifr, 0, sizeof(ifr));
-strncpy(ifr.ifr_name, ifname, IFNAMSIZ -1);
+memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
 drvinfo.cmd = ETHTOOL_GDRVINFO;
 ifr.ifr_data = (char*)&drvinfo;
 if(ioctl(fd_info, SIOCETHTOOL, &ifr) < 0)
@@ -3584,8 +3585,8 @@ if(getuid() != 0)
 
 if(monitormodeflag == true)
 	{
-	memset(&ifname, 0 , sizeof(ifname));
-	memset(&ifmac, 0 , sizeof(ifmac));
+	memset(&ifname, 0, IFNAMSIZ +1);
+	memset(&ifmac, 0, sizeof(ifmac));
 	if(opensocket(interfacename) == true)
 		{
 		fprintf(stdout, "monitor mode activated\n");
