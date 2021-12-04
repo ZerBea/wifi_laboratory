@@ -2846,6 +2846,7 @@ static struct packet_mreq mr;
 static struct ethtool_perm_addr *epmaddr;
 
 memset(&ifname, 0, IFNAMSIZ +1);
+memset(&ifmac, 0, sizeof(ifmac));
 if(interfacename != NULL) strncpy(ifname, interfacename, IFNAMSIZ);
 else
 	{
@@ -3450,6 +3451,11 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		{
 		case HCX_INTERFACE_NAME:
 		interfacename = optarg;
+		if(strlen(interfacename) > IFNAMSIZ)
+			{
+			fprintf(stderr, "interfacename > IFNAMSIZE\n");
+			exit (EXIT_FAILURE);
+			}
 		break;
 
 		case HCX_CHANNEL:
@@ -3551,6 +3557,11 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 
 		case HCX_SET_MONITORMODE:
 		interfacename = optarg;
+		if(strlen(interfacename) > IFNAMSIZ)
+			{
+			fprintf(stderr, "interfacename > IFNAMSIZE\n");
+			exit (EXIT_FAILURE);
+			}
 		monitormodeflag = true;
 		break;
 
@@ -3585,8 +3596,6 @@ if(getuid() != 0)
 
 if(monitormodeflag == true)
 	{
-	memset(&ifname, 0, IFNAMSIZ +1);
-	memset(&ifmac, 0, sizeof(ifmac));
 	if(opensocket(interfacename) == true)
 		{
 		fprintf(stdout, "monitor mode activated\n");
