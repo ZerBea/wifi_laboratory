@@ -2741,6 +2741,98 @@ ptrscanlist->channel = 0;
 return;
 }
 /*===========================================================================*/
+static inline void show_channels()
+{
+static int c;
+static struct iwreq pwrq;
+static int frequency;
+static int exponent;
+
+fprintf(stdout, "%s available frequencies, channels and tx power reported by driver:\n", ifname);
+for(c = 2407; c < 2488; c++)
+	{
+	memset(&pwrq, 0, sizeof(pwrq));
+	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
+	pwrq.u.freq.flags = IW_FREQ_FIXED;
+	pwrq.u.freq.m = c;
+	pwrq.u.freq.e = 6;
+	if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
+
+	memset(&pwrq, 0, sizeof(pwrq));
+	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
+	if(ioctl(fd_socket, SIOCGIWFREQ, &pwrq) < 0) continue;
+	frequency = pwrq.u.freq.m;
+	exponent = pwrq.u.freq.e;
+
+	memset(&pwrq, 0, sizeof(pwrq));
+	memcpy(pwrq.ifr_name, ifname, IFNAMSIZ);
+	pwrq.u.txpower.value = -1;
+	pwrq.u.txpower.fixed = 1;
+	pwrq.u.txpower.disabled = 0;
+	pwrq.u.txpower.flags = IW_TXPOW_DBM;
+	if(ioctl(fd_socket, SIOCGIWTXPOW, &pwrq) < 0) continue;
+
+	if((frequency >= 2407) && (frequency <= 2474)) fprintf(stdout, "%4dMHz %3d (%2d dBm)\n", c, (frequency -2407)/5, pwrq.u.txpower.value);
+	else if((frequency >= 2481) && (frequency <= 2487)) fprintf(stdout, "%4dMHz %3d (%2d dBm)\n", c, (frequency -2412)/5, pwrq.u.txpower.value);
+	else fprintf(stdout, "expected frequency %4dMHz reported frequency %4d and exponent %d (%2d dBm)\n", c, frequency, exponent, pwrq.u.txpower.value);
+	}
+
+for(c = 5005; c < 5981; c++)
+	{
+	memset(&pwrq, 0, sizeof(pwrq));
+	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
+	pwrq.u.freq.flags = IW_FREQ_FIXED;
+	pwrq.u.freq.m = c;
+	pwrq.u.freq.e = 6;
+	if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
+
+	memset(&pwrq, 0, sizeof(pwrq));
+	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
+	if(ioctl(fd_socket, SIOCGIWFREQ, &pwrq) < 0) continue;
+	frequency = pwrq.u.freq.m;
+	exponent = pwrq.u.freq.e;
+
+	memset(&pwrq, 0, sizeof(pwrq));
+	memcpy(pwrq.ifr_name, ifname, IFNAMSIZ);
+	pwrq.u.txpower.value = -1;
+	pwrq.u.txpower.fixed = 1;
+	pwrq.u.txpower.disabled = 0;
+	pwrq.u.txpower.flags = IW_TXPOW_DBM;
+	if(ioctl(fd_socket, SIOCGIWTXPOW, &pwrq) < 0) continue;
+
+	if((frequency >= 5005) && (frequency <= 5980)) fprintf(stdout, "%4dMHz %3d (%2d dBm)\n", c, (frequency -5000)/5, pwrq.u.txpower.value);
+	else fprintf(stdout, "expected frequency %4dMHz reported frequency %4d and exponent %d (%2d dBm)\n", c, frequency, exponent, pwrq.u.txpower.value);
+	}
+
+for(c = 5955; c < 6416; c++)
+	{
+	memset(&pwrq, 0, sizeof(pwrq));
+	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
+	pwrq.u.freq.flags = IW_FREQ_FIXED;
+	pwrq.u.freq.m = c;
+	pwrq.u.freq.e = 6;
+	if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
+
+	memset(&pwrq, 0, sizeof(pwrq));
+	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
+	if(ioctl(fd_socket, SIOCGIWFREQ, &pwrq) < 0) continue;
+	frequency = pwrq.u.freq.m;
+	exponent = pwrq.u.freq.e;
+
+	memset(&pwrq, 0, sizeof(pwrq));
+	memcpy(pwrq.ifr_name, ifname, IFNAMSIZ);
+	pwrq.u.txpower.value = -1;
+	pwrq.u.txpower.fixed = 1;
+	pwrq.u.txpower.disabled = 0;
+	pwrq.u.txpower.flags = IW_TXPOW_DBM;
+	if(ioctl(fd_socket, SIOCGIWTXPOW, &pwrq) < 0) continue;
+
+	if((frequency >= 5955) && (frequency <= 6415)) fprintf(stdout, "%4dMHz %3d (%2d dBm)\n", c, (frequency -5950)/5, pwrq.u.txpower.value);
+	else fprintf(stdout, "expected frequency %4dMHz reported frequency %4d and exponent %d (%2d dBm)\n", c, frequency, exponent, pwrq.u.txpower.value);
+	}
+return;
+}
+/*===========================================================================*/
 static inline bool opensocket(char *interfacename)
 {
 static int fd_info;
@@ -3534,7 +3626,7 @@ if(openpcapng() == false)
 	exit(EXIT_FAILURE);
 	}
 
-if(showchannelflag == true) getscanlist();
+if(showchannelflag == true) show_channels();
 else if(userscanlist == NULL)
 	{
 	getscanlist();
