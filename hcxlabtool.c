@@ -3006,15 +3006,16 @@ static char linein[RASPBERRY_INFO];
 
 cpuinfo = fopen("/proc/cpuinfo", "r");
 if(cpuinfo == NULL)
-{
+	{
 	perror("failed to retrieve cpuinfo");
 	return gpioperibase;
-}
+	}
 while(1)
 	{
 	if((len = fgetline(cpuinfo, RASPBERRY_INFO, linein)) == -1) break;
 	if(strstr(linein, "Raspberry Pi")) rpi = true;
 	}
+fclose(cpuinfo);
 if(rpi == false) return gpioperibase;
 iomem = fopen("/proc/iomem", "r");
 if(iomem == NULL)
@@ -3027,7 +3028,7 @@ while(1)
 	if((len = fgetline(iomem, RASPBERRY_INFO, linein)) == -1) break;
 	if(strstr(linein, ".gpio") != NULL)
 		{
-		if(linein[8] != '-') return gpioperibase;
+		if(linein[8] != '-') break;
 			{
 			linein[8] = 0;
 			gpioperibase = strtoul(linein, NULL, 16);
@@ -3035,6 +3036,7 @@ while(1)
 			}
 		}
 	}
+fclose(iomem);
 return gpioperibase;
 }
 /*===========================================================================*/
