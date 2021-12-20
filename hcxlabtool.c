@@ -2578,7 +2578,6 @@ standbytime.tv_sec = LEDFLASHINTERVAL;
 standbytime.tv_nsec = 0;
 while(wantstopflag == false)
 	{
-	if(wantstopflag == true) break;
 	if(gpiobutton > 0)
 		{
 		if(GET_GPIO(gpiobutton) > 0)
@@ -2601,6 +2600,7 @@ while(wantstopflag == false)
 		nanosleep(&sleepled, NULL);
 		GPIO_CLR = 1 << gpiostatusled;
 		}
+	if(wantstopflag == true) break;
 	nanosleep(&standbytime, NULL);
 	}
 if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
