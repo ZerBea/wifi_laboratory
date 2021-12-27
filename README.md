@@ -51,7 +51,7 @@ Raspberry Pi onboard WiFi chip must be disabled by boot options: dtoverlay=pi3-d
 General workflow
 --------------
 
-connect WiFi adpater
+connect WiFi adapter
 
 run hcxlabxxxx tool
 
@@ -83,7 +83,7 @@ Lessons learned (to be continued)
 
 a beautiful status output make the attack tool slow and sluggish.
 
-too many featues make the attack tool slow and sluggish.
+too many features make the attack tool slow and sluggish.
 
 response time behavior becomes very bad on big ringbuffers.
 
