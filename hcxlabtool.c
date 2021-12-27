@@ -2680,7 +2680,7 @@ while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 		else if(pwrq.u.freq.e == 0) ptrscanlist->frequency = pwrq.u.freq.m /1000000;
 		else
 			{
-			fprintf(stdout, "unhandled expontent %d reported by driver\n", pwrq.u.freq.e);
+			fprintf(stderr, "unhandled expontent %d reported by driver\n", pwrq.u.freq.e);
 			continue;
 			}
 		if((ptrscanlist->frequency >= 2407) && (ptrscanlist->frequency <= 2474)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
@@ -2691,7 +2691,7 @@ while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 		}
 	else
 		{
-		fprintf(stdout, "driver doesn't report frequencies (reported value: %04d %d)\n", pwrq.u.freq.m, pwrq.u.freq.e);
+		fprintf(stderr, "driver doesn't report frequencies (reported value: %04d %d)\n", pwrq.u.freq.m, pwrq.u.freq.e);
 		continue;
 		}
 	if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
@@ -2793,13 +2793,13 @@ for(c = 2407; c < 2488; c++)
 		else if(pwrq.u.freq.e == 0) frequency = pwrq.u.freq.m /1000000;
 		else
 			{
-			fprintf(stdout, "unhandled expontent %d reported by driver\n", pwrq.u.freq.e);
+			fprintf(stderr, "unhandled expontent %d reported by driver\n", pwrq.u.freq.e);
 			continue;
 			}
 		}
 	else
 		{
-		fprintf(stdout, "driver doesn't allow frequency scan\n");
+		fprintf(stderr, "driver doesn't allow frequency scan\n");
 		continue;
 		}
 	memset(&pwrq, 0, sizeof(pwrq));
@@ -2812,7 +2812,7 @@ for(c = 2407; c < 2488; c++)
 
 	if((frequency >= 2407) && (frequency <= 2474)) fprintf(stdout, "%4dMHz %3d (%2d dBm)\n", c, (frequency -2407)/5, pwrq.u.txpower.value);
 	else if((frequency >= 2481) && (frequency <= 2487)) fprintf(stdout, "%4dMHz %3d (%2d dBm)\n", c, (frequency -2412)/5, pwrq.u.txpower.value);
-	else fprintf(stdout, "unexpected frequency %4dMHz /exponent %d (%2d dBm)\n", frequency, exponent, pwrq.u.txpower.value);
+	else fprintf(stderr, "unexpected frequency %4dMHz /exponent %d (%2d dBm)\n", frequency, exponent, pwrq.u.txpower.value);
 	}
 
 for(c = 5005; c < 5981; c++)
@@ -2840,13 +2840,13 @@ for(c = 5005; c < 5981; c++)
 		else if(pwrq.u.freq.e == 0) frequency = pwrq.u.freq.m /1000000;
 		else
 			{
-			fprintf(stdout, "unhandled expontent %d reported by driver\n", pwrq.u.freq.e);
+			fprintf(stderr, "unhandled expontent %d reported by driver\n", pwrq.u.freq.e);
 			continue;
 			}
 		}
 	else
 		{
-		fprintf(stdout, "driver doesn't allow frequency scan\n");
+		fprintf(stderr, "driver doesn't allow frequency scan\n");
 		continue;
 		}
 	memset(&pwrq, 0, sizeof(pwrq));
@@ -2858,7 +2858,7 @@ for(c = 5005; c < 5981; c++)
 	if(ioctl(fd_socket, SIOCGIWTXPOW, &pwrq) < 0) continue;
 
 	if((frequency >= 5005) && (frequency <= 5980)) fprintf(stdout, "%4dMHz %3d (%2d dBm)\n", c, (frequency -5000)/5, pwrq.u.txpower.value);
-	else fprintf(stdout, "unexpected frequency %4dMHz /exponent %d (%2d dBm)\n", frequency, exponent, pwrq.u.txpower.value);
+	else fprintf(stderr, "unexpected frequency %4dMHz /exponent %d (%2d dBm)\n", frequency, exponent, pwrq.u.txpower.value);
 	}
 
 for(c = 5955; c < 6416; c++)
@@ -2886,13 +2886,13 @@ for(c = 5955; c < 6416; c++)
 		else if(pwrq.u.freq.e == 0) frequency = pwrq.u.freq.m /1000000;
 		else
 			{
-			fprintf(stdout, "unhandled expontent %d reported by driver\n", pwrq.u.freq.e);
+			fprintf(stderr, "unhandled expontent %d reported by driver\n", pwrq.u.freq.e);
 			continue;
 			}
 		}
 	else
 		{
-		fprintf(stdout, "driver doesn't allow frequency scan\n");
+		fprintf(stderr, "driver doesn't allow frequency scan\n");
 		continue;
 		}
 	memset(&pwrq, 0, sizeof(pwrq));
@@ -2904,7 +2904,7 @@ for(c = 5955; c < 6416; c++)
 	if(ioctl(fd_socket, SIOCGIWTXPOW, &pwrq) < 0) continue;
 
 	if((frequency >= 5955) && (frequency <= 6415)) fprintf(stdout, "%4dMHz %3d (%2d dBm)\n", c, (frequency -5950)/5, pwrq.u.txpower.value);
-	else fprintf(stdout, "unexpected frequency %4dMHz /exponent %d (%2d dBm)\n", frequency, exponent, pwrq.u.txpower.value);
+	else fprintf(stderr, "unexpected frequency %4dMHz /exponent %d (%2d dBm)\n", frequency, exponent, pwrq.u.txpower.value);
 	}
 return;
 }
