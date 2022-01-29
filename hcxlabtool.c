@@ -2433,9 +2433,9 @@ while(wantstopflag == false)
 			wantstopflag = true;
 			}
 		}
-	if(errorcount > ERROR_MAX)
+	if(errorcount >= ERROR_MAX)
 		{
-		fprintf(stderr, "error count reached ERROR_MAX\n");
+		if((errorcount %ERROR_MAX) == 0) fprintf(stderr, "error count reached ERROR_MAX\n");
 		if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
 		}
 	gettimeofday(&tv, NULL);
@@ -2520,9 +2520,9 @@ while(wantstopflag == false)
 			wantstopflag = true;
 			}
 		}
-	if(errorcount > ERROR_MAX)
+	if(errorcount >= ERROR_MAX)
 		{
-		fprintf(stderr, "error count reached ERROR_MAX\n");
+		if((errorcount %ERROR_MAX) == 0) fprintf(stderr, "error count reached ERROR_MAX\n");
 		if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
 		}
 	gettimeofday(&tv, NULL);
