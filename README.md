@@ -1,11 +1,11 @@
 hcxlabtool
 ==============
 
-Skeleton to test WiFi adapters and to understand 802.11 protocol.
+Skeleton to test WiFi adapters, to understand 802.11 protocol and to detect its weakness.
 
-Issue reports and feature requests will be ignored!
+Feature requests will be ignored!
 
-It is not made for newbies.
+It is not made for newbies and comes without any warnings.
 
 Code will often change!
 
@@ -19,7 +19,7 @@ There are only a few basic options and there is no status output.
 
 All additional test functions must be compiled individually (gcc -D - see Makefile).
 
-It is also designed to run headless on a modified (GPIO push button and LED) Raspberry Pi
+hcxlabtool is designed to run headless on a modified (GPIO push button and LED) Raspberry Pi.
 
 
 Requirements
