@@ -355,6 +355,15 @@ struct capabilitiesreq_sta_frame
 typedef struct capabilitiesreq_sta_frame capreqsta_t;
 #define	CAPABILITIESREQSTA_SIZE sizeof(capreqsta_t)
 /*===========================================================================*/
+struct capabilitiesaid_frame
+{
+ uint16_t 	capabilities;
+ uint16_t 	statuscode;
+ uint16_t	aid;
+} __attribute__((__packed__));
+typedef struct capabilitiesaid_frame capaid_t;
+#define	CAPABILITIESAID_SIZE sizeof(capaid_t)
+/*===========================================================================*/
 struct ie_tag
 {
  uint8_t		id;
@@ -403,10 +412,9 @@ static const uint8_t ouiwifialliance[3] =
 struct rsnie_tag
 {
  uint16_t		version;
- uint8_t		data[1];
 } __attribute__((__packed__));
 typedef struct rsnie_tag rsnie_t;
-#define	RSNIE_SIZE offsetof(rsnie_t, data)
+#define	RSNIE_SIZE sizeof(rsnie_t)
 #define RSNIE_LEN_MIN	20
 /*===========================================================================*/
 struct wpaie_tag
@@ -424,10 +432,9 @@ typedef struct wpaie_tag wpaie_t;
 struct suitecount_s
 {
  uint16_t	count;
- uint8_t	data[1];
 } __attribute__ ((packed));
 typedef struct suitecount_s suitecount_t;
-#define	SUITECOUNT_SIZE offsetof(suitecount_t, data)
+#define	SUITECOUNT_SIZE sizeof(suitecount_t)
 /*===========================================================================*/
 struct suite_s
 {
@@ -461,6 +468,8 @@ static const uint8_t suiteoui[3] =
 struct rsncapabilites_s
 {
  uint16_t	rsncapa;
+#define		MFP_REQUIRED	0b0000000001000000
+#define		MFP_SUPPORTED	0b0000000010000000
 };
 typedef struct rsncapabilites_s rsncapabilites_t;
 #define	RSNCAPABILITIES_SIZE sizeof(rsncapabilites_t)
@@ -481,6 +490,20 @@ struct llc_frame
 typedef struct llc_frame llc_t;
 #define	LLC_SIZE (sizeof(llc_t))
 #define	LLC_SNAP 0xaa
+/*===========================================================================*/
+struct disassociation_frame
+{
+ uint16_t				reasoncode;
+} __attribute__((__packed__));
+typedef struct disassociation_frame disassocf_t;
+#define	DISASSOCIATIONFRAME_SIZE (sizeof(disassocf_t))
+/*===========================================================================*/
+struct deauthentication_frame
+{
+ uint16_t				reasoncode;
+} __attribute__((__packed__));
+typedef struct deauthentication_frame deauthf_t;
+#define	DEAUTHENTICATIONFRAME_SIZE (sizeof(deauthf_t))
 /*===========================================================================*/
 struct authentication_frame
 {

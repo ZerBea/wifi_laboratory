@@ -1,4 +1,4 @@
-#define VERSIONTAG		"0.5.0"
+#define VERSIONTAG		"1.0.0"
 #define VERSIONYEAR		"2021"
 #define VERSIONNAME		"hcxlabtool"
 
@@ -35,113 +35,6 @@
 #define RESUMEINTERVAL		36000
 
 /*===========================================================================*/
-#define	EAPOLM1M2TIMEOUT	20000
-#define	EAPOLM2M3TIMEOUT	20000
-#define	EAPOLM3M4TIMEOUT	20000
-#define EAPOLLIST_MAX		4
-typedef struct
-{
- uint64_t		timestamp;
- uint8_t		macap[6];
- uint8_t		macclient[6];
- uint64_t		rc;
-}eapollist_t;
-#define	EAPOLLIST_SIZE (sizeof(eapollist_t))
-
-static int sort_eapollist_by_time(const void *a, const void *b)
-{
-const eapollist_t *ia = (const eapollist_t *)a;
-const eapollist_t *ib = (const eapollist_t *)b;
-
-if(ia->timestamp < ib->timestamp) return 1;
-else if(ia->timestamp > ib->timestamp) return -1;
-return 0;
-}
-/*===========================================================================*/
-#define RGAPLIST_MAX	4096
-typedef struct
-{
- uint64_t		timestamp;
- int			sequence;
- uint8_t		macrgap[6];
- uint8_t		essidlen;
- uint8_t		essid[ESSID_LEN_MAX];
-}rgaplist_t;
-#define	RGAPLIST_SIZE (sizeof(rgaplist_t))
-
-static int sort_rgaplist_by_time(const void *a, const void *b)
-{
-const rgaplist_t *ia = (const rgaplist_t *)a;
-const rgaplist_t *ib = (const rgaplist_t *)b;
-
-if(ia->timestamp < ib->timestamp) return 1;
-else if(ia->timestamp > ib->timestamp) return -1;
-return 0;
-}
-/*===========================================================================*/
-#define APLIST_MAX	256
-typedef struct
-{
- uint64_t		timestamp;
- uint8_t		macap[6];
- uint8_t		macclient[6];
- uint32_t		count;
- uint32_t		count2;
- uint8_t		status;
-#define STATUS_BEACON	0b00000001
-#define STATUS_PRESP	0b00000010
-#define STATUS_AUTH	0b00000001
-#define STATUS_ASSOC	0b00000010
-#define STATUS_REASSOC	0b00000100
-#define STATUS_M2	0b00001000
-#define STATUS_M2DONE	0b01000000
-#define STATUS_EAPDONE	0b10000000
- uint8_t		eapolstatus;
-#define EAPOLM1		0b00000001
-#define EAPOLM1M2RG	0b00000010
-#define EAPOLM1M2	0b00000100
-#define EAPOLM2M3	0b00001000
-#define EAPOLM1M2M3	0b00010000
-#define EAPOLPMKID	0b10000001
- uint8_t		eapstatus;
- int			channel;
- uint8_t		kdversion;
-#define KV_RSNIE	0b00000001
-#define KV_WPAIE	0b00000010
- uint8_t		groupcipher;
- uint8_t		cipher;
-#define TCS_WEP40	0b00000001
-#define TCS_TKIP	0b00000010
-#define TCS_WRAP	0b00000100
-#define TCS_CCMP	0b00001000
-#define TCS_WEP104	0b00010000
-#define TCS_BIP		0b00100000
-#define TCS_NOT_ALLOWED	0b01000000
- uint16_t		akm;
-#define	TAK_PMKSA	0b0000000000000001
-#define	TAK_PSK		0b0000000000000010
-#define TAK_FT		0b0000000000000100
-#define TAK_FT_PSK	0b0000000000001000
-#define	TAK_PMKSA256	0b0000000000010000
-#define	TAK_PSKSHA256	0b0000000000100000
-#define	TAK_TDLS	0b0000000001000000
-#define	TAK_SAE_SHA256	0b0000000010000000
-#define TAK_FT_SAE	0b0000000100000000
- uint8_t		essidlen;
- uint8_t		essid[ESSID_LEN_MAX];
-}aplist_t;
-#define	APLIST_SIZE (sizeof(aplist_t))
-
-static int sort_aplist_by_time(const void *a, const void *b)
-{
-const aplist_t *ia = (const aplist_t *)a;
-const aplist_t *ib = (const aplist_t *)b;
-
-if(ia->timestamp < ib->timestamp) return 1;
-else if(ia->timestamp > ib->timestamp) return -1;
-return 0;
-}
-/*===========================================================================*/
 typedef struct
 {
 int	frequency;
@@ -149,5 +42,125 @@ int	channel;
 }scanlist_t;
 #define	SCANLIST_SIZE (sizeof(scanlist_t))
 /*===========================================================================*/
+typedef struct
+{
+ uint8_t		essidlen;
+ uint8_t		essid[ESSID_LEN_MAX];
+}essid_t;
+#define	ESSID_SIZE (sizeof(essid_t))
+/*===========================================================================*/
+#define		CLIENTLIST_MAX		1024
+typedef struct
+{
+ uint64_t		timestamp;
+ uint32_t		count;
+ uint8_t		mac[6];
+ uint8_t		mic[16];
+ }clientlist_t;
+#define	CLIENTLIST_SIZE (sizeof(clientlist_t))
 
+static int sort_clientlist_by_time(const void *a, const void *b)
+{
+const clientlist_t *ia = (const clientlist_t *)a;
+const clientlist_t *ib = (const clientlist_t *)b;
 
+if(ia->timestamp < ib->timestamp) return 1;
+else if(ia->timestamp > ib->timestamp) return -1;
+return 0;
+}
+/*===========================================================================*/
+#define		RGBSSIDLIST_MAX		1024
+typedef struct
+{
+ uint64_t		timestamp;
+ int			sequence;
+ uint8_t		mac[6];
+ uint8_t		essidlen;
+ uint8_t		essid[ESSID_LEN_MAX];
+}rgbssidlist_t;
+#define	RGBSSIDLIST_SIZE (sizeof(rgbssidlist_t))
+
+static int sort_rgbssidlist_by_time(const void *a, const void *b)
+{
+const rgbssidlist_t *ia = (const rgbssidlist_t *)a;
+const rgbssidlist_t *ib = (const rgbssidlist_t *)b;
+
+if(ia->timestamp < ib->timestamp) return 1;
+else if(ia->timestamp > ib->timestamp) return -1;
+return 0;
+}
+/*===========================================================================*/
+#define		BSSID_COUNT_MAX		1024
+typedef struct
+{
+ uint64_t	timestampfirst;
+ uint64_t	replaycountm1;
+ uint64_t	timestampm1;
+ uint64_t	timestampm2;
+ uint64_t	timestampm3;
+ uint16_t	capabilities;
+ uint16_t	aid;
+ uint32_t	beaconcount;
+ uint32_t	proberesponsecount;
+ uint32_t	deauthattackcount;
+ uint32_t	deauthattackfactor;
+ uint8_t	status;
+#define		BSSID_NONE		0b00000000
+#define		BSSID_BEACON		0b00000001
+#define		BSSID_PROBERESPONSE	0b00000010
+#define		BSSID_M1		0b00000100
+#define		BSSID_M2		0b00001000
+#define		BSSID_M3		0b00010000
+#define		BSSID_M4		0b00100000
+#define		BSSID_PMKID		0b01000000
+ uint8_t	kdv;
+#define		BSSID_KDV_WPA		0b00000001
+#define		BSSID_KDV_RSN		0b00000010
+ uint8_t	groupcipher;
+ uint8_t	cipher;
+#define TCS_WEP40	0b00000001
+#define TCS_TKIP	0b00000010
+#define TCS_WRAP	0b00000100
+#define TCS_CCMP	0b00001000
+#define TCS_WEP104	0b00010000
+#define TCS_BIP		0b00100000
+#define TCS_NOT_ALLOWED	0b01000000
+ uint16_t		rsnakm;
+ uint16_t		wpaakm;
+#define	TAK_PSK		0b0000000000000001
+#define	TAK_PSKSHA256	0b0000000000000010
+#define TAK_FT_PSK	0b0000000000000100
+#define TAK_PSK_ALL	0b0000000000000111
+#define TAK_FT		0b0000000000001000
+#define	TAK_PMKSA	0b0000000000010000
+#define	TAK_PMKSA256	0b0000000000100000
+#define	TAK_TDLS	0b0000000001000000
+#define	TAK_SAE_SHA256	0b0000000010000000
+#define TAK_FT_SAE	0b0000000100000000
+ uint16_t		rsncapa;
+ uint8_t	macclient[6];
+ uint8_t	essidlen;
+ uint8_t	essid[ESSID_LEN_MAX];
+}bssidinfo_t;
+#define	BSSIDINFO_SIZE (sizeof(bssidinfo_t))
+/*===========================================================================*/
+#define BSSIDLIST_MAX		512
+#define BSSIDLIST_SORT_MAX	256
+typedef struct
+{
+ uint64_t	timestamp;
+ bssidinfo_t	*bssidinfo;
+ uint8_t	mac[6];
+}bssidlist_t;
+#define	BSSIDLIST_SIZE (sizeof(bssidlist_t))
+
+static int sort_bssidlist_by_time(const void *a, const void *b)
+{
+const bssidlist_t *ia = (const bssidlist_t *)a;
+const bssidlist_t *ib = (const bssidlist_t *)b;
+
+if(ia->timestamp < ib->timestamp) return 1;
+else if(ia->timestamp > ib->timestamp) return -1;
+return 0;
+}
+/*===========================================================================*/
