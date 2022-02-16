@@ -718,7 +718,6 @@ if(rgrc == m2rc)
 			memcpy((clientlist +p)->mic, wpak->keymic, 16);
 			#ifdef STATUSOUT
 			debugmac2(macfrx->addr2, macfrx->addr3, "M1M2ROGUE");
-			
 			#endif
 			}
 		return;
@@ -1611,8 +1610,8 @@ if(macfrx->retry == 1) return;
 #ifdef GETM2
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
-	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) && (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->timestamp == 0) break;
+	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) && (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->count >= m2attempts) return;
 	send_authentication_resp_opensystem();
 	return;
@@ -2145,15 +2144,6 @@ else
 	payloadptr = ieee82011ptr +MAC_SIZE_NORM;
 	payloadlen = ieee82011len -MAC_SIZE_NORM;
 	}
-
-send_reassociation_resp();
-send_reassociation_resp();
-send_reassociation_resp();
-send_reassociation_resp();
-send_reassociation_resp();
-send_reassociation_resp();
-
-
 if(macfrx->type == IEEE80211_FTYPE_MGMT)
 	{
 	if(macfrx->subtype == IEEE80211_STYPE_BEACON) process80211beacon();
