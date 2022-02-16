@@ -709,7 +709,7 @@ if(rgrc == m2rc)
 	for(p = 0; p < CLIENTLIST_MAX; p++)
 		{
 		if((clientlist +p)->timestamp == 0) return;
-		if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) && (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
+		if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 		(clientlist +p)->timestamp = timestamp;
 		if(memcmp((clientlist +p)->mic, wpak->keymic, 16) == 0) return;
 		else
@@ -1399,7 +1399,7 @@ writeepb(fd_pcapng);
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
 	if((clientlist +p)->timestamp == 0) break;
-	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) && (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
+	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->count >= m2attempts) return;
 	clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
 	clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
@@ -1491,7 +1491,7 @@ writeepb(fd_pcapng);
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
 	if((clientlist +p)->timestamp == 0) break;
-	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) && (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
+	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->count >= m2attempts) return;
 	clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
 	clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
@@ -1611,7 +1611,7 @@ if(macfrx->retry == 1) return;
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
 	if((clientlist +p)->timestamp == 0) break;
-	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) && (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
+	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->count >= m2attempts) return;
 	send_authentication_resp_opensystem();
 	return;
