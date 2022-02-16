@@ -55,6 +55,7 @@ typedef struct
  uint64_t		timestamp;
  uint32_t		count;
  uint8_t		mac[6];
+ uint8_t		macap[6];
  uint8_t		mic[16];
  }clientlist_t;
 #define	CLIENTLIST_SIZE (sizeof(clientlist_t))

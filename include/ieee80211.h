@@ -572,6 +572,15 @@ struct association_resp_frame
 typedef struct association_resp_frame assocrepf_t;
 #define	ASSOCIATIONRESPFRAME_SIZE (sizeof(assocrepf_t))
 /*===========================================================================*/
+struct reassociation_resp_frame
+{
+ uint16_t	capabilities;
+ uint16_t	statuscode;
+ uint16_t	aid;
+} __attribute__((__packed__));
+typedef struct reassociation_resp_frame reassocrepf_t;
+#define	REASSOCIATIONRESPFRAME_SIZE (sizeof(reassocrepf_t))
+/*===========================================================================*/
 struct action_frame
 {
  uint8_t	categoriecode;

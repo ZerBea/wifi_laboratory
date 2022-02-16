@@ -276,14 +276,51 @@ if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_ACK) == -1) errorcount++;
 return;
 }
 /*===========================================================================*/
+static inline void send_reassociation_resp()
+{
+static mac_t *macftx;
+static reassocrepf_t *reassocid;
+
+static const uint8_t reassociationresponsedata[] =
+{
+/* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6, 9, 12, 18, [Mbit/sec] */
+0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x0c, 0x12, 0x18, 0x24,
+/* Tag: Extended Supported Rates 24, 36, 48, 54, [Mbit/sec] */
+0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
+/* Tag: Extended Capabilities (8 octets) */
+0x7f, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x40
+};
+#define REASSOCIATIONRESPONSE_SIZE sizeof(reassociationresponsedata)
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +REASSOCIATIONRESPONSE_SIZE +ASSOCIATIONRESPFRAME_SIZE +1);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_REASSOC_RESP;
+memcpy(macftx->addr1, macfrx->addr2, 6);
+memcpy(macftx->addr2, macfrx->addr1, 6);
+memcpy(macftx->addr3, macfrx->addr1, 6);
+macftx->duration = 0x013a;
+macftx->sequence = apsequence++ << 4;
+if(apsequence >= 4096) apsequence = 1;
+reassocid = (reassocrepf_t*)(packetoutptr +HDRRT_SIZE +MAC_SIZE_NORM);
+reassocid->capabilities = 0x0431;
+reassocid->statuscode = 0x0000;
+reassocid->aid = 0xc001;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +REASSOCIATIONRESPFRAME_SIZE], &reassociationresponsedata, REASSOCIATIONRESPONSE_SIZE);
+if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +REASSOCIATIONRESPFRAME_SIZE +REASSOCIATIONRESPONSE_SIZE) == -1) errorcount++;
+return;
+}
+/*===========================================================================*/
 static inline void send_association_resp()
 {
 static mac_t *macftx;
 static capaid_t *capaid;
 static const uint8_t associationresponsedata[] =
 {
-/* Tag: Supported Rates 1(B), 2(B), 5.5(B), 6, 9, 11(B), 12, 18, [Mbit/sec] */
-0x01, 0x08, 0x82, 0x84, 0x8b, 0x0c, 0x12, 0x96, 0x18, 0x24,
+//* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6, 9, 12, 18, [Mbit/sec] */
+0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x0c, 0x12, 0x18, 0x24,
 /* Tag: Extended Supported Rates 24, 36, 48, 54, [Mbit/sec] */
 0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
 /* Tag: Extended Capabilities (8 octets) */
@@ -672,7 +709,7 @@ if(rgrc == m2rc)
 	for(p = 0; p < CLIENTLIST_MAX; p++)
 		{
 		if((clientlist +p)->timestamp == 0) return;
-		if(memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) continue;
+		if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) && (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 		(clientlist +p)->timestamp = timestamp;
 		if(memcmp((clientlist +p)->mic, wpak->keymic, 16) == 0) return;
 		else
@@ -1349,13 +1386,95 @@ return;
 /*===========================================================================*/
 static inline void process80211reassociation_req()
 {
+#ifdef GETM2
+static int p;
+static uint8_t *clientinfoptr;
+static uint16_t clientinfolen;
+static bssidinfo_t bssidinfo;
+#endif
+
 if(macfrx->retry == 1) return;
-
-
 writeepb(fd_pcapng);
+
+#ifdef GETM2
+for(p = 0; p < CLIENTLIST_MAX; p++)
+	{
+	if((clientlist +p)->timestamp == 0) break;
+	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) && (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
+	if((clientlist +p)->count >= m2attempts) return;
+	clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
+	clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
+	if(clientinfolen < IETAG_SIZE) return;
+	get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
+	if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
+		{
+		if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
+			{
+			send_ack();
+			send_reassociation_resp();
+			send_m1_wpa2(macfrx->addr2, macfrx->addr1);
+			memcpy(&mac_pending, macfrx->addr1, 6);
+			return;
+			}
+		if((bssidinfo.rsnakm &TAK_PSKSHA256) == TAK_PSKSHA256)
+			{
+			send_ack();
+			send_reassociation_resp();
+			send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
+			memcpy(&mac_pending, macfrx->addr1, 6);
+			return;
+			}
+		return;
+		}
+	if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
+		{
+		send_ack();
+		send_reassociation_resp();
+		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
+		memcpy(&mac_pending, macfrx->addr1, 6);
+		return;
+		}
+	return;
+	}
+memset((clientlist +p), 0, CLIENTLIST_SIZE); 
+(clientlist +p)->timestamp = timestamp;
+memcpy((clientlist +p)->mac, macfrx->addr2, 6);
+memcpy((clientlist +p)->macap, macfrx->addr1, 6);
+clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
+clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
+if(clientinfolen < IETAG_SIZE) return;
+get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
+if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
+	{
+	if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
+		{
+		send_ack();
+		send_reassociation_resp();
+		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
+		memcpy(&mac_pending, macfrx->addr1, 6);
+		return;
+		}
+	if((bssidinfo.rsnakm &TAK_PSKSHA256) == TAK_PSKSHA256)
+		{
+		send_ack();
+		send_reassociation_resp();
+		send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
+		memcpy(&mac_pending, macfrx->addr1, 6);
+		return;
+		}
+	return;
+	}
+if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
+	{
+	send_ack();
+	send_reassociation_resp();
+	send_m1_wpa2(macfrx->addr2, macfrx->addr1);
+	memcpy(&mac_pending, macfrx->addr1, 6);
+	return;
+	}
+#endif
 return;
 }
-/*===========================================================================*/
 /*===========================================================================*/
 static inline void process80211association_req()
 {
@@ -1373,7 +1492,7 @@ writeepb(fd_pcapng);
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
 	if((clientlist +p)->timestamp == 0) break;
-	if(memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) continue;
+	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) && (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->count >= m2attempts) return;
 	clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
 	clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
@@ -1412,7 +1531,7 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 memset((clientlist +p), 0, CLIENTLIST_SIZE); 
 (clientlist +p)->timestamp = timestamp;
 memcpy((clientlist +p)->mac, macfrx->addr2, 6);
-
+memcpy((clientlist +p)->macap, macfrx->addr1, 6);
 clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
 clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
 if(clientinfolen < IETAG_SIZE) return;
@@ -1445,8 +1564,6 @@ if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_
 	memcpy(&mac_pending, macfrx->addr1, 6);
 	return;
 	}
-return;
-
 #endif
 return;
 }
@@ -1494,8 +1611,8 @@ if(macfrx->retry == 1) return;
 #ifdef GETM2
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
+	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) && (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->timestamp == 0) break;
-	if(memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) continue;
 	if((clientlist +p)->count >= m2attempts) return;
 	send_authentication_resp_opensystem();
 	return;
@@ -1503,6 +1620,8 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 memset((clientlist +p), 0, CLIENTLIST_SIZE); 
 (clientlist +p)->timestamp = timestamp;
 memcpy((clientlist +p)->mac, macfrx->addr2, 6);
+memcpy((clientlist +p)->macap, macfrx->addr1, 6);
+send_authentication_resp_opensystem();
 qsort(clientlist, p +1, CLIENTLIST_SIZE, sort_clientlist_by_time);
 #endif
 writeepb(fd_pcapng);
@@ -1552,9 +1671,9 @@ const uint8_t proberesponse_data[] =
 0x2a, 0x01, 0x04,
 /* Tag: Extended Supported Rates 24, 36, 48, 54, [Mbit/sec] */
 0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
-/* Tag: RSN Information WPA1 & WPA2 PSK */
+/* Tag: RSN Information CCM CCM PSK */
 0x30, 0x14, 0x01, 0x00,
-0x00, 0x0f, 0xac, 0x02,
+0x00, 0x0f, 0xac, 0x04,
 0x01, 0x00,
 0x00, 0x0f, 0xac, 0x04,
 0x01, 0x00,
@@ -1562,7 +1681,7 @@ const uint8_t proberesponse_data[] =
 0x00, 0x00,
 /* Tag: Vendor Specific: Microsoft Corp.: WPA Information Element */
 0xdd, 0x16, 0x00, 0x50, 0xf2, 0x01, 0x01, 0x00,
-0x00, 0x50, 0xf2, 0x02,
+0x00, 0x50, 0xf2, 0x04,
 0x01, 0x00,
 0x00, 0x50, 0xf2, 0x02,
 0x01, 0x00,
@@ -1842,9 +1961,9 @@ const uint8_t beacon_data[] =
 0x2a, 0x01, 0x04,
 /* Tag: Extended Supported Rates 24, 36, 48, 54, [Mbit/sec] */
 0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
-/* Tag: RSN Information WPA1 & WPA2 PSK */
+/* Tag: RSN Information CCM CCM PSK  */
 0x30, 0x14, 0x01, 0x00,
-0x00, 0x0f, 0xac, 0x02,
+0x00, 0x0f, 0xac, 0x04,
 0x01, 0x00,
 0x00, 0x0f, 0xac, 0x04,
 0x01, 0x00,
@@ -1852,7 +1971,7 @@ const uint8_t beacon_data[] =
 0x00, 0x00,
 /* Tag: Vendor Specific: Microsoft Corp.: WPA Information Element */
 0xdd, 0x16, 0x00, 0x50, 0xf2, 0x01, 0x01, 0x00,
-0x00, 0x50, 0xf2, 0x02,
+0x00, 0x50, 0xf2, 0x04,
 0x01, 0x00,
 0x00, 0x50, 0xf2, 0x02,
 0x01, 0x00,
@@ -2026,6 +2145,15 @@ else
 	payloadptr = ieee82011ptr +MAC_SIZE_NORM;
 	payloadlen = ieee82011len -MAC_SIZE_NORM;
 	}
+
+send_reassociation_resp();
+send_reassociation_resp();
+send_reassociation_resp();
+send_reassociation_resp();
+send_reassociation_resp();
+send_reassociation_resp();
+
+
 if(macfrx->type == IEEE80211_FTYPE_MGMT)
 	{
 	if(macfrx->subtype == IEEE80211_STYPE_BEACON) process80211beacon();
