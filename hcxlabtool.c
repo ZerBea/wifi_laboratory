@@ -33,7 +33,7 @@ static struct timeval tvold;
 static struct timeval tvoldled;
 static struct timeval tvtot;
 static struct timeval tvlast;
-static long int rpisn;
+static unsigned long int rpisn;
 static uint64_t timestamp;
 static uint64_t mytime;
 static int staytime;
@@ -2955,7 +2955,7 @@ while(1)
 	if(strstr(linein, "Raspberry Pi")) rpi = true;
 	if(strstr(linein, "Serial") != NULL)
 		{
-		if(len > 8) rpisn = strtol(&linein[len -4], NULL, 16);
+		if(len > 8) rpisn = strtoul(&linein[len -4], NULL, 16);
 		}
 	}
 fclose(cpuinfo);
