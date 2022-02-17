@@ -1614,6 +1614,7 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->count >= m2attempts) return;
 	send_authentication_resp_opensystem();
+	if(p > 10) qsort(clientlist, p +1, CLIENTLIST_SIZE, sort_clientlist_by_time);
 	return;
 	}
 memset((clientlist +p), 0, CLIENTLIST_SIZE); 
@@ -1879,8 +1880,13 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		#ifdef GETM1
 		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +5))
 			{
-			if((bssidlist +p)->bssidinfo->essidlen == 0) return;
-			if((bssidlist +p)->bssidinfo->essid[0] == 0) return;
+			if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0))
+				{
+				#ifdef GETM1234
+				send_disassociation2client(p, WLAN_REASON_DISASSOC_STA_HAS_LEFT);
+				#endif
+				return;
+				}
 			if(((bssidlist +p)->bssidinfo->status &BSSID_M1) == 0)
 				{
 				if(((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK) send_authentication_req_opensystem(p);
@@ -1904,8 +1910,11 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			}
 		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +15))
 			{
-			if((bssidlist +p)->bssidinfo->essidlen == 0) return;
-			if((bssidlist +p)->bssidinfo->essid[0] == 0) return;
+			if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0))
+				{
+				send_disassociation2client(p, WLAN_REASON_DISASSOC_STA_HAS_LEFT);
+				return;
+				}
 			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) == 0) return;
 			if((((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa2(p);
 			else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa1(p);
@@ -1942,6 +1951,7 @@ if((bssidlist +p)->bssidinfo->kdv != 0)
 	send_pspoll(p);
 	send_deauthentication2client(p, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 	}
+if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_deauthentication2client(p, WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA);
 #endif
 qsort(bssidlist, p +1, BSSIDLIST_SIZE, sort_bssidlist_by_time);
 writeepb(fd_pcapng);
