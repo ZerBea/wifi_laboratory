@@ -106,6 +106,7 @@ typedef struct
  uint32_t	deauthattackcount;
  uint32_t	deauthattackfactor;
  uint8_t	status;
+ uint8_t	channel;
 #define		BSSID_NONE		0b00000000
 #define		BSSID_BEACON		0b00000001
 #define		BSSID_PROBERESPONSE	0b00000010

@@ -1369,6 +1369,10 @@ while(0 < infolen)
 				}
 			}
 		}
+	else if(tagptr->id == TAG_CHAN)
+		{
+		if(tagptr->len == 1) bssidinfo->channel = tagptr->data[0];
+		}
 	else if(tagptr->id == TAG_RSN)
 		{
 		if(tagptr->len >= RSNIE_LEN_MIN) gettagrsn(bssidinfo, tagptr->len, tagptr->data);
@@ -1819,7 +1823,7 @@ capabilitiesptr = (capap_t*)payloadptr;
 apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
 apinfolen = payloadlen -CAPABILITIESAP_SIZE;
 get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
-
+if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
 #ifdef GETM1234
 if((bssidlist +p)->bssidinfo->kdv != 0)
 	{
@@ -1866,6 +1870,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			writeepb(fd_pcapng);
 			return;
 			}
+		if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
 		if((bssidlist +p)->bssidinfo->status >= BSSID_M4) return;
 		if((bssidlist +p)->bssidinfo->kdv == 0) return;
 		(bssidlist +p)->bssidinfo->deauthattackcount += 1;
@@ -1874,6 +1879,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			(bssidlist +p)->bssidinfo->deauthattackcount = 0;
 			(bssidlist +p)->bssidinfo->deauthattackfactor += 1;
 			memset((bssidlist +p)->bssidinfo->macclient, 0xff, 6);
+			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
 			qsort(bssidlist, p +1, BSSIDLIST_SIZE, sort_bssidlist_by_time);
 			return;
 			}
@@ -1945,6 +1951,7 @@ capabilitiesptr = (capap_t*)payloadptr;
 apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
 apinfolen = payloadlen -CAPABILITIESAP_SIZE;
 get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
+if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
 #ifdef GETM1234
 if((bssidlist +p)->bssidinfo->kdv != 0)
 	{
