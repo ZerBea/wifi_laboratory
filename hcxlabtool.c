@@ -1574,6 +1574,7 @@ return;
 static inline void process80211association_resp()
 {
 writeepb(fd_pcapng);
+send_ack();
 return;
 }
 /*===========================================================================*/
@@ -1791,21 +1792,15 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		{
 		(bssidlist +p)->timestamp = timestamp;
 		(bssidlist +p)->bssidinfo->proberesponsecount += 1;
+		apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
+		apinfolen = payloadlen -CAPABILITIESAP_SIZE;
+		get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
 		if(((bssidlist +p)->bssidinfo->status & BSSID_PROBERESPONSE) != BSSID_PROBERESPONSE)
 			{
 			(bssidlist +p)->bssidinfo->status |= BSSID_PROBERESPONSE;
-			apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
-			apinfolen = payloadlen -CAPABILITIESAP_SIZE;
-			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
 			writeepb(fd_pcapng);
 			}
-		if((bssidlist +p)->bssidinfo->proberesponsecount %10 == 0)
-			{
-			apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
-			apinfolen = payloadlen -CAPABILITIESAP_SIZE;
-			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
-			writeepb(fd_pcapng);
-			}
+		if((bssidlist +p)->bssidinfo->proberesponsecount %100 == 0) writeepb(fd_pcapng);
 		if(p >= BSSIDLIST_SORT_MAX) qsort(bssidlist, p +1, BSSIDLIST_SIZE, sort_bssidlist_by_time);
 		return;
 		}
@@ -1859,6 +1854,12 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
 			writeepb(fd_pcapng);
 			return;
+			}
+		if((bssidlist +p)->bssidinfo->beaconcount %100 == 0)
+			{
+			apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
+			apinfolen = payloadlen -CAPABILITIESAP_SIZE;
+			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
 			}
 		if((bssidlist +p)->bssidinfo->beaconcount %216000 == 0)
 			{
