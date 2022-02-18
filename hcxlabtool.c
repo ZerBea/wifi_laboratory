@@ -1799,7 +1799,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
 			writeepb(fd_pcapng);
 			}
-		if((bssidlist +p)->bssidinfo->proberesponsecount %1000 == 0)
+		if((bssidlist +p)->bssidinfo->proberesponsecount %10 == 0)
 			{
 			apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
 			apinfolen = payloadlen -CAPABILITIESAP_SIZE;
