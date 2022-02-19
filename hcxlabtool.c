@@ -1037,6 +1037,7 @@ static inline void process80211null()
 {
 static int p;
 
+if(macfrx->to_ds == 0) return;
 #ifdef GETM2
 if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
 	{
@@ -1055,6 +1056,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) == 0)
 		{
 		(bssidlist +p)->timestamp = timestamp;
+		(bssidlist +p)->bssidinfo->timestampclient = timestamp;
 		memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
 		return;
 		}
@@ -1073,6 +1075,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) == 0)
 		{
 		(bssidlist +p)->timestamp = timestamp;
+		(bssidlist +p)->bssidinfo->timestampclient = timestamp;
 		memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
 		return;
 		}
@@ -1090,8 +1093,9 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 	if(memcmp((bssidlist +p)->mac, macfrx->addr1, 6) == 0)
 		{
 		(bssidlist +p)->timestamp = timestamp;
-		memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
+		(bssidlist +p)->bssidinfo->timestampclient = timestamp;
 		(bssidlist +p)->bssidinfo->aid = macfrx->duration;
+		memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
 		return;
 		}
 	}
@@ -1107,8 +1111,9 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 	if((bssidlist +p)->timestamp == 0) break;
 	if(memcmp((bssidlist +p)->mac, macfrx->addr1, 6) == 0)
 		{
-		memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
 		(bssidlist +p)->timestamp = timestamp;
+		(bssidlist +p)->bssidinfo->timestampclient = timestamp;
+		memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
 		return;
 		}
 	}
@@ -1124,8 +1129,9 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 	if((bssidlist +p)->timestamp == 0) break;
 	if(memcmp((bssidlist +p)->mac, macfrx->addr1, 6) == 0)
 		{
-		memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
 		(bssidlist +p)->timestamp = timestamp;
+		(bssidlist +p)->bssidinfo->timestampclient = timestamp;
+		memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
 		return;
 		}
 	}
@@ -1145,6 +1151,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) == 0)
 		{
 		(bssidlist +p)->timestamp = timestamp;
+		(bssidlist +p)->bssidinfo->timestampclient = timestamp;
 		memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
 		return;
 		}
@@ -1785,47 +1792,41 @@ static int apinfolen;
 static uint8_t *apinfoptr;
 
 if(payloadlen < CAPABILITIESAP_SIZE +IETAG_SIZE) return;
+apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
+apinfolen = payloadlen -CAPABILITIESAP_SIZE;
 for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
 	if((bssidlist +p)->timestamp == 0) break;
 	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) == 0)
 		{
+		get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
+		if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
 		(bssidlist +p)->timestamp = timestamp;
 		(bssidlist +p)->bssidinfo->proberesponsecount += 1;
-		apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
-		apinfolen = payloadlen -CAPABILITIESAP_SIZE;
-		get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
 		if(((bssidlist +p)->bssidinfo->status & BSSID_PROBERESPONSE) != BSSID_PROBERESPONSE)
 			{
 			(bssidlist +p)->bssidinfo->status |= BSSID_PROBERESPONSE;
 			writeepb(fd_pcapng);
+			return;
 			}
 		if((bssidlist +p)->bssidinfo->proberesponsecount %100 == 0) writeepb(fd_pcapng);
 		if(p >= BSSIDLIST_SORT_MAX) qsort(bssidlist, p +1, BSSIDLIST_SIZE, sort_bssidlist_by_time);
 		return;
 		}
 	}
+get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
+if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
 (bssidlist +p)->timestamp = timestamp;
 memcpy((bssidlist +p)->mac, macfrx->addr3, 6);
 memset((bssidlist +p)->bssidinfo, 0, BSSIDINFO_SIZE);
 (bssidlist +p)->bssidinfo->timestampfirst = timestamp;
 (bssidlist +p)->bssidinfo->proberesponsecount = 1;
 (bssidlist +p)->bssidinfo->aid = 0xc001;
+(bssidlist +p)->bssidinfo->timestampclient = timestamp;
 memset((bssidlist +p)->bssidinfo->macclient, 0xff, 6);
 (bssidlist +p)->bssidinfo->status = BSSID_PROBERESPONSE;
 capabilitiesptr = (capap_t*)payloadptr;
 (bssidlist +p)->bssidinfo->capabilities = capabilitiesptr->capabilities;
-apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
-apinfolen = payloadlen -CAPABILITIESAP_SIZE;
-get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
-if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
-#ifdef GETM1234
-if((bssidlist +p)->bssidinfo->kdv != 0)
-	{
-	send_pspoll(p);
-	send_deauthentication2client(p, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
-	}
-#endif
 qsort(bssidlist, p +1, BSSIDLIST_SIZE, sort_bssidlist_by_time);
 writeepb(fd_pcapng);
 return;
@@ -1839,98 +1840,70 @@ static int apinfolen;
 static uint8_t *apinfoptr;
 
 if(payloadlen < CAPABILITIESAP_SIZE +IETAG_SIZE) return;
+apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
+apinfolen = payloadlen -CAPABILITIESAP_SIZE;
 for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
 	if((bssidlist +p)->timestamp == 0) break;
 	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) == 0)
 		{
+		if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
 		(bssidlist +p)->timestamp = timestamp;
 		(bssidlist +p)->bssidinfo->beaconcount += 1;
 		if(((bssidlist +p)->bssidinfo->status & BSSID_BEACON) != BSSID_BEACON)
 			{
 			(bssidlist +p)->bssidinfo->status |= BSSID_BEACON;
-			apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
-			apinfolen = payloadlen -CAPABILITIESAP_SIZE;
 			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
 			writeepb(fd_pcapng);
-			return;
 			}
-		if((bssidlist +p)->bssidinfo->beaconcount %100 == 0)
-			{
-			apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
-			apinfolen = payloadlen -CAPABILITIESAP_SIZE;
-			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
-			}
-		if((bssidlist +p)->bssidinfo->beaconcount %216000 == 0)
-			{
-			(bssidlist +p)->bssidinfo->deauthattackcount = 0;
-			(bssidlist +p)->bssidinfo->deauthattackfactor = 0;
-			apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
-			apinfolen = payloadlen -CAPABILITIESAP_SIZE;
-			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
-			writeepb(fd_pcapng);
-			return;
-			}
-		if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
 		if((bssidlist +p)->bssidinfo->status >= BSSID_M4) return;
 		if((bssidlist +p)->bssidinfo->kdv == 0) return;
-		(bssidlist +p)->bssidinfo->deauthattackcount += 1;
-		if((bssidlist +p)->bssidinfo->deauthattackcount >= ((bssidlist +p)->bssidinfo->deauthattackfactor +25))
+		if((timestamp - (bssidlist +p)->bssidinfo->timestampclient) > 600000000)
+			{
+			memset((bssidlist +p)->bssidinfo->macclient, 0xff, 6);
+			return;
+			}
+		if((bssidlist +p)->bssidinfo->deauthattackcount >= ((bssidlist +p)->bssidinfo->deauthattackfactor +20))
 			{
 			(bssidlist +p)->bssidinfo->deauthattackcount = 0;
 			(bssidlist +p)->bssidinfo->deauthattackfactor += 1;
-			memset((bssidlist +p)->bssidinfo->macclient, 0xff, 6);
 			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
 			qsort(bssidlist, p +1, BSSIDLIST_SIZE, sort_bssidlist_by_time);
 			return;
 			}
+		(bssidlist +p)->bssidinfo->deauthattackcount += 1;
 		#ifdef GETM1
-		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +5))
+		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +4))
 			{
-			if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0))
-				{
-				#ifdef GETM1234
-				send_disassociation2client(p, WLAN_REASON_DISASSOC_STA_HAS_LEFT);
-				#endif
-				return;
-				}
 			if(((bssidlist +p)->bssidinfo->status &BSSID_M1) == 0)
 				{
 				if(((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK) send_authentication_req_opensystem(p);
 				else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa1(p);
 				return;
 				}
+			return;
+			}
+		#endif
+		#ifdef GETM1234
+		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +8))
+			{
 			if((((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa2(p);
 			else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa1(p);
 			return;
 			}
 		#endif
-		if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) == 0) return;
+		if(((bssidlist +p)->bssidinfo->rsncapa &MFP_REQUIRED) != 0) return;
 		#ifdef GETM1234
-		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +10))
+		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +12))
 			{
-			if(((bssidlist +p)->bssidinfo->rsncapa &MFP_REQUIRED) != 0) return;
-			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) == 0) return;
 			send_deauthentication2client(p, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 			send_deauthentication2ap(p, WLAN_REASON_DEAUTH_LEAVING);
 			return;
 			}
-		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +15))
+		#endif
+		#ifdef GETM1234
+		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +16))
 			{
-			if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0))
-				{
-				send_disassociation2client(p, WLAN_REASON_DISASSOC_STA_HAS_LEFT);
-				return;
-				}
-			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) == 0) return;
-			if((((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa2(p);
-			else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa1(p);
-			return;
-			}
-		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +20))
-			{
-			if(((bssidlist +p)->bssidinfo->rsncapa &MFP_REQUIRED) != 0)
-			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) == 0) return;
 			send_deauthentication2client(p, WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA);
 			send_deauthentication2ap(p, WLAN_REASON_DEAUTH_LEAVING);
 			return;
@@ -1939,27 +1912,25 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		return;
 		}
 	}
+get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
+if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
 (bssidlist +p)->timestamp = timestamp;
 memcpy((bssidlist +p)->mac, macfrx->addr3, 6);
 memset((bssidlist +p)->bssidinfo, 0, BSSIDINFO_SIZE);
 (bssidlist +p)->bssidinfo->timestampfirst = timestamp;
 (bssidlist +p)->bssidinfo->beaconcount = 1;
 (bssidlist +p)->bssidinfo->aid = 0xc001;
+(bssidlist +p)->bssidinfo->timestampclient = timestamp;
 memset((bssidlist +p)->bssidinfo->macclient, 0xff, 6);
 (bssidlist +p)->bssidinfo->status = BSSID_BEACON;
 capabilitiesptr = (capap_t*)payloadptr;
 (bssidlist +p)->bssidinfo->capabilities = capabilitiesptr->capabilities;
-apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
-apinfolen = payloadlen -CAPABILITIESAP_SIZE;
-get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
-if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
 #ifdef GETM1234
 if((bssidlist +p)->bssidinfo->kdv != 0)
 	{
 	send_pspoll(p);
 	send_deauthentication2client(p, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 	}
-if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_deauthentication2client(p, WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA);
 #endif
 qsort(bssidlist, p +1, BSSIDLIST_SIZE, sort_bssidlist_by_time);
 writeepb(fd_pcapng);

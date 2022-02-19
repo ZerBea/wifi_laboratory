@@ -140,6 +140,7 @@ typedef struct
 #define	TAK_SAE_SHA256	0b0000000010000000
 #define TAK_FT_SAE	0b0000000100000000
  uint16_t		rsncapa;
+ uint64_t	timestampclient;
  uint8_t	macclient[6];
  uint8_t	essidlen;
  uint8_t	essid[ESSID_LEN_MAX];
