@@ -1812,7 +1812,6 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) == 0)
 		{
 		get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
-		if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
 		(bssidlist +p)->timestamp = timestamp;
 		(bssidlist +p)->bssidinfo->proberesponsecount += 1;
 		if(((bssidlist +p)->bssidinfo->status & BSSID_PROBERESPONSE) != BSSID_PROBERESPONSE)
@@ -1826,11 +1825,10 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		return;
 		}
 	}
+memset((bssidlist +p)->bssidinfo, 0, BSSIDINFO_SIZE);
 get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
-if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
 (bssidlist +p)->timestamp = timestamp;
 memcpy((bssidlist +p)->mac, macfrx->addr3, 6);
-memset((bssidlist +p)->bssidinfo, 0, BSSIDINFO_SIZE);
 (bssidlist +p)->bssidinfo->timestampfirst = timestamp;
 (bssidlist +p)->bssidinfo->proberesponsecount = 1;
 (bssidlist +p)->bssidinfo->aid = 0xc001;
