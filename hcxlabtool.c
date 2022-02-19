@@ -1875,7 +1875,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			memset((bssidlist +p)->bssidinfo->macclient, 0xff, 6);
 			return;
 			}
-		if((bssidlist +p)->bssidinfo->deauthattackcount >= ((bssidlist +p)->bssidinfo->deauthattackfactor +20))
+		if((bssidlist +p)->bssidinfo->deauthattackcount >= ((bssidlist +p)->bssidinfo->deauthattackfactor +18))
 			{
 			(bssidlist +p)->bssidinfo->deauthattackcount = 0;
 			(bssidlist +p)->bssidinfo->deauthattackfactor += 1;
@@ -1885,7 +1885,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			}
 		(bssidlist +p)->bssidinfo->deauthattackcount += 1;
 		#ifdef GETM1
-		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +4))
+		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +2))
 			{
 			if(((bssidlist +p)->bssidinfo->status &BSSID_M1) == 0)
 				{
@@ -1897,7 +1897,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			}
 		#endif
 		#ifdef GETM1234
-		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +8))
+		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +6))
 			{
 			if((((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa2(p);
 			else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa1(p);
@@ -1906,7 +1906,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		#endif
 		if(((bssidlist +p)->bssidinfo->rsncapa &MFP_REQUIRED) != 0) return;
 		#ifdef GETM1234
-		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +12))
+		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +10))
 			{
 			send_deauthentication2client(p, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) != 0) send_deauthentication2ap(p, WLAN_REASON_DEAUTH_LEAVING);
@@ -1914,7 +1914,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			}
 		#endif
 		#ifdef GETM1234
-		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +16))
+		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +14))
 			{
 			send_deauthentication2client(p, WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA);
 			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) != 0) send_deauthentication2ap(p, WLAN_REASON_DEAUTH_LEAVING);
