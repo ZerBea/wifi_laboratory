@@ -1512,7 +1512,6 @@ if(macfrx->retry == 1) return;
 writeepb(fd_pcapng);
 
 #ifdef GETM2
-printf("sgot request\n");
 
 clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
 clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
@@ -1520,13 +1519,7 @@ if(clientinfolen < IETAG_SIZE) return;
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
 	if((clientlist +p)->timestamp == 0) break;
-	debugmac2((clientlist +p)->mac, macfrx->addr2, "before 1");
-	debugmac2((clientlist +p)->macap, macfrx->addr1, "before 2");
 	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
-	debugmac2((clientlist +p)->mac, macfrx->addr2, "after 1");
-	debugmac2((clientlist +p)->macap, macfrx->addr1, "after 2");
-	printf("attxx %d %d\n", (clientlist +p)->count, m2attempts);
-
 	if((clientlist +p)->count >= m2attempts) return;
 
 	get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
@@ -1535,7 +1528,6 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 		if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
 			{
 			send_ack();
-			printf("sende response\n");
 			send_association_resp();
 			send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 			memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1544,7 +1536,6 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 		if((bssidinfo.rsnakm &TAK_PSKSHA256) == TAK_PSKSHA256)
 			{
 			send_ack();
-			printf("sende response\n");
 			send_association_resp();
 			send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
 			memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1555,7 +1546,6 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 	if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
 		{
 		send_ack();
-		printf("sende response\n");
 		send_association_resp();
 		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 		memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1573,7 +1563,6 @@ if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
 		{
 		send_ack();
-		printf("sende response\n");
 		send_association_resp();
 		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 		memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1592,7 +1581,6 @@ if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
 	{
 	send_ack();
-	printf("sende response\n");
 	send_association_resp();
 	send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 	memcpy(&mac_pending, macfrx->addr1, 6);
