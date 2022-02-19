@@ -1069,6 +1069,19 @@ static inline void process80211qosnull()
 static int p;
 
 if(macfrx->to_ds == 0) return;
+#ifdef GETM2
+if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
+	{
+	if(memcmp(&mac_null, macfrx->addr1, 6) != 0)
+		{
+		send_ack();
+		if(write(fd_socket, epbown_m1 +EPB_SIZE, HDRRT_SIZE +MAC_SIZE_NORM +107) == -1) errorcount++;
+		memset(&mac_pending, 0, 6);
+		return;
+		}
+	}
+#endif
+if(macfrx->to_ds == 0) return;
 for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
 	if((bssidlist +p)->timestamp == 0) return;
@@ -1499,20 +1512,30 @@ if(macfrx->retry == 1) return;
 writeepb(fd_pcapng);
 
 #ifdef GETM2
+printf("sgot request\n");
+
+clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
+clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
+if(clientinfolen < IETAG_SIZE) return;
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
 	if((clientlist +p)->timestamp == 0) break;
+	debugmac2((clientlist +p)->mac, macfrx->addr2, "before 1");
+	debugmac2((clientlist +p)->macap, macfrx->addr1, "before 2");
 	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
+	debugmac2((clientlist +p)->mac, macfrx->addr2, "after 1");
+	debugmac2((clientlist +p)->macap, macfrx->addr1, "after 2");
+	printf("attxx %d %d\n", (clientlist +p)->count, m2attempts);
+
 	if((clientlist +p)->count >= m2attempts) return;
-	clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
-	clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
-	if(clientinfolen < IETAG_SIZE) return;
+
 	get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 	if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 		{
 		if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
 			{
 			send_ack();
+			printf("sende response\n");
 			send_association_resp();
 			send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 			memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1521,6 +1544,7 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 		if((bssidinfo.rsnakm &TAK_PSKSHA256) == TAK_PSKSHA256)
 			{
 			send_ack();
+			printf("sende response\n");
 			send_association_resp();
 			send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
 			memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1531,6 +1555,7 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 	if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
 		{
 		send_ack();
+		printf("sende response\n");
 		send_association_resp();
 		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 		memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1542,15 +1567,13 @@ memset((clientlist +p), 0, CLIENTLIST_SIZE);
 (clientlist +p)->timestamp = timestamp;
 memcpy((clientlist +p)->mac, macfrx->addr2, 6);
 memcpy((clientlist +p)->macap, macfrx->addr1, 6);
-clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
-clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
-if(clientinfolen < IETAG_SIZE) return;
 get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	{
 	if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
 		{
 		send_ack();
+		printf("sende response\n");
 		send_association_resp();
 		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 		memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1569,6 +1592,7 @@ if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
 	{
 	send_ack();
+	printf("sende response\n");
 	send_association_resp();
 	send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 	memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1581,7 +1605,6 @@ return;
 static inline void process80211association_resp()
 {
 writeepb(fd_pcapng);
-send_ack();
 return;
 }
 /*===========================================================================*/
@@ -1618,13 +1641,13 @@ static int p;
 #endif
 
 if(macfrx->retry == 1) return;
-
 #ifdef GETM2
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
 	if((clientlist +p)->timestamp == 0) break;
 	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->count >= m2attempts) return;
+	send_ack();
 	send_authentication_resp_opensystem();
 	if(p > 10) qsort(clientlist, p +1, CLIENTLIST_SIZE, sort_clientlist_by_time);
 	return;
@@ -1633,6 +1656,7 @@ memset((clientlist +p), 0, CLIENTLIST_SIZE);
 (clientlist +p)->timestamp = timestamp;
 memcpy((clientlist +p)->mac, macfrx->addr2, 6);
 memcpy((clientlist +p)->macap, macfrx->addr1, 6);
+send_ack();
 send_authentication_resp_opensystem();
 qsort(clientlist, p +1, CLIENTLIST_SIZE, sort_clientlist_by_time);
 #endif
@@ -1897,7 +1921,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +12))
 			{
 			send_deauthentication2client(p, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
-			send_deauthentication2ap(p, WLAN_REASON_DEAUTH_LEAVING);
+			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) != 0) send_deauthentication2ap(p, WLAN_REASON_DEAUTH_LEAVING);
 			return;
 			}
 		#endif
@@ -1905,7 +1929,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +16))
 			{
 			send_deauthentication2client(p, WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA);
-			send_deauthentication2ap(p, WLAN_REASON_DEAUTH_LEAVING);
+			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) != 0) send_deauthentication2ap(p, WLAN_REASON_DEAUTH_LEAVING);
 			return;
 			}
 		#endif
@@ -3318,7 +3342,7 @@ essidlistname = NULL;
 bpfcname = NULL;
 userscanlist = NULL;
 staytime = STAYTIME;
-m2attempts = m2attempts;
+m2attempts = M2ATTEMPTS;
 rgbssidlistmax = RGBSSIDLIST_MAX;
 tvtot.tv_sec = 2147483647L;
 tvtot.tv_usec = 0;
