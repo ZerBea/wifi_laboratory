@@ -1888,8 +1888,12 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			{
 			if(((bssidlist +p)->bssidinfo->status &BSSID_M1) == 0)
 				{
-				if(((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK) send_authentication_req_opensystem(p);
-				else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa1(p);
+				if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_pspoll(p);
+				else
+					{
+					if(((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK) send_authentication_req_opensystem(p);
+					else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa1(p);
+					}
 				return;
 				}
 			return;
