@@ -2294,16 +2294,17 @@ while(wantstopflag == false)
 			wantstopflag = true;
 			}
 		}
-	if(errorcount >= ERROR_MAX)
-		{
-		if((errorcount %ERROR_MAX) == 0) fprintf(stderr, "error count reached ERROR_MAX\n");
-		if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
-		}
 	gettimeofday(&tv, NULL);
 	if(tv.tv_sec >= tvtot.tv_sec)
 		{
 		rebootflag = true;
 		wantstopflag = true;
+		}
+	if(errorcount >= ERROR_MAX)
+		{
+		if((errorcount %ERROR_MAX) == 0) fprintf(stderr, "error count reached ERROR_MAX\n");
+		if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
+		continue;
 		}
 	if((tv.tv_sec -tvoldled.tv_sec) >= LEDFLASHINTERVAL)
 		{
@@ -2389,16 +2390,17 @@ while(wantstopflag == false)
 			wantstopflag = true;
 			}
 		}
-	if(errorcount >= ERROR_MAX)
-		{
-		if((errorcount %ERROR_MAX) == 0) fprintf(stderr, "error count reached ERROR_MAX\n");
-		if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
-		}
 	gettimeofday(&tv, NULL);
 	if(tv.tv_sec >= tvtot.tv_sec)
 		{
 		rebootflag = true;
 		wantstopflag = true;
+		}
+	if(errorcount >= ERROR_MAX)
+		{
+		if((errorcount %ERROR_MAX) == 0) fprintf(stderr, "error count reached ERROR_MAX\n");
+		if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
+		continue;
 		}
 	if((tv.tv_sec -tvold.tv_sec) >= LEDFLASHINTERVAL)
 		{
