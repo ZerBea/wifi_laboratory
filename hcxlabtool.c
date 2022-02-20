@@ -1878,6 +1878,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			(bssidlist +p)->bssidinfo->deauthattackcount = 0;
 			(bssidlist +p)->bssidinfo->deauthattackfactor += 1;
 			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
+			send_pspoll(p);
 			qsort(bssidlist, p +1, BSSIDLIST_SIZE, sort_bssidlist_by_time);
 			return;
 			}
@@ -1897,8 +1898,12 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		#ifdef GETM1234
 		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +6))
 			{
-			if((((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa2(p);
-			else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa1(p);
+			if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_pspoll(p);
+			else
+				{
+				if((((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa2(p);
+				else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa1(p);
+				}
 			return;
 			}
 		#endif
@@ -1939,7 +1944,12 @@ if((bssidlist +p)->bssidinfo->kdv != 0)
 	{
 	if(((bssidlist +p)->bssidinfo->channel == ptrscanlist->channel) || ((bssidlist +p)->bssidinfo->channel == 0))
 		{
-		send_pspoll(p);
+		if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_pspoll(p);
+		else
+			{
+			if((((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa2(p);
+			else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa1(p);
+			}
 		send_deauthentication2client(p, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 		}
 	}
