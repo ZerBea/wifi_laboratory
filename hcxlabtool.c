@@ -1361,6 +1361,25 @@ if((wpaptr->ouitype == VT_WPA_IE) && (vendorlen >= WPAIE_LEN_MIN)) gettagwpa(bss
 return;
 }
 /*===========================================================================*/
+static inline uint8_t get_tag_channel(int infolen, uint8_t *infoptr)
+{
+static ietag_t *tagptr;
+
+while(0 < infolen)
+	{
+	if(infolen == 4) return 0;
+	tagptr = (ietag_t*)infoptr;
+	if(tagptr->len > infolen) return 0;
+	if(tagptr->id == TAG_CHAN)
+		{
+		if(tagptr->len == 1) return tagptr->data[0];
+		}
+	infoptr += tagptr->len +IETAG_SIZE;
+	infolen -= tagptr->len +IETAG_SIZE;
+	}
+return 0;
+}
+/*===========================================================================*/
 static inline void get_tag_essid(essid_t *essidinfo, int infolen, uint8_t *infoptr)
 {
 static ietag_t *tagptr;
@@ -1823,10 +1842,13 @@ static int p;
 static capap_t *capabilitiesptr;
 static int apinfolen;
 static uint8_t *apinfoptr;
+static uint8_t apchannel;
 
 if(payloadlen < CAPABILITIESAP_SIZE +IETAG_SIZE) return;
 apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
 apinfolen = payloadlen -CAPABILITIESAP_SIZE;
+apchannel = get_tag_channel(apinfolen, apinfoptr);
+if((apchannel != ptrscanlist->channel) && (apchannel != 0)) return;
 for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
 	if((bssidlist +p)->timestamp == 0) break;
@@ -1869,10 +1891,13 @@ static int p;
 static capap_t *capabilitiesptr;
 static int apinfolen;
 static uint8_t *apinfoptr;
+static uint8_t apchannel;
 
 if(payloadlen < CAPABILITIESAP_SIZE +IETAG_SIZE) return;
 apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
 apinfolen = payloadlen -CAPABILITIESAP_SIZE;
+apchannel = get_tag_channel(apinfolen, apinfoptr);
+if((apchannel != ptrscanlist->channel) && (apchannel != 0)) return;
 for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
 	if((bssidlist +p)->timestamp == 0) break;
@@ -1886,7 +1911,6 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
 			writeepb(fd_pcapng);
 			}
-		if(((bssidlist +p)->bssidinfo->channel != ptrscanlist->channel) && ((bssidlist +p)->bssidinfo->channel != 0)) return;
 		if((bssidlist +p)->bssidinfo->status >= BSSID_M4) return;
 		if((bssidlist +p)->bssidinfo->kdv == 0) return;
 		if((timestamp - (bssidlist +p)->bssidinfo->timestampclient) > 600000000)
@@ -1967,16 +1991,13 @@ capabilitiesptr = (capap_t*)payloadptr;
 #ifdef GETM1234
 if((bssidlist +p)->bssidinfo->kdv != 0)
 	{
-	if(((bssidlist +p)->bssidinfo->channel == ptrscanlist->channel) || ((bssidlist +p)->bssidinfo->channel == 0))
+	if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_pspoll(p);
+	else
 		{
-		if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_pspoll(p);
-		else
-			{
-			if((((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa2(p);
-			else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa1(p);
-			}
-		send_deauthentication2client(p, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+		if((((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa2(p);
+		else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_reassociation_req_wpa1(p);
 		}
+	send_deauthentication2client(p, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 	}
 #endif
 qsort(bssidlist, p +1, BSSIDLIST_SIZE, sort_bssidlist_by_time);
