@@ -2319,7 +2319,11 @@ sleepled.tv_nsec = GPIO_LED_DELAY;
 tsfd.tv_sec = 0;
 tsfd.tv_nsec = FDNSECTIMER;
 ptrscanlist = scanlist;
-if(set_channel() == false) return;
+if(set_channel() == false)
+	{
+	errorcount++;
+	return;
+	}
 #ifdef GETM2
 send_beacon_wildcard();
 #endif
@@ -2374,7 +2378,7 @@ while(wantstopflag == false)
 		tvold.tv_sec = tv.tv_sec;
 		ptrscanlist++;
 		if(ptrscanlist->frequency == 0) ptrscanlist = scanlist;
-		set_channel();
+		if(set_channel() == false) errorcount++;
 		#ifdef GETM2
 		send_beacon_wildcard();
 		#endif
@@ -2415,7 +2419,11 @@ sleepled.tv_nsec = GPIO_LED_DELAY;
 tsfd.tv_sec = 0;
 tsfd.tv_nsec = FDNSECTIMER;
 ptrscanlist = scanlist;
-if(set_channel() == false) return;
+if(set_channel() == false)
+	{
+	errorcount++;
+	return;
+	}
 #ifdef GETM2
 send_beacon_wildcard();
 #endif
