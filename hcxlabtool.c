@@ -1373,6 +1373,7 @@ while(0 < infolen)
 	if(tagptr->id == TAG_CHAN)
 		{
 		if(tagptr->len == 1) return tagptr->data[0];
+		return 0;
 		}
 	infoptr += tagptr->len +IETAG_SIZE;
 	infolen -= tagptr->len +IETAG_SIZE;
@@ -2389,6 +2390,8 @@ while(wantstopflag == false)
 	FD_ZERO(&readfds);
 	sd_socket = fd_socket;
 	FD_SET(sd_socket, &readfds);
+	tsfd.tv_sec = 0;
+	tsfd.tv_nsec = FDNSECTIMER;
 	fdnum = pselect(sd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
 	if(fdnum < 0)
 		{
@@ -2482,6 +2485,8 @@ while(wantstopflag == false)
 	FD_ZERO(&readfds);
 	sd_socket = fd_socket;
 	FD_SET(sd_socket, &readfds);
+	tsfd.tv_sec = 0;
+	tsfd.tv_nsec = FDNSECTIMER;
 	fdnum = pselect(sd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
 	if(fdnum < 0)
 		{
