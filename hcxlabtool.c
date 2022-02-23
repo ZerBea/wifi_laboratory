@@ -888,7 +888,7 @@ static const uint8_t eaprequestiddata[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +EAPREQUESTIDDATA_SIZE);
-memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_DATA;
 macftx->subtype = IEEE80211_STYPE_DATA;
