@@ -1100,7 +1100,6 @@ if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
 		}
 	}
 #endif
-if(macfrx->to_ds == 0) return;
 for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
 	if((bssidlist +p)->timestamp == 0) return;
@@ -1109,6 +1108,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		(bssidlist +p)->timestamp = timestamp;
 		(bssidlist +p)->bssidinfo->timestampclient = timestamp;
 		memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
+		
 		return;
 		}
 	}
