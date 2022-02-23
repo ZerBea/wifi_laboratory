@@ -1455,8 +1455,8 @@ static uint16_t clientinfolen;
 static bssidinfo_t bssidinfo;
 #endif
 
-if(macfrx->retry == 1) return;
 writeepb(fd_pcapng);
+if(macfrx->retry == 1) return;
 #ifdef GETM2
 clientinfoptr = payloadptr +CAPABILITIESREQSTA_SIZE;
 clientinfolen = payloadlen -CAPABILITIESREQSTA_SIZE;
