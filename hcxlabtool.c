@@ -1458,14 +1458,14 @@ static bssidinfo_t bssidinfo;
 if(macfrx->retry == 1) return;
 writeepb(fd_pcapng);
 #ifdef GETM2
+clientinfoptr = payloadptr +CAPABILITIESREQSTA_SIZE;
+clientinfolen = payloadlen -CAPABILITIESREQSTA_SIZE;
+if(clientinfolen < IETAG_SIZE) return;
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
 	if((clientlist +p)->timestamp == 0) break;
 	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->count >= m2attempts) return;
-	clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
-	clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
-	if(clientinfolen < IETAG_SIZE) return;
 	get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 	if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 		{
@@ -1501,9 +1501,6 @@ memset((clientlist +p), 0, CLIENTLIST_SIZE);
 (clientlist +p)->timestamp = timestamp;
 memcpy((clientlist +p)->mac, macfrx->addr2, 6);
 memcpy((clientlist +p)->macap, macfrx->addr1, 6);
-clientinfoptr = payloadptr +CAPABILITIESSTA_SIZE;
-clientinfolen = payloadlen -CAPABILITIESSTA_SIZE;
-if(clientinfolen < IETAG_SIZE) return;
 get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	{
@@ -2220,7 +2217,6 @@ if(macfrx->type == IEEE80211_FTYPE_MGMT)
 		}
 	else if(macfrx->subtype == IEEE80211_STYPE_ASSOC_REQ) process80211association_req();
 	else if(macfrx->subtype == IEEE80211_STYPE_ASSOC_RESP) process80211association_resp();
-
 	else if(macfrx->subtype == IEEE80211_STYPE_REASSOC_REQ) process80211reassociation_req();
 	else if(macfrx->subtype == IEEE80211_STYPE_REASSOC_RESP) process80211reassociation_resp();
 	}
