@@ -65,6 +65,7 @@ static enhanced_packet_block_t *epbhdr;
 static enhanced_packet_block_t *epbhdrown;
 
 static int packetlen;
+static int packetoutlen;
 static uint8_t *packetptr;
 static uint8_t *packetoutptr;
 static mac_t *macfrx;
@@ -260,6 +261,29 @@ if(written != epblen) errorcount++;
 return;	
 }
 /*===========================================================================*/
+static inline void fdwrite()
+{
+static int fdnum;
+static fd_set txfds;
+static struct timespec tsfdtx;
+
+FD_ZERO(&txfds);
+FD_SET(fd_socket, &txfds);
+tsfdtx.tv_sec = 0;
+tsfdtx.tv_nsec = FDTXNSECTIMER;
+fdnum = pselect(fd_socket +1, NULL, &txfds, NULL, &tsfdtx, NULL);
+if(fdnum < 0)
+	{
+	errorcount++;
+	return;
+	}
+if(FD_ISSET(fd_socket, &txfds)) 
+	{
+	if(write(fd_socket, packetoutptr, packetoutlen) > 0) return;
+	}
+errorcount++;
+return;	
+}
 /*===========================================================================*/
 static inline void send_ack()
 {
@@ -272,7 +296,8 @@ macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_CTL;
 macftx->subtype = IEEE80211_STYPE_ACK;
 memcpy(macftx->addr1, macfrx->addr2, 6);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_ACK) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_ACK;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -309,7 +334,8 @@ reassocid->capabilities = 0x0431;
 reassocid->statuscode = 0x0000;
 reassocid->aid = 0xc001;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +REASSOCIATIONRESPFRAME_SIZE], &reassociationresponsedata, REASSOCIATIONRESPONSE_SIZE);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +REASSOCIATIONRESPFRAME_SIZE +REASSOCIATIONRESPONSE_SIZE) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +REASSOCIATIONRESPFRAME_SIZE +REASSOCIATIONRESPONSE_SIZE;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -345,7 +371,8 @@ capaid->capabilities = 0x0431;
 capaid->statuscode = 0x0000;
 capaid->aid = 0xc001;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAID_SIZE], &associationresponsedata, ASSOCIATIONRESPONSE_SIZE);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAID_SIZE +ASSOCIATIONRESPONSE_SIZE) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAID_SIZE +ASSOCIATIONRESPONSE_SIZE;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -364,7 +391,8 @@ memcpy(macftx->addr2, macfrx->addr1, 6);
 memcpy(macftx->addr3, macfrx->addr2, 6);
 macftx->sequence = clientsequence++ << 4;
 if(clientsequence > 4095) clientsequence = 1;
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -426,7 +454,8 @@ else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssid
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x1d] = CS_CCMP;
 if(((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x23] = AK_PSK;
 else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x23] = AK_PSKSHA256;
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +ASSOCIATIONREQUESTWPA2_SIZE) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +ASSOCIATIONREQUESTWPA2_SIZE;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -474,7 +503,8 @@ memcpy(stacapa->addr, (bssidlist +p)->mac, 6);
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +1] =(bssidlist +p)->bssidinfo->essidlen;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +IETAG_SIZE], (bssidlist +p)->bssidinfo->essid, (bssidlist +p)->bssidinfo->essidlen);
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE], &reassociationrequestwpa1data, REASSOCIATIONREQUESTWPA1_SIZE);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +REASSOCIATIONREQUESTWPA1_SIZE) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +REASSOCIATIONREQUESTWPA1_SIZE;
+fdwrite();
 return;
 }/*===========================================================================*/
 static inline void send_reassociation_req_wpa2(int p)
@@ -527,7 +557,8 @@ else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x2b] = CS_CCMP;
 if(((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x31] = AK_PSK;
 else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x31] = AK_PSKSHA256;
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +REASSOCIATIONREQUESTWPA2_SIZE) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +REASSOCIATIONREQUESTWPA2_SIZE;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -554,7 +585,8 @@ macftx->duration = 0x013a;
 macftx->sequence = clientsequence++ << 4;
 if(clientsequence > 4095) clientsequence = 1;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &authenticationrequestdata, MYAUTHENTICATIONREQUEST_SIZE);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +MYAUTHENTICATIONREQUEST_SIZE) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +MYAUTHENTICATIONREQUEST_SIZE;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -572,7 +604,8 @@ memcpy(macftx->addr1, (bssidlist +p)->mac, 6);
 memcpy(macftx->addr2, (bssidlist +p)->bssidinfo->macclient, 6);
 macftx->power = 1;
 macftx->duration = (bssidlist +p)->bssidinfo->aid;
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_RTS) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_RTS;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -593,7 +626,8 @@ macftx->duration = 0x013a;
 macftx->sequence = deauthenticationsequence++ << 4;
 if(deauthenticationsequence > 4095) deauthenticationsequence = 1;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM] = reason;
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +2) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +2;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -614,7 +648,8 @@ macftx->duration = 0x013a;
 macftx->sequence = deauthenticationsequence++ << 4;
 if(deauthenticationsequence > 4095) deauthenticationsequence = 1;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM] = reason;
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +2) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +2;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -635,7 +670,8 @@ macftx->duration = 0x013a;
 macftx->sequence = deauthenticationsequence++ << 4;
 if(deauthenticationsequence > 4095) deauthenticationsequence = 1;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM] = reason;
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +2) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +2;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -900,7 +936,8 @@ macftx->duration = 0x013a;
 macftx->sequence = apsequence++ << 4;
 if(clientsequence > 4095) apsequence = 1;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &eaprequestiddata, EAPREQUESTIDDATA_SIZE);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +EAPREQUESTIDDATA_SIZE) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +EAPREQUESTIDDATA_SIZE;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -967,7 +1004,8 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x17] = (rgrc >> 8) &0xff;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x18] = rgrc &0xff;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x19], &anonce, 32);
 writeepbown_m1(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +107);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +107) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -1008,7 +1046,8 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x17] = (rgrc >> 8) &0xff;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x18] = rgrc &0xff;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x19], &anonce, 32);
 writeepbown_m1(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +107);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +107) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -1048,7 +1087,8 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x17] = (rgrc >> 8) &0xff;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x18] = rgrc &0xff;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +0x19], &anonce, 32);
 writeepbown_m1(fd_pcapng, HDRRT_SIZE +MAC_SIZE_NORM +107);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +107) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -1063,7 +1103,9 @@ if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
 	if(memcmp(&mac_null, macfrx->addr1, 6) != 0)
 		{
 		send_ack();
-		if(write(fd_socket, epbown_m1 +EPB_SIZE, HDRRT_SIZE +MAC_SIZE_NORM +107) == -1) errorcount++;
+		packetptr = epbown_m1 +EPB_SIZE;
+		packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
+		fdwrite();
 		memset(&mac_pending, 0, 6);
 		return;
 		}
@@ -1094,7 +1136,9 @@ if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
 	if(memcmp(&mac_null, macfrx->addr1, 6) != 0)
 		{
 		send_ack();
-		if(write(fd_socket, epbown_m1 +EPB_SIZE, HDRRT_SIZE +MAC_SIZE_NORM +107) == -1) errorcount++;
+		packetptr = epbown_m1 +EPB_SIZE;
+		packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
+		fdwrite();
 		memset(&mac_pending, 0, 6);
 		return;
 		}
@@ -1656,7 +1700,8 @@ macftx->duration = 0x013a;
 macftx->sequence = apsequence++ << 4;
 if(apsequence > 4095) apsequence = 0;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &authenticationresponsedata, AUTHENTICATIONRESPONSE_SIZE);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +AUTHENTICATIONRESPONSE_SIZE) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +AUTHENTICATIONRESPONSE_SIZE;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -1771,7 +1816,8 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +1] = essidlen;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE], essid, essidlen);
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +essidlen], &proberesponse_data, PROBERESPONSE_DATA_SIZE);
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +essidlen +0x0c] = ptrscanlist->channel;
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +essidlen +PROBERESPONSE_DATA_SIZE) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +essidlen +PROBERESPONSE_DATA_SIZE;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -2064,7 +2110,8 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +1] = (rgbssidlist +
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE], (rgbssidlist +rgbssidlistp)->essid, (rgbssidlist +rgbssidlistp)->essidlen);
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgbssidlist +rgbssidlistp)->essidlen], beacon_data, BEACON_DATA_SIZE);
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgbssidlist +rgbssidlistp)->essidlen +0xc] = ptrscanlist->channel;
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgbssidlist +rgbssidlistp)->essidlen +BEACON_DATA_SIZE) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgbssidlist +rgbssidlistp)->essidlen +BEACON_DATA_SIZE;
+fdwrite();
 rgbssidlistp++;
 return;
 }
@@ -2109,7 +2156,8 @@ capap->capabilities = 0x431;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE], beacon_data, BEACON_DATA_SIZE);
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +0xe] = ptrscanlist->channel;
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +BEACON_DATA_SIZE) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +BEACON_DATA_SIZE;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -2137,7 +2185,8 @@ memcpy(macftx->addr3, &mac_broadcast, 6);
 macftx->sequence = clientsequence++ << 4;
 if(clientsequence > 4095) clientsequence = 1;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &undirectedproberequestdata, UNDIRECTEDPROBEREQUEST_SIZE);
-if(write(fd_socket, packetoutptr, HDRRT_SIZE +MAC_SIZE_NORM +UNDIRECTEDPROBEREQUEST_SIZE) == -1) errorcount++;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +UNDIRECTEDPROBEREQUEST_SIZE;
+fdwrite();
 return;
 }
 /*===========================================================================*/
@@ -2147,7 +2196,7 @@ static int rthl;
 static rth_t *rth;
 static uint32_t rthp;
 
-packetlen = recvfrom(sd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN, 0, NULL, NULL);
+packetlen = read(sd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
 timestamp = ((uint64_t)tv.tv_sec *1000000) + tv.tv_usec;
 if(packetlen < 0)
 	{
@@ -2188,7 +2237,7 @@ if(rthl > packetlen)
 	return;
 	}
 rthp = le32toh(rth->it_present);
-if((rthp & IEEE80211_RADIOTAP_TX_FLAGS) == IEEE80211_RADIOTAP_TX_FLAGS) return;
+if((rthp & IEEE80211_RADIOTAP_TX_FLAGS) == IEEE80211_RADIOTAP_TX_FLAGS) return; /* outgoing packet */
 ieee82011ptr = packetptr +rthl;
 ieee82011len = packetlen -rthl;
 if(ieee82011len < MAC_SIZE_ACK) return;
@@ -2314,7 +2363,7 @@ lasterrorcount = 0;
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
 tsfd.tv_sec = 0;
-tsfd.tv_nsec = FDNSECTIMER;
+tsfd.tv_nsec = FDRXNSECTIMER;
 ptrscanlist = scanlist;
 if(set_channel() == false)
 	{
@@ -2387,11 +2436,11 @@ while(wantstopflag == false)
 	sd_socket = fd_socket;
 	FD_SET(sd_socket, &readfds);
 	tsfd.tv_sec = 0;
-	tsfd.tv_nsec = FDNSECTIMER;
+	tsfd.tv_nsec = FDRXNSECTIMER;
 	fdnum = pselect(sd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
 	if(fdnum < 0)
 		{
-		errorcount++;
+		if(wantstopflag == false) errorcount++;
 		continue;
 		}
 	sd_socket = fd_socket;
@@ -2416,7 +2465,7 @@ lasterrorcount = 0;
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
 tsfd.tv_sec = 0;
-tsfd.tv_nsec = FDNSECTIMER;
+tsfd.tv_nsec = FDRXNSECTIMER;
 ptrscanlist = scanlist;
 if(set_channel() == false)
 	{
@@ -2482,11 +2531,11 @@ while(wantstopflag == false)
 	sd_socket = fd_socket;
 	FD_SET(sd_socket, &readfds);
 	tsfd.tv_sec = 0;
-	tsfd.tv_nsec = FDNSECTIMER;
+	tsfd.tv_nsec = FDRXNSECTIMER;
 	fdnum = pselect(sd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
 	if(fdnum < 0)
 		{
-		errorcount++;
+		if(wantstopflag == false) errorcount++;
 		continue;
 		}
 	sd_socket = fd_socket;
@@ -2846,7 +2895,6 @@ return;
 /*===========================================================================*/
 static inline bool opensocket(char *interfacename)
 {
-static int fd_info;
 static struct ifaddrs *ifaddr = NULL;
 static struct ifaddrs *ifa = NULL;
 static struct iwreq iwrinfo, iwr;
@@ -2855,6 +2903,7 @@ static struct ifreq ifr;
 static struct sockaddr_ll ll;
 static struct packet_mreq mr;
 static struct ethtool_perm_addr *epmaddr;
+static int enable = 1;
 
 memset(&ifname, 0, IFNAMSIZ +1);
 memset(&ifmac, 0, sizeof(ifmac));
@@ -2866,15 +2915,16 @@ else
 		{
 		if((ifa->ifa_addr) && (ifa->ifa_addr->sa_family == AF_PACKET))
 			{
-			if((fd_info = socket(AF_INET, SOCK_STREAM, 0)) != -1)
+			if((fd_socket = socket(AF_INET, SOCK_STREAM, 0)) != -1)
 				{
-				memset(&iwrinfo, 0, sizeof(iwr));
-				memcpy(&iwrinfo.ifr_name, ifa->ifa_name, IFNAMSIZ);
-				if(ioctl(fd_info, SIOCGIWNAME, &iwrinfo) != -1)
+				memset(&iwr, 0, sizeof(iwr));
+				memcpy(&iwr.ifr_name, ifa->ifa_name, IFNAMSIZ);
+				if(ioctl(fd_socket, SIOCGIWNAME, &iwr) != -1)
 					{
 					memcpy(&ifname, ifa->ifa_name, IFNAMSIZ);
 					break;
 					}
+				if(fd_socket > 0) close(fd_socket);
 				}
 			}
 		}
@@ -2882,61 +2932,72 @@ else
 	}
 if(ifname[0] == 0) return false;
 if((fd_socket = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) return false;
-	{
-	memset(&iwrinfo, 0, sizeof(iwr));
-	memcpy(&iwrinfo.ifr_name, ifname, IFNAMSIZ);
-	if(ioctl(fd_socket, SIOCGIWNAME, &iwrinfo) == -1) return false;
 
-	if(bpf.len > 0) if(setsockopt(fd_socket, SOL_SOCKET, SO_ATTACH_FILTER, &bpf, sizeof(bpf)) < 0) return false;
+memset(&iwrinfo, 0, sizeof(iwr));
+memcpy(&iwrinfo.ifr_name, ifname, IFNAMSIZ);
+if(ioctl(fd_socket, SIOCGIWNAME, &iwrinfo) == -1) return false;
 
-	memset(&ifr, 0, sizeof(ifr));
-	memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
-	if(ioctl(fd_socket, SIOCSIFFLAGS, &ifr) < 0) return false;
-	memset(&iwr, 0, sizeof(iwr));
-	iwr.u.mode = IW_MODE_MONITOR;
-	memcpy(&iwr.ifr_name, ifname, IFNAMSIZ);
-	if(ioctl(fd_socket, SIOCSIWMODE, &iwr) < 0) return false;
+if(bpf.len > 0) if(setsockopt(fd_socket, SOL_SOCKET, SO_ATTACH_FILTER, &bpf, sizeof(bpf)) < 0) return false;
 
-	memset(&iwr, 0, sizeof(iwr));
-	memcpy(&iwr.ifr_name, ifname, IFNAMSIZ);
-	memset(&param,0 , sizeof(param));
-	iwr.u.data.pointer = &param;
-	ioctl(fd_socket, SIOCSIWPOWER, &iwr);
+memset(&ifr, 0, sizeof(ifr));
+memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
+ifr.ifr_flags = 0;
+if(ioctl(fd_socket, SIOCGIFINDEX, &ifr) < 0) return false;
+memset(&ll, 0, sizeof(ll));
+ll.sll_family = PF_PACKET;
+ll.sll_ifindex = ifr.ifr_ifindex;
+ll.sll_protocol = htons(ETH_P_ALL);
+ll.sll_halen = ETH_ALEN;
+ll.sll_pkttype = PACKET_OTHERHOST | PACKET_OUTGOING;
+if(bind(fd_socket, (struct sockaddr*) &ll, sizeof(ll)) < 0) return false;
 
-	memset(&ifr, 0, sizeof(ifr));
-	memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
-	ifr.ifr_flags = IFF_UP | IFF_BROADCAST | IFF_RUNNING;
-	if(ioctl(fd_socket, SIOCSIFFLAGS, &ifr) < 0) return false;
+memset(&ifr, 0, sizeof(ifr));
+memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
+ifr.ifr_flags = 0;
+if(ioctl(fd_socket, SIOCGIFINDEX, &ifr) < 0) return false;
+memset(&mr, 0, sizeof(mr));
+mr.mr_ifindex = ifr.ifr_ifindex;
+mr.mr_type = PACKET_MR_PROMISC;
+if(setsockopt(fd_socket, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr)) < 0) return false;
 
-	memset(&ifr, 0, sizeof(ifr));
-	memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
-	ifr.ifr_flags = 0;
-	if(ioctl(fd_socket, SIOCGIFINDEX, &ifr) < 0) return false;
-	memset(&ll, 0, sizeof(ll));
-	ll.sll_family = PF_PACKET;
-	ll.sll_ifindex = ifr.ifr_ifindex;
-	ll.sll_protocol = htons(ETH_P_ALL);
-	ll.sll_halen = ETH_ALEN;
-	ll.sll_pkttype = PACKET_OTHERHOST | PACKET_OUTGOING;
-	if(bind(fd_socket, (struct sockaddr*) &ll, sizeof(ll)) < 0) return false;
+if(setsockopt(fd_socket, SOL_PACKET, PACKET_IGNORE_OUTGOING, &enable, sizeof(int)) < 0) return false;
 
-	memset(&mr, 0, sizeof(mr));
-	mr.mr_ifindex = ifr.ifr_ifindex;
-	mr.mr_type = PACKET_MR_PROMISC;
-	if(setsockopt(fd_socket, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr)) < 0) return false;
+memset(&ifr, 0, sizeof(ifr));
+memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
+if(ioctl(fd_socket, SIOCSIFFLAGS, &ifr) < 0) return false; /* set interface down */
 
-	epmaddr = (struct ethtool_perm_addr*)calloc(1, sizeof(struct ethtool_perm_addr) +6);
-	if(!epmaddr) return false;
-	memset(&ifr, 0, sizeof(ifr));
-	memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
-	epmaddr->cmd = ETHTOOL_GPERMADDR;
-	epmaddr->size = 6;
-	ifr.ifr_data = (char*)epmaddr;
-	if(ioctl(fd_socket, SIOCETHTOOL, &ifr) < 0) return false;
-	if(epmaddr->size != 6) return false;
-	memcpy(&ifmac, epmaddr->data, 6);
-	free(epmaddr);
-	}
+memset(&iwr, 0, sizeof(iwr));
+iwr.u.mode = IW_MODE_MONITOR;
+memcpy(&iwr.ifr_name, ifname, IFNAMSIZ);
+if(ioctl(fd_socket, SIOCSIWMODE, &iwr) < 0) return false;
+
+memset(&iwr, 0, sizeof(iwr));
+memcpy(&iwr.ifr_name, ifname, IFNAMSIZ);
+memset(&param,0 , sizeof(param));
+iwr.u.data.pointer = &param;
+ioctl(fd_socket, SIOCSIWPOWER, &iwr);
+
+memset(&ifr, 0, sizeof(ifr));
+memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
+ifr.ifr_flags = IFF_UP | IFF_BROADCAST | IFF_RUNNING;
+if(ioctl(fd_socket, SIOCSIFFLAGS, &ifr) < 0) return false;
+
+epmaddr = (struct ethtool_perm_addr*)calloc(1, sizeof(struct ethtool_perm_addr) +6);
+if(!epmaddr) return false;
+memset(&ifr, 0, sizeof(ifr));
+memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
+epmaddr->cmd = ETHTOOL_GPERMADDR;
+epmaddr->size = 6;
+ifr.ifr_data = (char*)epmaddr;
+if(ioctl(fd_socket, SIOCETHTOOL, &ifr) < 0) return false;
+if(epmaddr->size != 6) return false;
+memcpy(&ifmac, epmaddr->data, 6);
+free(epmaddr);
+
+// todo: init socket before we jumpt into the loop
+//packetlen = read(fd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
+//printf("%d\n", packetlen);
+
 return true;
 }
 /*===========================================================================*/
