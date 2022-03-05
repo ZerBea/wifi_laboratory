@@ -161,7 +161,7 @@ if(fd_socket > 0) close(fd_socket);
 if(fd_pcapng > 0) close(fd_pcapng);
 if(bssidlist != NULL)
 	{
-	for(p = 0; p < BSSIDLIST_MAX; p++)
+	for(p = 0; p < BSSIDLIST_MAX +1; p++)
 		{
 		if((bssidlist +p)->bssidinfo != NULL) free((bssidlist +p)->bssidinfo);
 		}
