@@ -27,8 +27,8 @@
 #define M2ATTEMPTS		10
 
 #define ESSID_LEN_MAX		32
-#define FDRXNSECTIMER		50000000 /* 5msec */
-#define FDTXNSECTIMER		1000000
+#define FDRXNSECTIMER		50000000 /* 0,05 seconds */
+#define FDTXNSECTIMER		10000000 /* 0,01 seconds */
 #define RGAPLISTCOUNT		10
 #define STAYTIME		5
 
