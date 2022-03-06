@@ -2197,7 +2197,7 @@ static rth_t *rth;
 static uint32_t rthp;
 
 packetlen = read(sd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
-timestamp = ((uint64_t)tv.tv_sec *1000000) + tv.tv_usec;
+timestamp = ((uint64_t)tv.tv_sec *1000000L) + tv.tv_usec;
 if(packetlen < 0)
 	{
 	errorcount++;
