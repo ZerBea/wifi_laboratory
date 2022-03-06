@@ -2361,8 +2361,6 @@ static struct timespec sleepled;
 lasterrorcount = 0;
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
-tsfd.tv_sec = 0;
-tsfd.tv_nsec = FDRXNSECTIMER;
 ptrscanlist = scanlist;
 if(set_channel() == false)
 	{
@@ -2461,8 +2459,6 @@ static struct timespec sleepled;
 lasterrorcount = 0;
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
-tsfd.tv_sec = 0;
-tsfd.tv_nsec = FDRXNSECTIMER;
 ptrscanlist = scanlist;
 if(set_channel() == false)
 	{
