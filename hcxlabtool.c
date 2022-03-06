@@ -3169,7 +3169,7 @@ static unsigned int seed;
 static unsigned int gpiobasemem = 0;
 
 gettimeofday(&tv, NULL);
-timestamp = ((uint64_t)tv.tv_sec *1000000) +tv.tv_usec;
+timestamp = ((uint64_t)tv.tv_sec *1000000L) +tv.tv_usec;
 tvold.tv_sec = tv.tv_sec;
 tvold.tv_usec = tv.tv_usec;
 tvoldled.tv_sec = tv.tv_sec;
