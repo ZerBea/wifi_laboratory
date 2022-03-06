@@ -3676,7 +3676,7 @@ else
 	}
 
 globalclose();
-fprintf(stdout, "\n%d error(s) encountered\n", errorcount);
+if(errorcount > 0) fprintf(stdout, "\n%d error(s) encountered\n", errorcount);
 
 if(poweroffflag == true)
 	{
