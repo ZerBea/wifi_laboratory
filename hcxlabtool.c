@@ -52,7 +52,6 @@ static uint8_t ifmac[6];
 static struct sock_fprog bpf;
 
 static int fd_socket;
-static int sd_socket;
 static int fd_pcapng;
 
 static bool wantstopflag;
@@ -2196,7 +2195,7 @@ static int rthl;
 static rth_t *rth;
 static uint32_t rthp;
 
-packetlen = read(sd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
+packetlen = read(fd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
 timestamp = ((uint64_t)tv.tv_sec *1000000L) + tv.tv_usec;
 if(packetlen < 0)
 	{
@@ -2433,18 +2432,16 @@ while(wantstopflag == false)
 		#endif
 		}
 	FD_ZERO(&readfds);
-	sd_socket = fd_socket;
-	FD_SET(sd_socket, &readfds);
+	FD_SET(fd_socket, &readfds);
 	tsfd.tv_sec = 0;
 	tsfd.tv_nsec = FDRXNSECTIMER;
-	fdnum = pselect(sd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
+	fdnum = pselect(fd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
 	if(fdnum < 0)
 		{
 		if(wantstopflag == false) errorcount++;
 		continue;
 		}
-	sd_socket = fd_socket;
-	if(FD_ISSET(sd_socket, &readfds)) process_packet();
+	if(FD_ISSET(fd_socket, &readfds)) process_packet();
 	#ifdef GETM2
 	else send_beacon();
 	#endif
@@ -2528,18 +2525,16 @@ while(wantstopflag == false)
 			}
 		}
 	FD_ZERO(&readfds);
-	sd_socket = fd_socket;
-	FD_SET(sd_socket, &readfds);
+	FD_SET(fd_socket, &readfds);
 	tsfd.tv_sec = 0;
 	tsfd.tv_nsec = FDRXNSECTIMER;
-	fdnum = pselect(sd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
+	fdnum = pselect(fd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
 	if(fdnum < 0)
 		{
 		if(wantstopflag == false) errorcount++;
 		continue;
 		}
-	sd_socket = fd_socket;
-	if(FD_ISSET(sd_socket, &readfds)) process_packet();
+	if(FD_ISSET(fd_socket, &readfds)) process_packet();
 	#ifdef GETM2
 	else send_beacon();
 	#endif
@@ -2994,6 +2989,7 @@ if(epmaddr->size != 6) return false;
 memcpy(&ifmac, epmaddr->data, 6);
 free(epmaddr);
 
+fcntl(fd_socket, F_SETFL, O_NONBLOCK);
 // todo: init socket before we jumpt into the loop
 //packetlen = read(fd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
 //printf("%d\n", packetlen);
