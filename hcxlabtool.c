@@ -2899,6 +2899,9 @@ static struct sockaddr_ll ll;
 static struct packet_mreq mr;
 static struct ethtool_perm_addr *epmaddr;
 static int enable = 1;
+static int fdnum;
+static fd_set readfds;
+static struct timespec tsfd;
 
 memset(&ifname, 0, IFNAMSIZ +1);
 memset(&ifmac, 0, sizeof(ifmac));
@@ -2990,10 +2993,14 @@ memcpy(&ifmac, epmaddr->data, 6);
 free(epmaddr);
 
 fcntl(fd_socket, F_SETFL, O_NONBLOCK);
-// todo: init socket before we jumpt into the loop
-//packetlen = read(fd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
-//printf("%d\n", packetlen);
-
+FD_ZERO(&readfds);
+FD_SET(fd_socket, &readfds);
+tsfd.tv_sec = 0;
+tsfd.tv_nsec = FDRXNSECTIMER;
+fdnum = pselect(fd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
+if(fdnum < 0) return false;
+if(FD_ISSET(fd_socket, &readfds)) packetlen = read(fd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
+else return false;
 return true;
 }
 /*===========================================================================*/
