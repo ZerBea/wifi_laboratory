@@ -1959,6 +1959,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		if((timestamp - (bssidlist +p)->bssidinfo->timestampclient) > 600000000)
 			{
 			memset((bssidlist +p)->bssidinfo->macclient, 0xff, 6);
+			send_pspoll(p);
 			return;
 			}
 		if((bssidlist +p)->bssidinfo->deauthattackcount >= ((bssidlist +p)->bssidinfo->deauthattackfactor +18))
