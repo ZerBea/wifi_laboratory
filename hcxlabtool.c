@@ -2490,7 +2490,11 @@ while(wantstopflag == false)
 		if(ptrscanlist->frequency == 0) ptrscanlist = scanlist;
 		if(set_channel() == false) errorcount++;
 		#ifdef GETM2
-		send_beacon_wildcard();
+		#ifdef BEACONUNSET
+		else send_beacon1();
+		#else
+		else send_beacon();
+		#endif
 		#endif
 		#ifdef GETM1
 		send_proberequest_wildcard();
@@ -2602,7 +2606,7 @@ while(wantstopflag == false)
 	#ifdef BEACONUNSET
 	else send_beacon1();
 	#else
-	else send_beacon1();
+	else send_beacon();
 	#endif
 	#endif
 	}
