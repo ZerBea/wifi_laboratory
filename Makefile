@@ -9,6 +9,7 @@ all: build
 build:
 	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabgetm1 hcxlabtool.c -DGETM1 -DSTATUSOUT
 	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabgetm2 hcxlabtool.c -DGETM2 -DSTATUSOUT
+	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabgetm2wc hcxlabtool.c -DGETM2 -DBEACONUNSET -DSTATUSOUT
 	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabgetm1234 hcxlabtool.c -DGETM1234 -DSTATUSOUT
 	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabgetmall hcxlabtool.c  -DGETM1 -DGETM2 -DGETM1234 -DSTATUSOUT
 	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabdumpall hcxlabtool.c -DDUMPIPV4 -DDUMPIPV6 -DDUMPWEP -DDUMPWPA

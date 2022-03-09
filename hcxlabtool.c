@@ -770,6 +770,7 @@ if(rgrc == m2rc)
 			{
 			(clientlist +p)->count += 1;
 			memcpy((clientlist +p)->mic, wpak->keymic, 16);
+			memset(&mac_pending, 0, 6);
 			#ifdef STATUSOUT
 			debugmac2(macfrx->addr2, macfrx->addr3, "M1M2ROGUE");
 			#endif
@@ -1105,7 +1106,6 @@ if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
 		packetptr = epbown_m1 +EPB_SIZE;
 		packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
 		fdwrite();
-		memset(&mac_pending, 0, 6);
 		return;
 		}
 	}
@@ -1138,7 +1138,6 @@ if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
 		packetptr = epbown_m1 +EPB_SIZE;
 		packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
 		fdwrite();
-		memset(&mac_pending, 0, 6);
 		return;
 		}
 	}
@@ -1832,8 +1831,8 @@ if(essidinfo.essidlen == 0)
 	{
 	if((rgbssidlist)->timestamp == 0) return;
 	#ifdef GETM2
-	if(memcmp(&mac_broadcast, macfrx->addr3, 6) == 0) send_probe_resp(rgbssidlist->mac, rgbssidlist->essidlen, rgbssidlist->essid);
-	else send_probe_resp(macfrx->addr3, rgbssidlist->essidlen, rgbssidlist->essid);
+	if(memcmp(&mac_broadcast, macfrx->addr3, 6) == 0) send_probe_resp((rgbssidlist +rgbssidlistp)->mac, (rgbssidlist +rgbssidlistp)->essidlen, (rgbssidlist +rgbssidlistp)->essid);
+	else send_probe_resp(macfrx->addr3, essidinfo.essidlen, essidinfo.essid);
 	#endif
 	return;
 	}
@@ -1842,7 +1841,7 @@ if(essidinfo.essid[0] == 0)
 	if((rgbssidlist)->timestamp == 0) return;
 	#ifdef GETM2
 	if(memcmp(&mac_broadcast, macfrx->addr3, 6) == 0) send_probe_resp(rgbssidlist->mac, rgbssidlist->essidlen, rgbssidlist->essid);
-	else send_probe_resp(macfrx->addr3, rgbssidlist->essidlen, rgbssidlist->essid);
+	else send_probe_resp(macfrx->addr3, essidinfo.essidlen, essidinfo.essid);
 	#endif
 	return;
 	}
@@ -2111,6 +2110,73 @@ memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE]
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgbssidlist +rgbssidlistp)->essidlen], beacon_data, BEACON_DATA_SIZE);
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgbssidlist +rgbssidlistp)->essidlen +0xc] = ptrscanlist->channel;
 packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgbssidlist +rgbssidlistp)->essidlen +BEACON_DATA_SIZE;
+fdwrite();
+rgbssidlistp++;
+return;
+}
+/*===========================================================================*/
+static inline void send_beacon1()
+{
+static mac_t *macftx;
+static capap_t *capap;
+
+const uint8_t beacon_data[] =
+{
+/* Tag: Wildcard */
+0x00, 0x00,
+/* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6, 9, 12, 18, [Mbit/sec] */
+0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x0c, 0x12, 0x18, 0x24,
+/* Tag: DS Parameter set: Current Channel: 1 */
+0x03, 0x01, 0x01,
+/* Tag: TIM Information */
+0x05, 0x04, 0x00, 0x01, 0x00, 0x00,
+/* Tag: ERP Information */
+0x2a, 0x01, 0x04,
+/* Tag: Extended Supported Rates 24, 36, 48, 54, [Mbit/sec] */
+0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
+/* Tag: RSN Information CCM CCM PSK  */
+0x30, 0x14, 0x01, 0x00,
+0x00, 0x0f, 0xac, 0x04,
+0x01, 0x00,
+0x00, 0x0f, 0xac, 0x04,
+0x01, 0x00,
+0x00, 0x0f, 0xac, 0x02,
+0x00, 0x00,
+/* Tag: Vendor Specific: Microsoft Corp.: WPA Information Element */
+0xdd, 0x16, 0x00, 0x50, 0xf2, 0x01, 0x01, 0x00,
+0x00, 0x50, 0xf2, 0x04,
+0x01, 0x00,
+0x00, 0x50, 0xf2, 0x02,
+0x01, 0x00,
+0x00, 0x50, 0xf2, 0x02
+};
+#define BEACON_DATA_SIZE sizeof(beacon_data)
+
+if(rgbssidlistp > rgbssidlistmax) rgbssidlistp = 0; 
+if((rgbssidlist +rgbssidlistp)->timestamp == 0)
+	{
+	rgbssidlistp = 0;
+	return;
+	}
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +BEACON_DATA_SIZE +1);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_BEACON;
+memcpy(macftx->addr1, &mac_broadcast, 6);
+memcpy(macftx->addr2, (rgbssidlist +rgbssidlistp)->mac, 6);
+memcpy(macftx->addr3, (rgbssidlist +rgbssidlistp)->mac, 6);
+macftx->sequence = (rgbssidlist +rgbssidlistp)->sequence++ << 4;
+if((rgbssidlist +rgbssidlistp)->sequence > 4095) (rgbssidlist +rgbssidlistp)->sequence = 1;
+capap = (capap_t*)(packetoutptr +HDRRT_SIZE +MAC_SIZE_NORM);
+capap->timestamp = mytime++;
+capap->beaconintervall = 0xc8;
+capap->capabilities = 0x431;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE], beacon_data, BEACON_DATA_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +0xe] = ptrscanlist->channel;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +BEACON_DATA_SIZE;
 fdwrite();
 rgbssidlistp++;
 return;
@@ -2533,7 +2599,11 @@ while(wantstopflag == false)
 		}
 	if(FD_ISSET(fd_socket, &readfds)) process_packet();
 	#ifdef GETM2
-	else send_beacon();
+	#ifdef BEACONUNSET
+	else send_beacon1();
+	#else
+	else send_beacon1();
+	#endif
 	#endif
 	}
 if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
