@@ -27,8 +27,15 @@
 #define M2ATTEMPTS		10
 
 #define ESSID_LEN_MAX		32
-#define FDRXNSECTIMER		100000000 /* 0,1 seconds */
-#define FDTXNSECTIMER		10000000 /* 0,01 seconds */
+
+#ifdef GETM2PR
+#define FDRXSECTIMER		1 /* 1 second */
+#define FDRXNSECTIMER		0
+#else
+#define FDRXSECTIMER		0
+#define FDRXNSECTIMER		200000000 /* 0,2 second */
+#endif
+#define FDTXNSECTIMER		10000000 /* 0,01 second */
 #define RGAPLISTCOUNT		10
 #define STAYTIME		5
 
@@ -72,6 +79,7 @@ return 0;
 }
 /*===========================================================================*/
 #define		RGBSSIDLIST_MAX		1024
+#define		RGBSSIDLISTTX_MAX	10
 typedef struct
 {
  uint64_t		timestamp;

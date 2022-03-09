@@ -44,6 +44,7 @@ static scanlist_t *ptrscanlist;
 static bssidlist_t *bssidlist;
 static int rgbssidlistmax;
 static int rgbssidlistp;
+static int rgbssidlistprp;
 static rgbssidlist_t *rgbssidlist;
 static clientlist_t *clientlist;
 
@@ -80,7 +81,7 @@ static mpdu_t *mpdu;
 #endif
 static uint32_t ouirgap;
 static uint32_t nicrgap;
-static uint8_t macrgbcwap[6];
+static uint8_t macrgbwcopen[6];
 static uint8_t macrgap[6];
 static uint8_t anonce[32];
 static uint32_t ouirgclient;
@@ -1103,7 +1104,7 @@ if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
 	if(memcmp(&mac_null, macfrx->addr1, 6) != 0)
 		{
 		send_ack();
-		packetptr = epbown_m1 +EPB_SIZE;
+		packetoutptr = epbown_m1 +EPB_SIZE;
 		packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
 		fdwrite();
 		return;
@@ -1427,6 +1428,8 @@ static inline void get_tag_essid(essid_t *essidinfo, int infolen, uint8_t *infop
 {
 static ietag_t *tagptr;
 
+essidinfo->essidlen = 0;
+essidinfo->essid[0] = 0;
 while(0 < infolen)
 	{
 	if(infolen == 4) return;
@@ -1434,13 +1437,10 @@ while(0 < infolen)
 	if(tagptr->len > infolen) return;
 	if(tagptr->id == TAG_SSID)
 		{
-		if((tagptr->len > 0) && (tagptr->len <= ESSID_LEN_MAX))
+		if(tagptr->len <= ESSID_LEN_MAX)
 			{
-			if(&tagptr->data[0]!= 0)
-				{
-				essidinfo->essidlen = tagptr->len;
-				memcpy(essidinfo->essid, &tagptr->data[0], tagptr->len);
-				}
+			essidinfo->essidlen = tagptr->len;
+			memcpy(essidinfo->essid, &tagptr->data[0], tagptr->len);
 			}
 		return;
 		}
@@ -1829,10 +1829,23 @@ get_tag_essid(&essidinfo, payloadlen, payloadptr);
 
 if(essidinfo.essidlen == 0)
 	{
-	if((rgbssidlist)->timestamp == 0) return;
 	#ifdef GETM2
-	if(memcmp(&mac_broadcast, macfrx->addr3, 6) == 0) send_probe_resp((rgbssidlist +rgbssidlistp)->mac, (rgbssidlist +rgbssidlistp)->essidlen, (rgbssidlist +rgbssidlistp)->essid);
-	else send_probe_resp(macfrx->addr3, essidinfo.essidlen, essidinfo.essid);
+	if(memcmp(&mac_broadcast, macfrx->addr3, 6) == 0)
+		{
+		#ifdef GETM2PR
+		for(p = 0; p < RGBSSIDLISTTX_MAX; p++)
+			{
+			if(rgbssidlistprp > RGBSSIDLIST_MAX) rgbssidlistprp =0;
+			if((rgbssidlist +rgbssidlistprp)->timestamp == 0) rgbssidlistprp = 0;
+			send_probe_resp((rgbssidlist +rgbssidlistprp)->mac, (rgbssidlist +rgbssidlistprp)->essidlen, (rgbssidlist +rgbssidlistprp)->essid);
+			rgbssidlistprp++;
+			}
+		#else
+		send_probe_resp((rgbssidlist +rgbssidlistp)->mac, (rgbssidlist +rgbssidlistp)->essidlen, (rgbssidlist +rgbssidlistp)->essid);
+		#endif
+		return;
+		}
+	send_probe_resp(macfrx->addr3, essidinfo.essidlen, essidinfo.essid);
 	#endif
 	return;
 	}
@@ -2211,8 +2224,8 @@ macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_BEACON;
 memcpy(macftx->addr1, &mac_broadcast, 6);
-memcpy(macftx->addr2, &macrgbcwap, 6);
-memcpy(macftx->addr3, &macrgbcwap, 6);
+memcpy(macftx->addr2, &macrgbwcopen, 6);
+memcpy(macftx->addr3, &macrgbwcopen, 6);
 macftx->sequence = beaconsequence++ << 4;
 if(beaconsequence > 4095) beaconsequence = 1;
 capap = (capap_t*)(packetoutptr +HDRRT_SIZE +MAC_SIZE_NORM);
@@ -2490,11 +2503,7 @@ while(wantstopflag == false)
 		if(ptrscanlist->frequency == 0) ptrscanlist = scanlist;
 		if(set_channel() == false) errorcount++;
 		#ifdef GETM2
-		#ifdef BEACONUNSET
-		else send_beacon1();
-		#else
-		else send_beacon();
-		#endif
+		send_beacon_wildcard();
 		#endif
 		#ifdef GETM1
 		send_proberequest_wildcard();
@@ -2502,7 +2511,7 @@ while(wantstopflag == false)
 		}
 	FD_ZERO(&readfds);
 	FD_SET(fd_socket, &readfds);
-	tsfd.tv_sec = 0;
+	tsfd.tv_sec = FDRXSECTIMER;
 	tsfd.tv_nsec = FDRXNSECTIMER;
 	fdnum = pselect(fd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
 	if(fdnum < 0)
@@ -2512,7 +2521,11 @@ while(wantstopflag == false)
 		}
 	if(FD_ISSET(fd_socket, &readfds)) process_packet();
 	#ifdef GETM2
+	#ifdef BEACONUNSET
+	else send_beacon1();
+	#else
 	else send_beacon();
+	#endif
 	#endif
 	}
 if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
@@ -2593,7 +2606,7 @@ while(wantstopflag == false)
 		}
 	FD_ZERO(&readfds);
 	FD_SET(fd_socket, &readfds);
-	tsfd.tv_sec = 0;
+	tsfd.tv_sec = FDRXSECTIMER;
 	tsfd.tv_nsec = FDRXNSECTIMER;
 	fdnum = pselect(fd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
 	if(fdnum < 0)
@@ -3293,12 +3306,12 @@ memset(&ifname, 0, sizeof(ifname));
 memset(&ifmac, 0, sizeof(ifmac));
 ouirgap = (myvendorap[rand() %((MYVENDORAP_SIZE /sizeof(int)))]) &0xfcffff;
 nicrgap = (rand() & 0x0fffff);
-macrgbcwap[5] = nicrgap & 0xff;
-macrgbcwap[4] = (nicrgap >> 8) & 0xff;
-macrgbcwap[3] = (nicrgap >> 16) & 0xff;
-macrgbcwap[2] = ouirgap & 0xff;
-macrgbcwap[1] = (ouirgap >> 8) & 0xff;
-macrgbcwap[0] = (ouirgap >> 16) & 0xff;
+macrgbwcopen[5] = nicrgap & 0xff;
+macrgbwcopen[4] = (nicrgap >> 8) & 0xff;
+macrgbwcopen[3] = (nicrgap >> 16) & 0xff;
+macrgbwcopen[2] = ouirgap & 0xff;
+macrgbwcopen[1] = (ouirgap >> 8) & 0xff;
+macrgbwcopen[0] = (ouirgap >> 16) & 0xff;
 nicrgap += 1;
 macrgap[5] = nicrgap & 0xff;
 macrgap[4] = (nicrgap >> 8) & 0xff;
@@ -3336,6 +3349,7 @@ for(p = 0; p < BSSIDLIST_MAX +1; p++)
 	}
 
 rgbssidlistp = 0;
+rgbssidlistprp = 0;
 if((rgbssidlist = (rgbssidlist_t*)calloc(RGBSSIDLIST_MAX +1, RGBSSIDLIST_SIZE)) == NULL) return false;
 if((clientlist = (clientlist_t*)calloc(CLIENTLIST_MAX +1, CLIENTLIST_SIZE)) == NULL) return false;
 
