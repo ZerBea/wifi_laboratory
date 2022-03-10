@@ -1981,7 +1981,9 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		if((timestamp - (bssidlist +p)->bssidinfo->timestampclient) > 600000000)
 			{
 			memset((bssidlist +p)->bssidinfo->macclient, 0xff, 6);
+			#ifdef GETM1234
 			send_pspoll(p);
+			#endif
 			return;
 			}
 		if((bssidlist +p)->bssidinfo->deauthattackcount >= ((bssidlist +p)->bssidinfo->deauthattackfactor +18))
@@ -1989,7 +1991,9 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			(bssidlist +p)->bssidinfo->deauthattackcount = 0;
 			(bssidlist +p)->bssidinfo->deauthattackfactor += 1;
 			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
+			#ifdef GETM1234
 			send_pspoll(p);
+			#endif
 			qsort(bssidlist, p +1, BSSIDLIST_SIZE, sort_bssidlist_by_time);
 			return;
 			}
