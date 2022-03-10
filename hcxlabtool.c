@@ -389,6 +389,7 @@ macftx->subtype = IEEE80211_STYPE_NULLFUNC;
 memcpy(macftx->addr1, macfrx->addr2, 6);
 memcpy(macftx->addr2, macfrx->addr1, 6);
 memcpy(macftx->addr3, macfrx->addr2, 6);
+macftx->to_ds = 1;
 macftx->sequence = clientsequence++ << 4;
 if(clientsequence > 4095) clientsequence = 1;
 packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM;
