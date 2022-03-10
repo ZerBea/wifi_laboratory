@@ -1881,7 +1881,7 @@ get_tag_essid(&essidinfo, payloadlen, payloadptr);
 if(essidinfo.essidlen == 0)
 	{
 	#ifdef GETM2
-	if(memcmp(&mac_broadcast, macfrx->addr3, 6) == 0)
+	if((memcmp(&mac_broadcast, macfrx->addr3, 6) == 0) || (essidinfo.essid[0] == 0))
 		{
 		#ifdef GETM2PR
 		for(p = 0; p < RGBSSIDLISTTX_MAX; p++)
@@ -1892,20 +1892,14 @@ if(essidinfo.essidlen == 0)
 			rgbssidlistprp++;
 			}
 		#else
-		send_probe_resp((rgbssidlist +rgbssidlistp)->mac, (rgbssidlist +rgbssidlistp)->essidlen, (rgbssidlist +rgbssidlistp)->essid);
+		if(rgbssidlistprp > RGBSSIDLIST_MAX) rgbssidlistprp =0;
+		if((rgbssidlist +rgbssidlistprp)->timestamp == 0) rgbssidlistprp = 0;
+		send_probe_resp((rgbssidlist +rgbssidlistprp)->mac, (rgbssidlist +rgbssidlistprp)->essidlen, (rgbssidlist +rgbssidlistprp)->essid);
+		rgbssidlistprp++;
 		#endif
 		return;
 		}
 	send_probe_resp(macfrx->addr3, essidinfo.essidlen, essidinfo.essid);
-	#endif
-	return;
-	}
-if(essidinfo.essid[0] == 0)
-	{
-	if((rgbssidlist)->timestamp == 0) return;
-	#ifdef GETM2
-	if(memcmp(&mac_broadcast, macfrx->addr3, 6) == 0) send_probe_resp(rgbssidlist->mac, rgbssidlist->essidlen, rgbssidlist->essid);
-	else send_probe_resp(macfrx->addr3, essidinfo.essidlen, essidinfo.essid);
 	#endif
 	return;
 	}
