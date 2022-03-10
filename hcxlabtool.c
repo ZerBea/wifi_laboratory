@@ -1517,7 +1517,6 @@ static int p;
 static uint8_t *clientinfoptr;
 static uint16_t clientinfolen;
 static bssidinfo_t bssidinfo;
-static capreqsta_t *clientcapa;
 #endif
 
 writeepb(fd_pcapng);
@@ -1534,45 +1533,28 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 	get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 	if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 		{
-		clientcapa = (capreqsta_t*)payloadptr;
 		if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
 			{
-			if(memcmp(macfrx->addr1, clientcapa->addr, 6) != 0) send_disassociationcurrent2client(macfrx->addr2, clientcapa->addr, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
-			else
-				{
-				send_ack();
-				send_reassociation_resp();
-				send_m1_wpa2(macfrx->addr2, macfrx->addr1);
-				memcpy(&mac_pending, macfrx->addr1, 6);
-				}
-			return;
+			send_ack();
+			send_reassociation_resp();
+			send_m1_wpa2(macfrx->addr2, macfrx->addr1);
+			memcpy(&mac_pending, macfrx->addr1, 6);
 			}
 		if((bssidinfo.rsnakm &TAK_PSKSHA256) == TAK_PSKSHA256)
 			{
-			if(memcmp(macfrx->addr1, clientcapa->addr, 6) != 0) send_disassociationcurrent2client(macfrx->addr2, clientcapa->addr, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
-			else
-				{
-				send_ack();
-				send_reassociation_resp();
-				send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
-				memcpy(&mac_pending, macfrx->addr1, 6);
-				}
-			return;
+			send_ack();
+			send_reassociation_resp();
+			send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
+			memcpy(&mac_pending, macfrx->addr1, 6);
 			}
 		return;
 		}
 	if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
 		{
-		clientcapa = (capreqsta_t*)payloadptr;
-		if(memcmp(macfrx->addr1, clientcapa->addr, 6) != 0) send_disassociationcurrent2client(macfrx->addr2, clientcapa->addr, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
-		else
-			{
-			send_ack();
-			send_reassociation_resp();
-			send_m1_wpa1(macfrx->addr2, macfrx->addr1);
-			memcpy(&mac_pending, macfrx->addr1, 6);
-			}
-		return;
+		send_ack();
+		send_reassociation_resp();
+		send_m1_wpa1(macfrx->addr2, macfrx->addr1);
+		memcpy(&mac_pending, macfrx->addr1, 6);
 		}
 	return;
 	}
@@ -1583,45 +1565,28 @@ memcpy((clientlist +p)->macap, macfrx->addr1, 6);
 get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	{
-	clientcapa = (capreqsta_t*)payloadptr;
 	if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
 		{
-		if(memcmp(macfrx->addr1, clientcapa->addr, 6) != 0) send_disassociationcurrent2client(macfrx->addr2, clientcapa->addr, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
-		else
-			{
-			send_ack();
-			send_reassociation_resp();
-			send_m1_wpa2(macfrx->addr2, macfrx->addr1);
-			memcpy(&mac_pending, macfrx->addr1, 6);
-			}
-		return;
+		send_ack();
+		send_reassociation_resp();
+		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
+		memcpy(&mac_pending, macfrx->addr1, 6);
 		}
 	if((bssidinfo.rsnakm &TAK_PSKSHA256) == TAK_PSKSHA256)
 		{
-		if(memcmp(macfrx->addr1, clientcapa->addr, 6) != 0) send_disassociationcurrent2client(macfrx->addr2, clientcapa->addr, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
-		else
-			{
-			send_ack();
-			send_reassociation_resp();
-			send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
-			memcpy(&mac_pending, macfrx->addr1, 6);
-			}
-		return;
+		send_ack();
+		send_reassociation_resp();
+		send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
+		memcpy(&mac_pending, macfrx->addr1, 6);
 		}
 	return;
 	}
 if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
 	{
-	clientcapa = (capreqsta_t*)payloadptr;
-	if(memcmp(macfrx->addr1, clientcapa->addr, 6) != 0) send_disassociationcurrent2client(macfrx->addr2, clientcapa->addr, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
-	else
-		{
-		send_ack();
-		send_reassociation_resp();
-		send_m1_wpa1(macfrx->addr2, macfrx->addr1);
-		memcpy(&mac_pending, macfrx->addr1, 6);
-		}
-	return;
+	send_ack();
+	send_reassociation_resp();
+	send_m1_wpa1(macfrx->addr2, macfrx->addr1);
+	memcpy(&mac_pending, macfrx->addr1, 6);
 	}
 #endif
 return;
@@ -1892,7 +1857,7 @@ if(essidinfo.essidlen == 0)
 			rgbssidlistprp++;
 			}
 		#else
-		if(rgbssidlistprp > RGBSSIDLIST_MAX) rgbssidlistprp =0;
+		if(rgbssidlistprp > RGBSSIDLIST_MAX) rgbssidlistprp = 0;
 		if((rgbssidlist +rgbssidlistprp)->timestamp == 0) rgbssidlistprp = 0;
 		send_probe_resp((rgbssidlist +rgbssidlistprp)->mac, (rgbssidlist +rgbssidlistprp)->essidlen, (rgbssidlist +rgbssidlistprp)->essid);
 		rgbssidlistprp++;
