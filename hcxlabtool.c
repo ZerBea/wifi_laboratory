@@ -1528,8 +1528,8 @@ if(clientinfolen < IETAG_SIZE) return;
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
 	if((clientlist +p)->timestamp == 0) break;
-	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->count >= m2attempts) return;
+	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 	if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 		{
@@ -1610,8 +1610,8 @@ if(clientinfolen < IETAG_SIZE) return;
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
 	if((clientlist +p)->timestamp == 0) break;
-	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->count >= m2attempts) return;
+	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 	if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 		{
