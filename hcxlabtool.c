@@ -1886,7 +1886,7 @@ if(essidinfo.essidlen == 0)
 		#ifdef GETM2PR
 		for(p = 0; p < RGBSSIDLISTTX_MAX; p++)
 			{
-			if(rgbssidlistprp > RGBSSIDLIST_MAX) rgbssidlistprp =0;
+			if(rgbssidlistprp > RGBSSIDLIST_MAX) rgbssidlistprp = 0;
 			if((rgbssidlist +rgbssidlistprp)->timestamp == 0) rgbssidlistprp = 0;
 			send_probe_resp((rgbssidlist +rgbssidlistprp)->mac, (rgbssidlist +rgbssidlistprp)->essidlen, (rgbssidlist +rgbssidlistprp)->essid);
 			rgbssidlistprp++;
