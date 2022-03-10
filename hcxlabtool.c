@@ -609,6 +609,28 @@ fdwrite();
 return;
 }
 /*===========================================================================*/
+static inline void send_disassociationcurrent2client(uint8_t *macclient, uint8_t *macap, uint8_t reason)
+{
+static mac_t *macftx;
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +2 +1);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_DISASSOC;
+memcpy(macftx->addr1, macclient, 6);
+memcpy(macftx->addr2, macap, 6);
+memcpy(macftx->addr3, macap, 6);
+macftx->duration = 0x013a;
+macftx->sequence = deauthenticationsequence++ << 4;
+if(deauthenticationsequence > 4095) deauthenticationsequence = 1;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM] = reason;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +2;
+fdwrite();
+return;
+}
+/*===========================================================================*/
 static inline void send_disassociation2client(int p, uint8_t reason)
 {
 static mac_t *macftx;
@@ -1495,6 +1517,7 @@ static int p;
 static uint8_t *clientinfoptr;
 static uint16_t clientinfolen;
 static bssidinfo_t bssidinfo;
+static capreqsta_t *clientcapa;
 #endif
 
 writeepb(fd_pcapng);
@@ -1511,30 +1534,44 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 	get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 	if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 		{
+		clientcapa = (capreqsta_t*)payloadptr;
 		if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
 			{
-			send_ack();
-			send_reassociation_resp();
-			send_m1_wpa2(macfrx->addr2, macfrx->addr1);
-			memcpy(&mac_pending, macfrx->addr1, 6);
+			if(memcmp(macfrx->addr1, clientcapa->addr, 6) != 0) send_disassociationcurrent2client(macfrx->addr2, clientcapa->addr, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
+			else
+				{
+				send_ack();
+				send_reassociation_resp();
+				send_m1_wpa2(macfrx->addr2, macfrx->addr1);
+				memcpy(&mac_pending, macfrx->addr1, 6);
+				}
 			return;
 			}
 		if((bssidinfo.rsnakm &TAK_PSKSHA256) == TAK_PSKSHA256)
 			{
-			send_ack();
-			send_reassociation_resp();
-			send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
-			memcpy(&mac_pending, macfrx->addr1, 6);
+			if(memcmp(macfrx->addr1, clientcapa->addr, 6) != 0) send_disassociationcurrent2client(macfrx->addr2, clientcapa->addr, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
+			else
+				{
+				send_ack();
+				send_reassociation_resp();
+				send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
+				memcpy(&mac_pending, macfrx->addr1, 6);
+				}
 			return;
 			}
 		return;
 		}
 	if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
 		{
-		send_ack();
-		send_reassociation_resp();
-		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
-		memcpy(&mac_pending, macfrx->addr1, 6);
+		clientcapa = (capreqsta_t*)payloadptr;
+		if(memcmp(macfrx->addr1, clientcapa->addr, 6) != 0) send_disassociationcurrent2client(macfrx->addr2, clientcapa->addr, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
+		else
+			{
+			send_ack();
+			send_reassociation_resp();
+			send_m1_wpa1(macfrx->addr2, macfrx->addr1);
+			memcpy(&mac_pending, macfrx->addr1, 6);
+			}
 		return;
 		}
 	return;
@@ -1546,30 +1583,44 @@ memcpy((clientlist +p)->macap, macfrx->addr1, 6);
 get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	{
+	clientcapa = (capreqsta_t*)payloadptr;
 	if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
 		{
-		send_ack();
-		send_reassociation_resp();
-		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
-		memcpy(&mac_pending, macfrx->addr1, 6);
+		if(memcmp(macfrx->addr1, clientcapa->addr, 6) != 0) send_disassociationcurrent2client(macfrx->addr2, clientcapa->addr, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
+		else
+			{
+			send_ack();
+			send_reassociation_resp();
+			send_m1_wpa2(macfrx->addr2, macfrx->addr1);
+			memcpy(&mac_pending, macfrx->addr1, 6);
+			}
 		return;
 		}
 	if((bssidinfo.rsnakm &TAK_PSKSHA256) == TAK_PSKSHA256)
 		{
-		send_ack();
-		send_reassociation_resp();
-		send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
-		memcpy(&mac_pending, macfrx->addr1, 6);
+		if(memcmp(macfrx->addr1, clientcapa->addr, 6) != 0) send_disassociationcurrent2client(macfrx->addr2, clientcapa->addr, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
+		else
+			{
+			send_ack();
+			send_reassociation_resp();
+			send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
+			memcpy(&mac_pending, macfrx->addr1, 6);
+			}
 		return;
 		}
 	return;
 	}
 if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
 	{
-	send_ack();
-	send_reassociation_resp();
-	send_m1_wpa2(macfrx->addr2, macfrx->addr1);
-	memcpy(&mac_pending, macfrx->addr1, 6);
+	clientcapa = (capreqsta_t*)payloadptr;
+	if(memcmp(macfrx->addr1, clientcapa->addr, 6) != 0) send_disassociationcurrent2client(macfrx->addr2, clientcapa->addr, WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY);
+	else
+		{
+		send_ack();
+		send_reassociation_resp();
+		send_m1_wpa1(macfrx->addr2, macfrx->addr1);
+		memcpy(&mac_pending, macfrx->addr1, 6);
+		}
 	return;
 	}
 #endif
