@@ -436,7 +436,7 @@ static const uint8_t associationrequestwpa2data[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +ASSOCIATIONREQUESTWPA2_SIZE +IETAG_SIZE +(bssidlist +p)->bssidinfo->essidlen);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_ASSOC_REQ;
@@ -555,7 +555,7 @@ static const uint8_t associationrequestwpa1data[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +ASSOCIATIONREQUESTWPA1_SIZE +IETAG_SIZE +(bssidlist +p)->bssidinfo->essidlen);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_ASSOC_REQ;
@@ -569,10 +569,11 @@ memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &associationrequestcapa, ASSOCI
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +1] = (bssidlist +p)->bssidinfo->essidlen;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +IETAG_SIZE], (bssidlist +p)->bssidinfo->essid, (bssidlist +p)->bssidinfo->essidlen);
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE], &associationrequestwpa1data, ASSOCIATIONREQUESTWPA1_SIZE);
-if(((bssidlist +p)->bssidinfo->groupcipher &TCS_CCMP) == TCS_CCMP) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x17] = CS_CCMP;
-else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x17] = CS_TKIP;
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x1d] = CS_CCMP;
-if(((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x23] = AK_PSK;
+if(((bssidlist +p)->bssidinfo->groupcipher &TCS_CCMP) == TCS_CCMP) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x29] = CS_CCMP;
+else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x29] = CS_TKIP;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x2f] = CS_TKIP;
+if(((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x35] = AK_PSK;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +ASSOCIATIONREQUESTWPA1_SIZE;
 fdwrite();
 return;
 }
@@ -621,6 +622,12 @@ memcpy(stacapa->addr, (bssidlist +p)->mac, 6);
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +1] =(bssidlist +p)->bssidinfo->essidlen;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +IETAG_SIZE], (bssidlist +p)->bssidinfo->essid, (bssidlist +p)->bssidinfo->essidlen);
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE], &reassociationrequestwpa1data, REASSOCIATIONREQUESTWPA1_SIZE);
+
+if(((bssidlist +p)->bssidinfo->groupcipher &TCS_CCMP) == TCS_CCMP) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x29] = CS_CCMP;
+else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x29] = CS_TKIP;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x2f] = CS_TKIP;
+if(((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x35] = AK_PSK;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +REASSOCIATIONREQUESTWPA1_SIZE;
 packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESREQSTA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +REASSOCIATIONREQUESTWPA1_SIZE;
 fdwrite();
 return;
@@ -692,7 +699,7 @@ static const uint8_t authenticationrequestdata[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +MYAUTHENTICATIONREQUEST_SIZE +1);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_AUTH;
@@ -1304,7 +1311,7 @@ if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
 	if(memcmp(&mac_null, macfrx->addr1, 6) != 0)
 		{
 		send_ack();
-		packetptr = epbown_m1 +EPB_SIZE;
+		packetoutptr = epbown_m1 +EPB_SIZE;
 		packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
 		fdwrite();
 		return;
