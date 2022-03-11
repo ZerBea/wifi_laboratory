@@ -1988,10 +1988,10 @@ static essid_t essidinfo;
 if(payloadlen < IETAG_SIZE) return;
 get_tag_essid(&essidinfo, payloadlen, payloadptr);
 
-if(essidinfo.essidlen == 0)
+if((essidinfo.essidlen == 0) || (essidinfo.essid[0] == 0))
 	{
 	#ifdef GETM2
-	if((memcmp(&mac_broadcast, macfrx->addr3, 6) == 0) || (essidinfo.essid[0] == 0))
+	if(memcmp(&mac_broadcast, macfrx->addr3, 6) == 0)
 		{
 		#ifdef GETM2PR
 		for(p = 0; p < RGBSSIDLISTTX_MAX; p++)
