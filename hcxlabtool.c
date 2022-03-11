@@ -1682,6 +1682,7 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 	if((clientlist +p)->timestamp == 0) break;
 	if((clientlist +p)->count >= m2attempts) return;
 	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
+	memset(&bssidinfo, 0 , sizeof(bssidinfo));
 	get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 	if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 		{
@@ -1714,6 +1715,7 @@ memset((clientlist +p), 0, CLIENTLIST_SIZE);
 (clientlist +p)->timestamp = timestamp;
 memcpy((clientlist +p)->mac, macfrx->addr2, 6);
 memcpy((clientlist +p)->macap, macfrx->addr1, 6);
+memset(&bssidinfo, 0 , sizeof(bssidinfo));
 get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	{
@@ -1764,6 +1766,7 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 	if((clientlist +p)->timestamp == 0) break;
 	if((clientlist +p)->count >= m2attempts) return;
 	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
+	memset(&bssidinfo, 0 , sizeof(bssidinfo));
 	get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 	if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 		{
@@ -1799,6 +1802,7 @@ memset((clientlist +p), 0, CLIENTLIST_SIZE);
 (clientlist +p)->timestamp = timestamp;
 memcpy((clientlist +p)->mac, macfrx->addr2, 6);
 memcpy((clientlist +p)->macap, macfrx->addr1, 6);
+memset(&bssidinfo, 0 , sizeof(bssidinfo));
 get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	{
@@ -1994,7 +1998,6 @@ static essid_t essidinfo;
 
 if(payloadlen < IETAG_SIZE) return;
 get_tag_essid(&essidinfo, payloadlen, payloadptr);
-
 if((essidinfo.essidlen == 0) || (essidinfo.essid[0] == 0))
 	{
 	#ifdef GETM2
