@@ -4,12 +4,16 @@
 
 #define HCX_GPIO_BUTTON		1
 #define HCX_GPIO_STATUSLED	2
-#define HCX_BPFC		3
-#define HCX_ESSIDLIST		4
-#define HCX_ESSIDMAX		5
-#define HCX_M2ATTEMPT		7
-#define HCX_TOT			8
-#define HCX_WEAKCANDIDATE	9
+#define HCX_ON_SIGTERM		3
+#define HCX_ON_GPIOBUTTON	4
+#define HCX_ON_TOT		5
+#define HCX_ON_ERROR		6
+#define HCX_BPFC		7
+#define HCX_ESSIDLIST		8
+#define HCX_ESSIDMAX		9
+#define HCX_M2ATTEMPT		10
+#define HCX_TOT			11
+#define HCX_WEAKCANDIDATE	12
 #define HCX_INTERFACE_NAME	'i'
 #define HCX_CHANNEL		'c'
 #define HCX_SHOW_CHANNEL	'C'
@@ -18,6 +22,10 @@
 #define HCX_SHOW_INTERFACES	'I'
 #define HCX_HELP		'h'
 #define HCX_VERSION		'v'
+
+#define WANT_EXIT		0b00000000
+#define WANT_POWEROFF		0b00000001
+#define WANT_REBOOT		0b00000010
 
 #define ERROR_MAX		100
 #define WATCHDOG		600

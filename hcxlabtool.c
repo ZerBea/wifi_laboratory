@@ -28,6 +28,10 @@
 
 static bool rebootflag;
 static bool poweroffflag;
+static int onsigterm;
+static int ongpiobutton;
+static int ontot;
+static int onerror;
 static struct timeval tv;
 static struct timeval tvold;
 static struct timeval tvoldled;
@@ -2648,19 +2652,24 @@ while(wantstopflag == false)
 		{
 		if(GET_GPIO(gpiobutton) > 0)
 			{
-			poweroffflag = true;
+			if(ongpiobutton == WANT_POWEROFF) poweroffflag = true;
+			if(ongpiobutton == WANT_REBOOT) rebootflag = true;
 			wantstopflag = true;
 			}
 		}
 	gettimeofday(&tv, NULL);
 	if(tv.tv_sec >= tvtot.tv_sec)
 		{
-		rebootflag = true;
+		if(ontot == WANT_POWEROFF) poweroffflag = true;
+		if(ontot == WANT_REBOOT) rebootflag = true;
 		wantstopflag = true;
 		}
 	if(errorcount >= ERROR_MAX)
 		{
-		if((errorcount %ERROR_MAX) == 0) fprintf(stderr, "error count reached ERROR_MAX\n");
+		if(onerror == WANT_POWEROFF) poweroffflag = true;
+		if(onerror == WANT_REBOOT) rebootflag = true;
+		wantstopflag = true;
+		fprintf(stderr, "error count reached ERROR_MAX\n");
 		if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
 		continue;
 		}
@@ -2750,19 +2759,27 @@ while(wantstopflag == false)
 		{
 		if(GET_GPIO(gpiobutton) > 0)
 			{
-			poweroffflag = true;
+			if(ongpiobutton == WANT_POWEROFF) poweroffflag = true;
+			if(ongpiobutton == WANT_REBOOT) rebootflag = true;
 			wantstopflag = true;
 			}
 		}
 	gettimeofday(&tv, NULL);
 	if(tv.tv_sec >= tvtot.tv_sec)
 		{
-		rebootflag = true;
+		if(ontot == WANT_POWEROFF) poweroffflag = true;
+		if(ontot == WANT_REBOOT) rebootflag = true;
 		wantstopflag = true;
 		}
 	if(errorcount >= ERROR_MAX)
 		{
-		if((errorcount %ERROR_MAX) == 0) fprintf(stderr, "error count reached ERROR_MAX\n");
+		if((errorcount %ERROR_MAX) == 0)
+			{
+			if(onerror == WANT_POWEROFF) poweroffflag = true;
+			if(onerror == WANT_REBOOT) rebootflag = true;
+			wantstopflag = true;
+			fprintf(stderr, "error count reached ERROR_MAX\n");
+			}
 		if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
 		continue;
 		}
@@ -2834,7 +2851,8 @@ while(wantstopflag == false)
 		{
 		if(GET_GPIO(gpiobutton) > 0)
 			{
-			poweroffflag = true;
+			if(ongpiobutton == WANT_POWEROFF) poweroffflag = true;
+			if(ongpiobutton == WANT_REBOOT) rebootflag = true;
 			wantstopflag = true;
 			}
 		}
@@ -2863,7 +2881,12 @@ return;
 /*===========================================================================*/
 static inline void programmende(int signum)
 {
-if((signum == SIGINT) || (signum == SIGTERM) || (signum == SIGKILL)) wantstopflag = true;
+if((signum == SIGINT) || (signum == SIGTERM) || (signum == SIGKILL))
+	{
+	if(onsigterm == WANT_POWEROFF) poweroffflag = true;
+	if(onsigterm == WANT_REBOOT) rebootflag = true;
+	wantstopflag = true;
+	}
 return;
 }
 /*===========================================================================*/
@@ -3654,6 +3677,24 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                            default: GPIO not in use\n"
 	"--gpio_statusled=<digit>  : Raspberry Pi GPIO number of status LED (2...27)\n"
 	"                            default: GPIO not in use\n"
+	"--onsigterm               : action when the program has been terminated (exit, poweroff, reboot)\n"
+	"                             exit:     just terminate (default)\n"
+	"                             poweroff: power off system\n"
+	"                             reboot:   reboot system\n"
+	"--ongpiobutton            : action when the program has been terminated (exit, poweroff, reboot)\n"
+	"                             exit:     just terminate (default)\n"
+	"                             poweroff: power off system\n"
+	"                             reboot:   reboot system\n"
+	"--ongtot                  : action when the program has been terminated (exit, poweroff, reboot)\n"
+	"                             exit:     just terminate (default)\n"
+	"                             poweroff: power off system\n"
+	"                             reboot:   reboot system\n"
+	"--onerror                 : action when the program has been terminated (exit, poweroff, reboot)\n"
+	"                             exit:     just terminate (default)\n"
+	"                             poweroff: power off system\n"
+	"                             reboot:   reboot system\n"
+	"--tot=<digit>             : enable timeout timer in minutes (minimum = 2 minutes)\n"
+	"                            set TOT to reboot system\n"
 	"--bpfc=<file>             : input kernel space Berkeley Packet Filter (BPF) code\n"
 	"                            affected: incoming and outgoing traffic - that include rca scan\n"
 	"                            steps to create a BPF (it only has to be done once):\n"
@@ -3674,8 +3715,6 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                            default: %d entries\n"
 	"--m2attempt=<digit>       : reject CLIENT request after n received M2 frames\n"
 	"                            default: %d received M2 frames\n" 
-	"--tot=<digit>             : enable timeout timer in minutes (minimum = 2 minutes)\n"
-	"                            set TOT to reboot system\n"
 	"--weakcandidate=<password>: use this pre shared key (8...63 characters) as weak candidate\n"
 	"                            will be saved to pcapng to inform hcxpcaptool\n"
 	"                            default: %s\n"
@@ -3706,6 +3745,10 @@ static bool monitormodeflag;
 static bool showinterfaceflag;
 static bool showchannelflag;
 
+static const char *exitstring = "exit";
+static const char *poweroffstring = "poweroff";
+static const char *rebootstring = "reboot";
+
 static const char *weakcandidatedefault = "12345678";
 static const char *short_options = "i:c:t:m:IChv";
 static const struct option long_options[] =
@@ -3718,6 +3761,10 @@ static const struct option long_options[] =
 	{"essidmax",			required_argument,	NULL,	HCX_ESSIDMAX},
 	{"tot",				required_argument,	NULL,	HCX_TOT},
 	{"weakcandidate	",		required_argument,	NULL,	HCX_WEAKCANDIDATE},
+	{"onsigterm",			required_argument,	NULL,	HCX_ON_SIGTERM},
+	{"ongpiobutton",		required_argument,	NULL,	HCX_ON_GPIOBUTTON},
+	{"ontot",			required_argument,	NULL,	HCX_ON_TOT},
+	{"onerror",			required_argument,	NULL,	HCX_ON_ERROR},
 	{"version",			no_argument,		NULL,	HCX_VERSION},
 	{"help",			no_argument,		NULL,	HCX_HELP},
 	{NULL,				0,			NULL,	0}
@@ -3731,6 +3778,10 @@ rebootflag = false;
 poweroffflag = false;
 gpiobutton = 0;
 gpiostatusled = 0;
+onsigterm = WANT_EXIT;
+ongpiobutton = WANT_EXIT;
+ontot = WANT_EXIT;
+onerror = WANT_EXIT;
 interfacename = NULL;
 essidlistname = NULL;
 bpfcname = NULL;
@@ -3803,6 +3854,34 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 			fprintf(stderr, "invalid GPIO option\n");
 			exit(EXIT_FAILURE);
 			}
+		break;
+
+		case HCX_ON_SIGTERM:
+		if(strncmp(exitstring, optarg, 8) == 0) onsigterm = WANT_EXIT;
+		else if(strncmp(poweroffstring, optarg, 8) == 0) onsigterm = WANT_POWEROFF;
+		else if(strncmp(rebootstring, optarg, 8) == 0) onsigterm = WANT_REBOOT;
+		else onsigterm = WANT_EXIT;
+		break;
+
+		case HCX_ON_GPIOBUTTON:
+		if(strncmp(exitstring, optarg, 8) == 0) ongpiobutton = WANT_EXIT;
+		else if(strncmp(poweroffstring, optarg, 8) == 0) ongpiobutton = WANT_POWEROFF;
+		else if(strncmp(rebootstring, optarg, 8) == 0) ongpiobutton = WANT_REBOOT;
+		else ongpiobutton = WANT_EXIT;
+		break;
+
+		case HCX_ON_TOT:
+		if(strncmp(exitstring, optarg, 8) == 0) ontot = WANT_EXIT;
+		else if(strncmp(poweroffstring, optarg, 8) == 0) ontot = WANT_POWEROFF;
+		else if(strncmp(rebootstring, optarg, 8) == 0) ontot = WANT_REBOOT;
+		else ontot = WANT_EXIT;
+		break;
+
+		case HCX_ON_ERROR:
+		if(strncmp(exitstring, optarg, 8) == 0) onerror = WANT_EXIT;
+		else if(strncmp(poweroffstring, optarg, 8) == 0) onerror = WANT_POWEROFF;
+		else if(strncmp(rebootstring, optarg, 8) == 0) onerror = WANT_REBOOT;
+		else onerror = WANT_EXIT;
 		break;
 
 		case HCX_BPFC:
@@ -3924,6 +4003,12 @@ if(opensocket(interfacename) == false)
 	{
 	standbyloop();
 	globalclose();
+	if(rebootflag == true)
+		{
+		if(system("reboot") != 0) fprintf(stderr, "can't reboot system\n");
+		printf("reboot\n");
+		exit(EXIT_SUCCESS);
+		}
 	if(poweroffflag == true)
 		{
 		if(system("poweroff") != 0) fprintf(stderr, "can't power off\n");
@@ -3956,16 +4041,19 @@ else
 globalclose();
 if(errorcount > 0) fprintf(stdout, "\n%d error(s) encountered\n", errorcount);
 
-if(poweroffflag == true)
-	{
-	if(system("poweroff") != 0) fprintf(stderr, "can't power off system\n");
-	exit(EXIT_FAILURE);
-	}
 if(rebootflag == true)
 	{
 	if(system("reboot") != 0) fprintf(stderr, "can't reboot system\n");
-	exit(EXIT_FAILURE);
+	printf("reboot\n");
+	exit(EXIT_SUCCESS);
 	}
+if(poweroffflag == true)
+	{
+	if(system("poweroff") != 0) fprintf(stderr, "can't power off system\n");
+	printf("poweroff\n");
+	exit(EXIT_SUCCESS);
+	}
+
 return EXIT_SUCCESS;
 }
 /*===========================================================================*/
