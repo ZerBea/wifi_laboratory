@@ -2125,9 +2125,9 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		if((bssidlist +p)->bssidinfo->kdv == 0) return;
 		if((timestamp - (bssidlist +p)->bssidinfo->timestampclient) > 600000000)
 			{
-			memset((bssidlist +p)->bssidinfo->macclient, 0xff, 6);
 			#ifdef GETM1234
-			send_pspoll(p);
+			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) == 0) send_pspoll(p);
+			else if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_pspoll(p);
 			#endif
 			return;
 			}
@@ -2137,7 +2137,8 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			(bssidlist +p)->bssidinfo->deauthattackfactor += 1;
 			get_taglist((bssidlist +p)->bssidinfo, apinfolen, apinfoptr);
 			#ifdef GETM1234
-			send_pspoll(p);
+			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) == 0) send_pspoll(p);
+			else if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_pspoll(p);
 			#endif
 			qsort(bssidlist, p +1, BSSIDLIST_SIZE, sort_bssidlist_by_time);
 			return;
