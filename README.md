@@ -1,7 +1,7 @@
 hcxlabtool
 ==============
 
-Skeleton to test WiFi adapters, to understand 802.11 protocol and to detect its weakness.
+Skeleton to test WiFi adapters, to understand 802.11 protocol and to discover potential weak points.
 
 Feature requests will be ignored!
 
