@@ -2176,7 +2176,6 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 				}
 			return;
 			}
-		return;
 		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +14))
 			{
 			if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_pspoll(p);
