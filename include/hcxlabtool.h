@@ -29,13 +29,13 @@
 #define ESSID_LEN_MAX		32
 
 #ifdef GETM2PR
-#define FDRXSECTIMER		1 /* 1 second */
+#define FDRXSECTIMER		1 /* 1 second interval */
 #define FDRXNSECTIMER		0
 #else
 #define FDRXSECTIMER		0
-#define FDRXNSECTIMER		200000000 /* 0,2 second */
+#define FDRXNSECTIMER		200000000 /* 0,2 second interval */
 #endif
-#define FDTXNSECTIMER		10000000 /* 0,01 second */
+#define FDTXSECTIMER		5 /* 5 second timeout */
 #define RGAPLISTCOUNT		10
 #define STAYTIME		5
 

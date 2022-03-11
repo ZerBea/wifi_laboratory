@@ -269,8 +269,8 @@ static struct timespec tsfdtx;
 
 FD_ZERO(&txfds);
 FD_SET(fd_socket, &txfds);
-tsfdtx.tv_sec = 0;
-tsfdtx.tv_nsec = FDTXNSECTIMER;
+tsfdtx.tv_sec = FDTXSECTIMER;
+tsfdtx.tv_nsec = 0;
 fdnum = pselect(fd_socket +1, NULL, &txfds, NULL, &tsfdtx, NULL);
 if(fdnum < 0)
 	{
