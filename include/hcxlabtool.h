@@ -33,7 +33,11 @@
 #define FDRXNSECTIMER		0
 #else
 #define FDRXSECTIMER		0
+#ifdef BEACONUNSET
+#define FDRXNSECTIMER		100000000 /* 0,1 second interval */
+#else
 #define FDRXNSECTIMER		200000000 /* 0,2 second interval */
+#endif
 #endif
 #define FDTXSECTIMER		5 /* 5 second timeout */
 #define RGAPLISTCOUNT		10
