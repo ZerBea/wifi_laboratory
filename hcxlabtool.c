@@ -2129,6 +2129,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) == 0) send_pspoll(p);
 			else if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_pspoll(p);
 			#endif
+			memset((bssidlist +p)->bssidinfo->macclient, 0xff, 6);
 			return;
 			}
 		if((bssidlist +p)->bssidinfo->deauthattackcount >= ((bssidlist +p)->bssidinfo->deauthattackfactor +26))
