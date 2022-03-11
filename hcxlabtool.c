@@ -2169,6 +2169,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 		if((bssidlist +p)->bssidinfo->deauthattackcount == ((bssidlist +p)->bssidinfo->deauthattackfactor +10))
 			{
 			if(memcmp(&mac_broadcast, (bssidlist +p)->bssidinfo->macclient, 6) == 0) send_pspoll(p);
+			else if(((bssidlist +p)->bssidinfo->essidlen == 0) || ((bssidlist +p)->bssidinfo->essid[0] == 0)) send_pspoll(p);
 			else
 				{
 				if((((bssidlist +p)->bssidinfo->rsnakm &TAK_PSK) == TAK_PSK)) send_association_req_wpa2_cl(p);
