@@ -65,6 +65,9 @@ static int gpiobutton;
 static int errorcount;
 static int lasterrorcount;
 
+static time_t fdrxsectimer;
+static long int fdrxnsectimer;
+
 static enhanced_packet_block_t *epbhdr;
 static enhanced_packet_block_t *epbhdrown;
 
@@ -2709,8 +2712,8 @@ while(wantstopflag == false)
 		}
 	FD_ZERO(&readfds);
 	FD_SET(fd_socket, &readfds);
-	tsfd.tv_sec = FDRXSECTIMER;
-	tsfd.tv_nsec = FDRXNSECTIMER;
+	tsfd.tv_sec = fdrxsectimer;
+	tsfd.tv_nsec = fdrxnsectimer;
 	fdnum = pselect(fd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
 	if(fdnum < 0)
 		{
@@ -2812,8 +2815,8 @@ while(wantstopflag == false)
 		}
 	FD_ZERO(&readfds);
 	FD_SET(fd_socket, &readfds);
-	tsfd.tv_sec = FDRXSECTIMER;
-	tsfd.tv_nsec = FDRXNSECTIMER;
+	tsfd.tv_sec = fdrxsectimer;
+	tsfd.tv_nsec = fdrxnsectimer;
 	fdnum = pselect(fd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
 	if(fdnum < 0)
 		{
@@ -3291,8 +3294,8 @@ free(epmaddr);
 fcntl(fd_socket, F_SETFL, O_NONBLOCK);
 FD_ZERO(&readfds);
 FD_SET(fd_socket, &readfds);
-tsfd.tv_sec = 0;
-tsfd.tv_nsec = FDRXNSECTIMER;
+tsfd.tv_sec = 1;
+tsfd.tv_nsec = 0;
 fdnum = pselect(fd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
 if(fdnum < 0) return false;
 if(FD_ISSET(fd_socket, &readfds)) packetlen = read(fd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
@@ -3715,12 +3718,13 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                            default: %d entries\n"
 	"--m2attempt=<digit>       : reject CLIENT request after n received M2 frames\n"
 	"                            default: %d received M2 frames\n" 
+	"--beaconinterval          : default: %ld nanoseconds\n" 
 	"--weakcandidate=<password>: use this pre shared key (8...63 characters) as weak candidate\n"
 	"                            will be saved to pcapng to inform hcxpcaptool\n"
 	"                            default: %s\n"
 	"--help                    : show this help\n"
 	"--version                 : show version\n",
-	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, eigenname, M2ATTEMPTS, RGBSSIDLIST_MAX, weakcandidate);
+	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, eigenname, M2ATTEMPTS, RGBSSIDLIST_MAX, FDRXNSECTIMER, weakcandidate);
 exit(EXIT_SUCCESS);
 }
 /*---------------------------------------------------------------------------*/
@@ -3737,6 +3741,7 @@ int main(int argc, char *argv[])
 static int auswahl;
 static int index;
 static int totvalue;
+static unsigned long long int bivalue;
 static char *interfacename;
 static char *bpfcname;
 static char *essidlistname;
@@ -3759,6 +3764,7 @@ static const struct option long_options[] =
 	{"essidlist",			required_argument,	NULL,	HCX_ESSIDLIST},
 	{"m2attempt",			required_argument,	NULL,	HCX_M2ATTEMPT},
 	{"essidmax",			required_argument,	NULL,	HCX_ESSIDMAX},
+	{"beaconinterval",		required_argument,	NULL,	HCX_BEACON_INTERVAL},
 	{"tot",				required_argument,	NULL,	HCX_TOT},
 	{"weakcandidate	",		required_argument,	NULL,	HCX_WEAKCANDIDATE},
 	{"onsigterm",			required_argument,	NULL,	HCX_ON_SIGTERM},
@@ -3792,6 +3798,8 @@ rgbssidlistmax = RGBSSIDLIST_MAX;
 tvtot.tv_sec = 2147483647L;
 tvtot.tv_usec = 0;
 totvalue = 0;
+fdrxsectimer = FDRXSECTIMER;
+fdrxnsectimer = FDRXNSECTIMER;
 weakcandidatelen = 8;
 strncpy(weakcandidate, weakcandidatedefault, 64);
 monitormodeflag = false;
@@ -3924,6 +3932,21 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 			}
 		gettimeofday(&tvtot, NULL);
 		tvtot.tv_sec += totvalue *60;
+		break;
+
+		case HCX_BEACON_INTERVAL:
+		bivalue = strtoll(optarg, NULL, 10);
+		if(bivalue < 100)
+			{
+			fprintf(stderr, "interval must be >= 100 nanoseconds\n");
+			exit(EXIT_FAILURE);
+			}
+		if(bivalue < 1000000000L) fdrxnsectimer = bivalue;
+		else
+			{
+			fdrxnsectimer = bivalue %1000000000L;
+			fdrxsectimer = bivalue /1000000000L;
+			}
 		break;
 
 		case HCX_WEAKCANDIDATE:

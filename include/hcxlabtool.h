@@ -12,8 +12,9 @@
 #define HCX_ESSIDLIST		8
 #define HCX_ESSIDMAX		9
 #define HCX_M2ATTEMPT		10
-#define HCX_TOT			11
-#define HCX_WEAKCANDIDATE	12
+#define HCX_BEACON_INTERVAL	11
+#define HCX_TOT			12
+#define HCX_WEAKCANDIDATE	13
 #define HCX_INTERFACE_NAME	'i'
 #define HCX_CHANNEL		'c'
 #define HCX_SHOW_CHANNEL	'C'
@@ -36,18 +37,10 @@
 
 #define ESSID_LEN_MAX		32
 
-#ifdef GETM2PR
-#define FDRXSECTIMER		1 /* 1 second interval */
-#define FDRXNSECTIMER		0
-#else
-#define FDRXSECTIMER		0
-#ifdef BEACONUNSET
-#define FDRXNSECTIMER		100000000 /* 0,1 second interval */
-#else
-#define FDRXNSECTIMER		200000000 /* 0,2 second interval */
-#endif
-#endif
-#define FDTXSECTIMER		5 /* 5 second timeout */
+#define FDRXSECTIMER		0L
+#define FDRXNSECTIMER		102400000L /* 0,1024 second interval */
+
+#define FDTXSECTIMER		5L /* 5 second timeout */
 #define RGAPLISTCOUNT		10
 #define STAYTIME		5
 
