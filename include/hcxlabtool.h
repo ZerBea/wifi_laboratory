@@ -105,7 +105,6 @@ else if(ia->timestamp > ib->timestamp) return -1;
 return 0;
 }
 /*===========================================================================*/
-#define		BSSID_COUNT_MAX		1024
 typedef struct
 {
  uint64_t	timestampfirst;
@@ -161,8 +160,8 @@ typedef struct
 }bssidinfo_t;
 #define	BSSIDINFO_SIZE (sizeof(bssidinfo_t))
 /*===========================================================================*/
-#define BSSIDLIST_MAX		512
-#define BSSIDLIST_SORT_MAX	256
+#define BSSIDLIST_MAX		1024
+#define BSSIDLIST_SORT_MAX	512
 typedef struct
 {
  uint64_t	timestamp;
