@@ -62,7 +62,7 @@ typedef struct
 }essid_t;
 #define	ESSID_SIZE (sizeof(essid_t))
 /*===========================================================================*/
-#define		CLIENTLIST_MAX		1024
+#define		CLIENTLIST_MAX		2048
 typedef struct
 {
  uint64_t		timestamp;
@@ -83,7 +83,7 @@ else if(ia->timestamp > ib->timestamp) return -1;
 return 0;
 }
 /*===========================================================================*/
-#define		RGBSSIDLIST_MAX		1024
+#define		RGBSSIDLIST_MAX		2048
 #define		RGBSSIDLISTTX_MAX	10
 typedef struct
 {
