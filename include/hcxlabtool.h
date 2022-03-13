@@ -62,7 +62,7 @@ typedef struct
 }essid_t;
 #define	ESSID_SIZE (sizeof(essid_t))
 /*===========================================================================*/
-#define		CLIENTLIST_MAX		2048
+#define		CLIENTLIST_MAX		1024
 typedef struct
 {
  uint64_t		timestamp;
@@ -160,8 +160,8 @@ typedef struct
 }bssidinfo_t;
 #define	BSSIDINFO_SIZE (sizeof(bssidinfo_t))
 /*===========================================================================*/
-#define BSSIDLIST_MAX		1024
-#define BSSIDLIST_SORT_MAX	512
+#define BSSIDLIST_MAX		512
+#define BSSIDLIST_SORT_MAX	256
 typedef struct
 {
  uint64_t	timestamp;
