@@ -1671,19 +1671,28 @@ return;
 /*===========================================================================*/
 static inline void process80211reassociation_req()
 {
-#ifdef GETM2
 static int p;
-static uint8_t *clientinfoptr;
 static uint16_t clientinfolen;
+static capreqsta_t *capreqsta;
+#ifdef GETM2
+static uint8_t *clientinfoptr;
 static bssidinfo_t bssidinfo;
 #endif
 
 writeepb(fd_pcapng);
 if(macfrx->retry == 1) return;
-#ifdef GETM2
-clientinfoptr = payloadptr +CAPABILITIESREQSTA_SIZE;
 clientinfolen = payloadlen -CAPABILITIESREQSTA_SIZE;
 if(clientinfolen < IETAG_SIZE) return;
+if(memcmp(&mac_broadcast, macfrx->addr2, 6) == 0) return;
+capreqsta = (capreqsta_t *)payloadptr;
+for(p = 0; p < BSSIDLIST_MAX; p++)
+	{
+	if(memcmp(capreqsta->addr, (bssidlist +p)->mac, 6) != 0) continue;
+	memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
+	break;
+	}
+#ifdef GETM2
+clientinfoptr = payloadptr +CAPABILITIESREQSTA_SIZE;
 for(p = 0; p < CLIENTLIST_MAX; p++)
 	{
 	if((clientlist +p)->timestamp == 0) break;
