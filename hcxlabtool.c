@@ -1401,6 +1401,18 @@ static int p;
 if(memcmp(macfrx->addr3, macfrx->addr2, 6) == 0) return;
 if(memcmp(&mac_broadcast, macfrx->addr1, 6) == 0) return;
 if(memcmp(&mac_broadcast, macfrx->addr2, 6) == 0) return;
+#ifdef GETM2
+if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
+	{
+	if(memcmp(&mac_null, macfrx->addr1, 6) != 0)
+		{
+		send_ack();
+		packetoutptr = epbown_m1 +EPB_SIZE;
+		packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
+		fdwrite();
+		}
+	}
+#endif
 for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
 	if((bssidlist +p)->timestamp == 0) break;
