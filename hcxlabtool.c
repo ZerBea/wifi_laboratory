@@ -1691,8 +1691,8 @@ static uint8_t *clientinfoptr;
 static bssidinfo_t bssidinfo;
 #endif
 
-writeepb(fd_pcapng);
 if(macfrx->retry == 1) return;
+writeepb(fd_pcapng);
 clientinfolen = payloadlen -CAPABILITIESREQSTA_SIZE;
 if(clientinfolen < IETAG_SIZE) return;
 if(memcmp(&mac_broadcast, macfrx->addr2, 6) == 0) return;
