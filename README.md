@@ -35,7 +35,7 @@ Requirements
 
 * detailed knowledge of Linux
 
-* latest Linux Kernel
+* latest Linux Kernel (recommended distribution: Raspberry Pi OS Lite on ARMv6 systems or Arch Linux Arm on Armv7 systems)  
 
 * driver must support full monitor mode and full packet injection
 
