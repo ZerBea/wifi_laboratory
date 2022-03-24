@@ -100,3 +100,5 @@ it is mandatory to ACK NULL and ACTION frames within a 4way handshake!
 setting a short preamble in radiotap header is ignored on tx.
 
 entire AUTHENTICATION process should be done running a data rate of 1.0 Mb/s
+
+there are better ways to disconnect a CLIENT than injecting stupid DEAUTHENTICATION frames.
