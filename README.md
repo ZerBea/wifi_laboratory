@@ -93,12 +93,12 @@ a Raspberry Pi is not able to handle more than one interface at the same time.
 
 pselect doesn't like to be interrupted by another timer.
 
-active monitor mode (enabled by radiotap header) is mandatatory on AUTHENTICATION, ASSOCIATION and EAPOL frames.
+active monitor mode (enabled by radiotap header) is mandatatory on AUTHENTICATION, ASSOCIATION and EAPOL frames!
 
 it is mandatory to ACK NULL and ACTION frames within a 4way handshake!
 
 setting a short preamble in radiotap header is ignored on tx.
 
-entire AUTHENTICATION process should be done running a data rate of 1.0 Mb/s
+entire AUTHENTICATION process should be done running a data rate of 1.0 Mb/s.
 
 there are (much) better ways than injecting stupid DEAUTHENTICATION frames to disconnect a CLIENT. 
