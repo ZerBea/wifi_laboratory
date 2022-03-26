@@ -3213,6 +3213,7 @@ static inline bool opensocket(char *interfacename)
 static struct ifaddrs *ifaddr = NULL;
 static struct ifaddrs *ifa = NULL;
 static struct iwreq iwrinfo, iwr;
+
 static struct iw_param param;
 static struct ifreq ifr;
 static struct sockaddr_ll ll;
@@ -3311,6 +3312,13 @@ if(ioctl(fd_socket, SIOCETHTOOL, &ifr) < 0) return false;
 if(epmaddr->size != 6) return false;
 memcpy(&ifmac, epmaddr->data, 6);
 free(epmaddr);
+
+memset(&iwr, 0, sizeof(iwr));
+memcpy(&iwr.ifr_name, ifname, IFNAMSIZ);
+iwr.u.freq.flags = IW_FREQ_FIXED;
+iwr.u.freq.m = 2412;
+iwr.u.freq.e = 6;
+if(ioctl(fd_socket, SIOCSIWFREQ, &iwr) < 0) return false;
 
 fcntl(fd_socket, F_SETFL, O_NONBLOCK);
 FD_ZERO(&readfds);
