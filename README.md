@@ -102,3 +102,5 @@ setting a short preamble in radiotap header is ignored on tx.
 entire AUTHENTICATION process should be done running a data rate of 1.0 Mb/s.
 
 there are (much) better ways than injecting stupid DEAUTHENTICATION frames to disconnect a CLIENT. 
+
+the most useful frame is an EAPOL M2 frame!
