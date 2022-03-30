@@ -3220,9 +3220,6 @@ static struct sockaddr_ll ll;
 static struct packet_mreq mr;
 static struct ethtool_perm_addr *epmaddr;
 static int enable = 1;
-static int fdnum;
-static fd_set readfds;
-static struct timespec tsfd;
 
 memset(&ifname, 0, IFNAMSIZ +1);
 memset(&ifmac, 0, sizeof(ifmac));
@@ -3316,19 +3313,16 @@ free(epmaddr);
 memset(&iwr, 0, sizeof(iwr));
 memcpy(&iwr.ifr_name, ifname, IFNAMSIZ);
 iwr.u.freq.flags = IW_FREQ_FIXED;
-iwr.u.freq.m = 2412;
+iwr.u.freq.m = 2462;
 iwr.u.freq.e = 6;
 if(ioctl(fd_socket, SIOCSIWFREQ, &iwr) < 0) return false;
 
-fcntl(fd_socket, F_SETFL, O_NONBLOCK);
-FD_ZERO(&readfds);
-FD_SET(fd_socket, &readfds);
-tsfd.tv_sec = 1;
-tsfd.tv_nsec = 0;
-fdnum = pselect(fd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
-if(fdnum < 0) return false;
-if(FD_ISSET(fd_socket, &readfds)) packetlen = read(fd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
-else return false;
+memset(&iwr, 0, sizeof(iwr));
+memcpy(&iwr.ifr_name, ifname, IFNAMSIZ);
+iwr.u.freq.flags = IW_FREQ_FIXED;
+iwr.u.freq.m = 2412;
+iwr.u.freq.e = 6;
+if(ioctl(fd_socket, SIOCSIWFREQ, &iwr) < 0) return false;
 return true;
 }
 /*===========================================================================*/
