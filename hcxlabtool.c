@@ -11,8 +11,8 @@
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
 #include <linux/filter.h>
+#include <linux/if_packet.h>
 #include <net/if.h>
-#include <netpacket/packet.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/time.h>
@@ -3219,7 +3219,9 @@ static struct ifreq ifr;
 static struct sockaddr_ll ll;
 static struct packet_mreq mr;
 static struct ethtool_perm_addr *epmaddr;
+#ifdef PACKET_IGNORE_OUTGOING
 static int enable = 1;
+#endif
 
 memset(&ifname, 0, IFNAMSIZ +1);
 memset(&ifmac, 0, sizeof(ifmac));
