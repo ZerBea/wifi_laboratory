@@ -3275,9 +3275,9 @@ memset(&mr, 0, sizeof(mr));
 mr.mr_ifindex = ifr.ifr_ifindex;
 mr.mr_type = PACKET_MR_PROMISC;
 if(setsockopt(fd_socket, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr)) < 0) return false;
-
+#ifdef PACKET_IGNORE_OUTGOING
 if(setsockopt(fd_socket, SOL_PACKET, PACKET_IGNORE_OUTGOING, &enable, sizeof(int)) < 0) return false;
-
+#endif
 memset(&ifr, 0, sizeof(ifr));
 memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
 if(ioctl(fd_socket, SIOCSIFFLAGS, &ifr) < 0) return false; /* set interface down */
