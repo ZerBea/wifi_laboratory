@@ -868,6 +868,13 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) == 0)
 		{
 		wpak = (wpakey_t*)wpakptr;
+		if(((bssidlist +p)->bssidinfo->status &BSSID_ESSID) != BSSID_ESSID)
+			{
+			#ifdef GETM1234
+			send_disassociation2client(p, WLAN_REASON_PREV_AUTH_NOT_VALID);
+			#endif
+			return;
+			}
 		if(((bssidlist +p)->bssidinfo->replaycountm1 +1) != be64toh(wpak->replaycount))
 			{
 			#ifdef GETM1234
@@ -916,6 +923,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
 	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) == 0)
 		{
+		if(((bssidlist +p)->bssidinfo->status &BSSID_ESSID) != BSSID_ESSID) return;
 		(bssidlist +p)->bssidinfo->deauthattackcount = 0;
 		wpak = (wpakey_t*)wpakptr;
 		if(((bssidlist +p)->bssidinfo->replaycountm1 +1) != be64toh(wpak->replaycount)) return;
@@ -948,6 +956,7 @@ if(rgrc == m2rc)
 		if((clientlist +p)->timestamp == 0) return;
 		if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 		(clientlist +p)->timestamp = timestamp;
+		if((clientlist +p)->essid != CLIENT_ESSID) return;
 		if(memcmp((clientlist +p)->mic, wpak->keymic, 16) == 0) return;
 		else
 			{
@@ -966,6 +975,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
 	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) == 0)
 		{
+		if(((bssidlist +p)->bssidinfo->status &BSSID_ESSID) != BSSID_ESSID) return;
 		(bssidlist +p)->bssidinfo->deauthattackcount = 0;
 		if((bssidlist +p)->bssidinfo->replaycountm1 != m2rc) return;
 		if((timestamp -(bssidlist +p)->bssidinfo->timestampm1) > 20000) return;
@@ -1023,6 +1033,7 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
 	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) == 0)
 		{
+		if(((bssidlist +p)->bssidinfo->status &BSSID_ESSID) != BSSID_ESSID) return;
 		(bssidlist +p)->bssidinfo->deauthattackcount = 0;
 		(bssidlist +p)->timestamp = timestamp;
 		(bssidlist +p)->bssidinfo->status |= BSSID_M1;
@@ -1712,6 +1723,7 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	memset(&bssidinfo, 0 , sizeof(bssidinfo));
 	get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
+	(clientlist +p)->essid |= CLIENT_ESSID;
 	if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 		{
 		if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
@@ -1745,6 +1757,7 @@ memcpy((clientlist +p)->mac, macfrx->addr2, 6);
 memcpy((clientlist +p)->macap, macfrx->addr1, 6);
 memset(&bssidinfo, 0 , sizeof(bssidinfo));
 get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
+(clientlist +p)->essid |= CLIENT_ESSID;
 if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	{
 	if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
@@ -1773,6 +1786,21 @@ if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_
 #endif
 return;
 }
+
+
+/*===========================================================================*/
+static inline void confirmassociation_req()
+{
+static int p;
+
+for(p = 0; p < BSSIDLIST_MAX; p++)
+	{
+	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) != 0) continue;
+	(bssidlist +p)->bssidinfo->status |= BSSID_ESSID;
+	return;
+	}
+return;
+}
 /*===========================================================================*/
 static inline void process80211association_req()
 {
@@ -1794,6 +1822,7 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 	if((clientlist +p)->timestamp == 0) break;
 	if((clientlist +p)->count >= m2attempts) return;
 	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
+	(clientlist +p)->essid |= CLIENT_ESSID;
 	memset(&bssidinfo, 0 , sizeof(bssidinfo));
 	get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
 	if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
@@ -1832,6 +1861,7 @@ memcpy((clientlist +p)->mac, macfrx->addr2, 6);
 memcpy((clientlist +p)->macap, macfrx->addr1, 6);
 memset(&bssidinfo, 0 , sizeof(bssidinfo));
 get_taglist(&bssidinfo, clientinfolen, clientinfoptr);
+(clientlist +p)->essid |= CLIENT_ESSID;
 if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	{
 	if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
@@ -2559,9 +2589,17 @@ if(macfrx->type == IEEE80211_FTYPE_MGMT)
 		if(memcmp(&macrgclient, macfrx->addr1, 6) != 0) process80211authentication();
 		else process80211authentication_resp_rg();
 		}
-	else if(macfrx->subtype == IEEE80211_STYPE_ASSOC_REQ) process80211association_req();
+	else if(macfrx->subtype == IEEE80211_STYPE_ASSOC_REQ)
+		{
+		process80211association_req();
+		confirmassociation_req();
+		}
 	else if(macfrx->subtype == IEEE80211_STYPE_ASSOC_RESP) process80211association_resp();
-	else if(macfrx->subtype == IEEE80211_STYPE_REASSOC_REQ) process80211reassociation_req();
+	else if(macfrx->subtype == IEEE80211_STYPE_REASSOC_REQ)
+		{
+		process80211reassociation_req();
+		confirmassociation_req();
+		}
 	else if(macfrx->subtype == IEEE80211_STYPE_REASSOC_RESP) process80211reassociation_resp();
 	}
 else if(macfrx->type == IEEE80211_FTYPE_CTL)

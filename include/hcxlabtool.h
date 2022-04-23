@@ -65,11 +65,13 @@ typedef struct
 #define		CLIENTLIST_MAX		1024
 typedef struct
 {
- uint64_t		timestamp;
- uint32_t		count;
- uint8_t		mac[6];
- uint8_t		macap[6];
- uint8_t		mic[16];
+ uint64_t	timestamp;
+ uint32_t	count;
+ uint8_t	mac[6];
+ uint8_t	macap[6];
+ uint8_t	mic[16];
+#define		CLIENT_ESSID	0b00000001
+ uint8_t	essid;
  }clientlist_t;
 #define	CLIENTLIST_SIZE (sizeof(clientlist_t))
 
@@ -123,11 +125,12 @@ typedef struct
 #define		BSSID_NONE		0b00000000
 #define		BSSID_BEACON		0b00000001
 #define		BSSID_PROBERESPONSE	0b00000010
-#define		BSSID_M1		0b00000100
-#define		BSSID_M2		0b00001000
-#define		BSSID_M3		0b00010000
-#define		BSSID_M4		0b00100000
-#define		BSSID_PMKID		0b01000000
+#define		BSSID_ESSID		0b00000100
+#define		BSSID_M1		0b00001000
+#define		BSSID_M2		0b00010000
+#define		BSSID_M3		0b00100000
+#define		BSSID_M4		0b01000000
+#define		BSSID_PMKID		0b10000000
  uint8_t	kdv;
 #define		BSSID_KDV_WPA		0b00000001
 #define		BSSID_KDV_RSN		0b00000010
