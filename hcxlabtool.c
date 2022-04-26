@@ -284,7 +284,7 @@ if(fdnum < 0)
 	errorcount++;
 	return;
 	}
-if(FD_ISSET(fd_socket, &txfds)) 
+if(FD_ISSET(fd_socket, &txfds))
 	{
 	if(write(fd_socket, packetoutptr, packetoutlen) > 0) return;
 	}
@@ -555,7 +555,7 @@ static const uint8_t associationrequestwpa1data[] =
 0x00, 0x50, 0xf2, 0x02, /* group cipher */
 0x01, 0x00, /* count */
 0x00, 0x50, 0xf2, 0x02, /* pairwise cipher */
-0x01, 0x00,  /* count */
+0x01, 0x00, /* count */
 0x00, 0x50, 0xf2, 0x02, /* AKM */
 };
 #define ASSOCIATIONREQUESTWPA1_SIZE sizeof(associationrequestwpa1data)
@@ -605,7 +605,7 @@ static const uint8_t reassociationrequestwpa1data[] =
 0x00, 0x50, 0xf2, 0x02, /* group cipher */
 0x01, 0x00, /* count */
 0x00, 0x50, 0xf2, 0x02, /* pairwise cipher */
-0x01, 0x00,  /* count */
+0x01, 0x00, /* count */
 0x00, 0x50, 0xf2, 0x02, /* AKM */
 };
 #define REASSOCIATIONREQUESTWPA1_SIZE sizeof(reassociationrequestwpa1data)
@@ -1751,7 +1751,7 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 		}
 	return;
 	}
-memset((clientlist +p), 0, CLIENTLIST_SIZE); 
+memset((clientlist +p), 0, CLIENTLIST_SIZE);
 (clientlist +p)->timestamp = timestamp;
 memcpy((clientlist +p)->mac, macfrx->addr2, 6);
 memcpy((clientlist +p)->macap, macfrx->addr1, 6);
@@ -1855,7 +1855,7 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 		}
 	return;
 	}
-memset((clientlist +p), 0, CLIENTLIST_SIZE); 
+memset((clientlist +p), 0, CLIENTLIST_SIZE);
 (clientlist +p)->timestamp = timestamp;
 memcpy((clientlist +p)->mac, macfrx->addr2, 6);
 memcpy((clientlist +p)->macap, macfrx->addr1, 6);
@@ -1951,7 +1951,7 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 	if(p > 10) qsort(clientlist, p +1, CLIENTLIST_SIZE, sort_clientlist_by_time);
 	return;
 	}
-memset((clientlist +p), 0, CLIENTLIST_SIZE); 
+memset((clientlist +p), 0, CLIENTLIST_SIZE);
 (clientlist +p)->timestamp = timestamp;
 memcpy((clientlist +p)->mac, macfrx->addr2, 6);
 memcpy((clientlist +p)->macap, macfrx->addr1, 6);
@@ -2324,7 +2324,7 @@ const uint8_t beacon_data[] =
 0x2a, 0x01, 0x04,
 /* Tag: Extended Supported Rates 24, 36, 48, 54, [Mbit/sec] */
 0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
-/* Tag: RSN Information CCM CCM PSK  */
+/* Tag: RSN Information CCM CCM PSK */
 0x30, 0x14, 0x01, 0x00,
 0x00, 0x0f, 0xac, 0x04,
 0x01, 0x00,
@@ -2342,7 +2342,7 @@ const uint8_t beacon_data[] =
 };
 #define BEACON_DATA_SIZE sizeof(beacon_data)
 
-if(rgbssidlistp > rgbssidlistmax) rgbssidlistp = 0; 
+if(rgbssidlistp > rgbssidlistmax) rgbssidlistp = 0;
 if((rgbssidlist +rgbssidlistp)->timestamp == 0)
 	{
 	rgbssidlistp = 0;
@@ -2393,7 +2393,7 @@ const uint8_t beacon_data[] =
 0x2a, 0x01, 0x04,
 /* Tag: Extended Supported Rates 24, 36, 48, 54, [Mbit/sec] */
 0x32, 0x04, 0x30, 0x48, 0x60, 0x6c,
-/* Tag: RSN Information CCM CCM PSK  */
+/* Tag: RSN Information CCM CCM PSK */
 0x30, 0x14, 0x01, 0x00,
 0x00, 0x0f, 0xac, 0x04,
 0x01, 0x00,
@@ -2411,7 +2411,7 @@ const uint8_t beacon_data[] =
 };
 #define BEACON_DATA_SIZE sizeof(beacon_data)
 
-if(rgbssidlistp > rgbssidlistmax) rgbssidlistp = 0; 
+if(rgbssidlistp > rgbssidlistmax) rgbssidlistp = 0;
 if((rgbssidlist +rgbssidlistp)->timestamp == 0)
 	{
 	rgbssidlistp = 0;
@@ -3400,7 +3400,7 @@ while(c < bpf.len)
 		bpf.len = 0;
 		break;
 		}
-	sscanf(linein, "%" SCNu16 "%" SCNu8 "%" SCNu8 "%" SCNu32, &zeiger->code, &zeiger->jt,  &zeiger->jf,  &zeiger->k);
+	sscanf(linein, "%" SCNu16 "%" SCNu8 "%" SCNu8 "%" SCNu32, &zeiger->code, &zeiger->jt, &zeiger->jf, &zeiger->k);
 	zeiger++;
 	c++;
 	}
@@ -3714,8 +3714,8 @@ exit(EXIT_SUCCESS);
 __attribute__ ((noreturn))
 static inline void usage(char *eigenname)
 {
-fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
-	"usage  : %s <options>\n"
+fprintf(stdout, "%s %s (C) %s ZeroBeat\n"
+	"usage: %s <options>\n"
 	"\n"
 	"short options:\n"
 	"-i <interface> : interface (monitor mode will be enabled by hcxlabtool)\n"
@@ -3778,8 +3778,8 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                            this include the ESSIDs from essid list\n"
 	"                            default: %d entries\n"
 	"--m2attempt=<digit>       : reject CLIENT request after n received M2 frames\n"
-	"                            default: %d received M2 frames\n" 
-	"--beaconinterval          : default: %ld nanoseconds\n" 
+	"                            default: %d received M2 frames\n"
+	"--beaconinterval          : default: %ld nanoseconds\n"
 	"--weakcandidate=<password>: use this pre shared key (8...63 characters) as weak candidate\n"
 	"                            will be saved to pcapng to inform hcxpcaptool\n"
 	"                            default: %s\n"
