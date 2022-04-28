@@ -3251,13 +3251,15 @@ static inline bool opensocket(char *interfacename)
 static struct ifaddrs *ifaddr = NULL;
 static struct ifaddrs *ifa = NULL;
 static struct iwreq iwrinfo, iwr;
-
 static struct iw_param param;
 static struct ifreq ifr;
 static struct sockaddr_ll ll;
 static struct packet_mreq mr;
 static struct ethtool_perm_addr *epmaddr;
 static int enable = 1;
+static int fdnum;
+static fd_set readfds;
+static struct timespec tsfd;
 
 memset(&ifname, 0, IFNAMSIZ +1);
 memset(&ifmac, 0, sizeof(ifmac));
@@ -3361,6 +3363,14 @@ iwr.u.freq.flags = IW_FREQ_FIXED;
 iwr.u.freq.m = 2412;
 iwr.u.freq.e = 6;
 if(ioctl(fd_socket, SIOCSIWFREQ, &iwr) < 0) return false;
+
+FD_ZERO(&readfds);
+FD_SET(fd_socket, &readfds);
+tsfd.tv_sec = fdrxsectimer;
+tsfd.tv_nsec = fdrxnsectimer;
+fdnum = pselect(fd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
+if(fdnum < 0) return true;
+if(FD_ISSET(fd_socket, &readfds)) read(fd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
 return true;
 }
 /*===========================================================================*/
