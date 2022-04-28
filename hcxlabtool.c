@@ -292,22 +292,6 @@ errorcount++;
 return;	
 }
 /*===========================================================================*/
-static inline void send_ack()
-{
-static mac_t *macftx;
-
-packetoutptr = epbown +EPB_SIZE;
-memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_ACK+1);
-memcpy(packetoutptr, &hdradiotap, HDRRT_SIZE);
-macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
-macftx->type = IEEE80211_FTYPE_CTL;
-macftx->subtype = IEEE80211_STYPE_ACK;
-memcpy(macftx->addr1, macfrx->addr2, 6);
-packetoutlen = HDRRT_SIZE +MAC_SIZE_ACK;
-fdwrite();
-return;
-}
-/*===========================================================================*/
 static inline void send_reassociation_resp()
 {
 static mac_t *macftx;
@@ -1296,7 +1280,6 @@ if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
 	{
 	if(memcmp(&mac_null, macfrx->addr1, 6) != 0)
 		{
-		send_ack();
 		packetoutptr = epbown_m1 +EPB_SIZE;
 		packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
 		fdwrite();
@@ -1328,7 +1311,6 @@ if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
 	{
 	if(memcmp(&mac_null, macfrx->addr1, 6) != 0)
 		{
-		send_ack();
 		packetoutptr = epbown_m1 +EPB_SIZE;
 		packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
 		fdwrite();
@@ -1417,7 +1399,6 @@ if(memcmp(&mac_pending, macfrx->addr1, 6) == 0)
 	{
 	if(memcmp(&mac_null, macfrx->addr1, 6) != 0)
 		{
-		send_ack();
 		packetoutptr = epbown_m1 +EPB_SIZE;
 		packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +107;
 		fdwrite();
@@ -1728,14 +1709,12 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 		{
 		if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
 			{
-			send_ack();
 			send_reassociation_resp();
 			send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 			memcpy(&mac_pending, macfrx->addr1, 6);
 			}
 		if((bssidinfo.rsnakm &TAK_PSKSHA256) == TAK_PSKSHA256)
 			{
-			send_ack();
 			send_reassociation_resp();
 			send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
 			memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1744,7 +1723,6 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 		}
 	if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
 		{
-		send_ack();
 		send_reassociation_resp();
 		send_m1_wpa1(macfrx->addr2, macfrx->addr1);
 		memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1762,14 +1740,12 @@ if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	{
 	if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
 		{
-		send_ack();
 		send_reassociation_resp();
 		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 		memcpy(&mac_pending, macfrx->addr1, 6);
 		}
 	if((bssidinfo.rsnakm &TAK_PSKSHA256) == TAK_PSKSHA256)
 		{
-		send_ack();
 		send_reassociation_resp();
 		send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
 		memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1778,7 +1754,6 @@ if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	}
 if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
 	{
-	send_ack();
 	send_reassociation_resp();
 	send_m1_wpa1(macfrx->addr2, macfrx->addr1);
 	memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1829,7 +1804,6 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 		{
 		if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
 			{
-			send_ack();
 			send_association_resp();
 			send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 			memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1837,7 +1811,6 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 			}
 		if((bssidinfo.rsnakm &TAK_PSKSHA256) == TAK_PSKSHA256)
 			{
-			send_ack();
 			send_association_resp();
 			send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
 			memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1847,7 +1820,6 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 		}
 	if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
 		{
-		send_ack();
 		send_association_resp();
 		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 		memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1866,7 +1838,6 @@ if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	{
 	if((bssidinfo.rsnakm &TAK_PSK) == TAK_PSK)
 		{
-		send_ack();
 		send_association_resp();
 		send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 		memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1874,7 +1845,6 @@ if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 		}
 	if((bssidinfo.rsnakm &TAK_PSKSHA256) == TAK_PSKSHA256)
 		{
-		send_ack();
 		send_association_resp();
 		send_m1_wpa2kv3(macfrx->addr2, macfrx->addr1);
 		memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1884,7 +1854,6 @@ if((bssidinfo.kdv &BSSID_KDV_RSN) == BSSID_KDV_RSN)
 	}
 if(((bssidinfo.kdv &BSSID_KDV_WPA) == BSSID_KDV_WPA) && ((bssidinfo.wpaakm &TAK_PSK) == TAK_PSK))
 	{
-	send_ack();
 	send_association_resp();
 	send_m1_wpa2(macfrx->addr2, macfrx->addr1);
 	memcpy(&mac_pending, macfrx->addr1, 6);
@@ -1897,11 +1866,7 @@ return;
 static inline void process80211association_resp()
 {
 if(macfrx->retry == 1) return;
-if(memcmp(&macrgclient, macfrx->addr1, 6) == 0)
-	{
-	send_ack();
-	send_null();
-	}
+if(memcmp(&macrgclient, macfrx->addr1, 6) == 0) send_null();
 writeepb(fd_pcapng);
 return;
 }
@@ -1946,7 +1911,6 @@ for(p = 0; p < CLIENTLIST_MAX; p++)
 	if((clientlist +p)->timestamp == 0) break;
 	if((memcmp((clientlist +p)->mac, macfrx->addr2, 6) != 0) || (memcmp((clientlist +p)->macap, macfrx->addr1, 6) != 0)) continue;
 	if((clientlist +p)->count >= m2attempts) return;
-	send_ack();
 	send_authentication_resp_opensystem();
 	if(p > 10) qsort(clientlist, p +1, CLIENTLIST_SIZE, sort_clientlist_by_time);
 	return;
@@ -1955,7 +1919,6 @@ memset((clientlist +p), 0, CLIENTLIST_SIZE);
 (clientlist +p)->timestamp = timestamp;
 memcpy((clientlist +p)->mac, macfrx->addr2, 6);
 memcpy((clientlist +p)->macap, macfrx->addr1, 6);
-send_ack();
 send_authentication_resp_opensystem();
 qsort(clientlist, p +1, CLIENTLIST_SIZE, sort_clientlist_by_time);
 #endif
@@ -1983,7 +1946,6 @@ for(p = 0; p < BSSIDLIST_MAX; p++)
 	if((bssidlist +p)->timestamp == 0) return;
 	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) == 0)
 		{
-		send_ack();
 		send_association_req_wpa2(p);
 		memset(&mac_pending, 0, 6);
 		return;
