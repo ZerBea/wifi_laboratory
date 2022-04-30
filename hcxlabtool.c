@@ -3755,7 +3755,7 @@ fprintf(stdout, "%s %s (C) %s ZeroBeat\n"
 	"                            default: %d received M2 frames\n"
 	"--beaconinterval          : default: %ld nanoseconds\n"
 	"--weakcandidate=<password>: use this pre shared key (8...63 characters) as weak candidate\n"
-	"                            will be saved to pcapng to inform hcxpcaptool\n"
+	"                            will be stored to pcapng to inform hcxpcapngtool\n"
 	"                            default: %s\n"
 	"--help                    : show this help\n"
 	"--version                 : show version\n",
