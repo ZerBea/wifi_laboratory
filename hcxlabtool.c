@@ -1648,7 +1648,7 @@ while(0 < infolen)
 		{
 		if((tagptr->len > 0) && (tagptr->len <= ESSID_LEN_MAX))
 			{
-			if(&tagptr->data[0]!= 0)
+			if(tagptr->data[0] > 0)
 				{
 				bssidinfo->essidlen = tagptr->len;
 				memcpy(bssidinfo->essid, &tagptr->data[0], tagptr->len);
