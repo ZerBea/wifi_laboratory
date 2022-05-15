@@ -18,6 +18,7 @@
 #define HCX_INTERFACE_NAME	'i'
 #define HCX_CHANNEL		'c'
 #define HCX_SHOW_CHANNEL	'C'
+#define HCX_SCANBAND		'b'
 #define HCX_STAYTIME		't'
 #define HCX_SET_MONITORMODE	'm'
 #define HCX_SHOW_INTERFACES	'I'
@@ -43,6 +44,11 @@
 #define FDTXSECTIMER		5L /* 5 second timeout */
 #define RGAPLISTCOUNT		10
 #define STAYTIME		5
+
+#define SCANBAND24		0b00000001
+#define SCANBAND5		0b00000010
+#define SCANBAND6		0b00000100
+#define SCANBANDALL		0b11111111
 
 #define LEDFLASHINTERVAL	10
 #define RESUMEINTERVAL		36000

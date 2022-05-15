@@ -2639,6 +2639,7 @@ static inline bool set_channel()
 {
 static struct iwreq pwrq;
 
+printf("debug: %d\n", ptrscanlist->frequency);
 memset(&pwrq, 0, sizeof(pwrq));
 memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
 pwrq.u.freq.flags = IW_FREQ_FIXED;
@@ -3002,57 +3003,66 @@ free(scanlistdup);
 return;
 }
 /*===========================================================================*/
-static inline void getscanlist()
+static inline void getscanlist(uint8_t scanband)
 {
 static int c;
 static struct iwreq pwrq;
 
 ptrscanlist = scanlist;
-for(c = 2407; c < 2488; c++)
+if((scanband & SCANBAND24) == SCANBAND24)
 	{
-	if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
-	memset(&pwrq, 0, sizeof(pwrq));
-	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
-	pwrq.u.freq.flags = IW_FREQ_FIXED;
-	pwrq.u.freq.m = c;
-	pwrq.u.freq.e = 6;
-	if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
-	ptrscanlist->frequency = c;
-	if((ptrscanlist->frequency >= 2407) && (ptrscanlist->frequency <= 2474)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
-	else if((ptrscanlist->frequency >= 2481) && (ptrscanlist->frequency <= 2487)) ptrscanlist->channel = (ptrscanlist->frequency -2412)/5;
-	else continue;
-	if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
-	ptrscanlist++;
+	for(c = 2407; c < 2488; c++)
+		{
+		if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
+		memset(&pwrq, 0, sizeof(pwrq));
+		memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
+		pwrq.u.freq.flags = IW_FREQ_FIXED;
+		pwrq.u.freq.m = c;
+		pwrq.u.freq.e = 6;
+		if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
+		ptrscanlist->frequency = c;
+		if((ptrscanlist->frequency >= 2407) && (ptrscanlist->frequency <= 2474)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
+		else if((ptrscanlist->frequency >= 2481) && (ptrscanlist->frequency <= 2487)) ptrscanlist->channel = (ptrscanlist->frequency -2412)/5;
+		else continue;
+		if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
+		ptrscanlist++;
+		}
 	}
-for(c = 5005; c < 5981; c++)
+if((scanband & SCANBAND5) == SCANBAND5)
 	{
-	if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
-	memset(&pwrq, 0, sizeof(pwrq));
-	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
-	pwrq.u.freq.flags = IW_FREQ_FIXED;
-	pwrq.u.freq.m = c;
-	pwrq.u.freq.e = 6;
-	if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) continue;
-	ptrscanlist->frequency = c;
-	if((ptrscanlist->frequency >= 5005) && (ptrscanlist->frequency <= 5980)) ptrscanlist->channel = (ptrscanlist->frequency -5000)/5;
-	else continue;
-	if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
-	ptrscanlist++;
+	for(c = 5005; c < 5981; c++)
+		{
+		if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
+		memset(&pwrq, 0, sizeof(pwrq));
+		memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
+		pwrq.u.freq.flags = IW_FREQ_FIXED;
+		pwrq.u.freq.m = c;
+		pwrq.u.freq.e = 6;
+		if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) continue;
+		ptrscanlist->frequency = c;
+		if((ptrscanlist->frequency >= 5005) && (ptrscanlist->frequency <= 5980)) ptrscanlist->channel = (ptrscanlist->frequency -5000)/5;
+		else continue;
+		if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
+		ptrscanlist++;
+		}
 	}
-for(c = 5955; c < 6416; c++)
+if((scanband & SCANBAND6) == SCANBAND6)
 	{
-	if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
-	memset(&pwrq, 0, sizeof(pwrq));
-	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
-	pwrq.u.freq.flags = IW_FREQ_FIXED;
-	pwrq.u.freq.m = c;
-	pwrq.u.freq.e = 6;
-	if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) continue;
-	ptrscanlist->frequency = c;
-	if((ptrscanlist->frequency >= 5955) && (ptrscanlist->frequency <= 6415)) ptrscanlist->channel = (ptrscanlist->frequency -5950)/5;
-	else continue;
-	if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
-	ptrscanlist++;
+	for(c = 5955; c < 6416; c++)
+		{
+		if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
+		memset(&pwrq, 0, sizeof(pwrq));
+		memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
+		pwrq.u.freq.flags = IW_FREQ_FIXED;
+		pwrq.u.freq.m = c;
+		pwrq.u.freq.e = 6;
+		if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) continue;
+		ptrscanlist->frequency = c;
+		if((ptrscanlist->frequency >= 5955) && (ptrscanlist->frequency <= 6415)) ptrscanlist->channel = (ptrscanlist->frequency -5950)/5;
+		else continue;
+		if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
+		ptrscanlist++;
+		}
 	}
 ptrscanlist->frequency = 0;
 ptrscanlist->channel = 0;
@@ -3694,13 +3704,19 @@ fprintf(stdout, "%s %s (C) %s ZeroBeat\n"
 	"short options:\n"
 	"-i <interface> : interface (monitor mode will be enabled by hcxlabtool)\n"
 	"                 default: first discovered interface\n"
-	"-c <digit>     : set channel (1,2,3, ...) or frequency (2437,2462,5600,...)\n"
+	"-c <digit>     : set scan channel (1,2,3, ...) or frequency (2437,2462,5600,...)\n"
 	"                 0 - 1000 treated as channel\n"
 	"                   > 1000 treated as frequency in MHz\n"
 	"                 channel numbers are not longer unique\n"
 	"                 on 5GHz and 6Ghz it is recommended to use frequency instead of channel number\n"
 	"                 https://en.wikipedia.org/wiki/List_of_WLAN_channels\n"
-	"-C             : show available device channels and quit\n"
+	"-b <bitmask>   : set scan band (override -c sitch)\n"
+	"                 default: all bands supported by interface\n"
+	"                 bitmask:\n"
+	"                 1: 2.4GHz band if supported by interface\n"
+	"                 2: 5GHz band if supported by interface\n"
+	"                 4: 6GHz band if supported by device\n"
+	"-C             : show supported channels and quit\n"
 	"                 if no channels are available, interface is probably in use or doesn't support monitor mode\n"
 	"                 if more channels are available, firmware, driver and regulatory domain is probably patched\n"
 	"-t <seconds>   : stay time on channel before hopping to the next channel\n"
@@ -3777,6 +3793,7 @@ static int auswahl;
 static int index;
 static int totvalue;
 static unsigned long long int bivalue;
+static uint8_t scanband;
 static char *interfacename;
 static char *bpfcname;
 static char *essidlistname;
@@ -3790,7 +3807,7 @@ static const char *poweroffstring = "poweroff";
 static const char *rebootstring = "reboot";
 
 static const char *weakcandidatedefault = "12345678";
-static const char *short_options = "i:c:t:m:IChv";
+static const char *short_options = "i:c:b:t:m:IChv";
 static const struct option long_options[] =
 {
 	{"gpio_button",			required_argument,	NULL,	HCX_GPIO_BUTTON},
@@ -3828,6 +3845,7 @@ essidlistname = NULL;
 bpfcname = NULL;
 userscanlist = NULL;
 staytime = STAYTIME;
+scanband = SCANBANDALL;
 m2attempts = M2ATTEMPTS;
 rgbssidlistmax = RGBSSIDLIST_MAX;
 tvtot.tv_sec = 2147483647L;
@@ -3860,6 +3878,10 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 
 		case HCX_SHOW_CHANNEL:
 		showchannelflag = true;
+		break;
+
+		case HCX_SCANBAND:
+		scanband = atoi(optarg);
 		break;
 
 		case HCX_STAYTIME:
@@ -4084,7 +4106,7 @@ if(openpcapng() == false)
 if(showchannelflag == true) show_channels();
 else if(userscanlist == NULL)
 	{
-	getscanlist();
+	getscanlist(scanband);
 	if(ptrscanlist != scanlist) fdloopscan();
 	else fprintf(stderr, "interface doesn't support frequency scan\n");
 	}
