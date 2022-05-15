@@ -2982,8 +2982,8 @@ while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 			fprintf(stderr, "unhandled expontent %d reported by driver\n", pwrq.u.freq.e);
 			continue;
 			}
-		if((ptrscanlist->frequency >= 2407) && (ptrscanlist->frequency <= 2474)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
-		else if((ptrscanlist->frequency >= 2481) && (ptrscanlist->frequency <= 2487)) ptrscanlist->channel = (ptrscanlist->frequency -2412)/5;
+		if((ptrscanlist->frequency >= 2407) && (ptrscanlist->frequency <= 2477)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
+		else if((ptrscanlist->frequency >= 2479) && (ptrscanlist->frequency <= 2489)) ptrscanlist->channel = (ptrscanlist->frequency -2412)/5;
 		else if((ptrscanlist->frequency >= 5005) && (ptrscanlist->frequency <= 5980)) ptrscanlist->channel = (ptrscanlist->frequency -5000)/5;
 		else if((ptrscanlist->frequency >= 5955) && (ptrscanlist->frequency <= 6415)) ptrscanlist->channel = (ptrscanlist->frequency -5950)/5;
 		else continue;
@@ -3010,7 +3010,7 @@ static struct iwreq pwrq;
 ptrscanlist = scanlist;
 if((scanband & SCANBAND24) == SCANBAND24)
 	{
-	for(c = 2407; c < 2488; c++)
+	for(c = 2407; c <= 2477; c++)
 		{
 		if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
 		memset(&pwrq, 0, sizeof(pwrq));
@@ -3020,8 +3020,8 @@ if((scanband & SCANBAND24) == SCANBAND24)
 		pwrq.u.freq.e = 6;
 		if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
 		ptrscanlist->frequency = c;
-		if((ptrscanlist->frequency >= 2407) && (ptrscanlist->frequency <= 2474)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
-		else if((ptrscanlist->frequency >= 2481) && (ptrscanlist->frequency <= 2487)) ptrscanlist->channel = (ptrscanlist->frequency -2412)/5;
+		if((ptrscanlist->frequency >= 2407) && (ptrscanlist->frequency <= 2477)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
+		else if((ptrscanlist->frequency >= 2479) && (ptrscanlist->frequency <= 2489)) ptrscanlist->channel = (ptrscanlist->frequency -2412)/5;
 		else continue;
 		if(((ptrscanlist->channel) < 1) || ((ptrscanlist->channel) > 255)) continue;
 		ptrscanlist++;
@@ -3118,8 +3118,8 @@ for(c = 2407; c < 2488; c++)
 	pwrq.u.txpower.flags = IW_TXPOW_DBM;
 	if(ioctl(fd_socket, SIOCGIWTXPOW, &pwrq) < 0) continue;
 
-	if((frequency >= 2407) && (frequency <= 2474)) fprintf(stdout, "%4dMHz %3d (%2d dBm)\n", c, (frequency -2407)/5, pwrq.u.txpower.value);
-	else if((frequency >= 2481) && (frequency <= 2487)) fprintf(stdout, "%4dMHz %3d (%2d dBm)\n", c, (frequency -2412)/5, pwrq.u.txpower.value);
+	if((frequency >= 2407) && (frequency <= 2477)) fprintf(stdout, "%4dMHz %3d (%2d dBm)\n", c, (frequency -2407)/5, pwrq.u.txpower.value);
+	else if((frequency > 2479) && (frequency <= 2489)) fprintf(stdout, "%4dMHz %3d (%2d dBm)\n", c, (frequency -2412)/5, pwrq.u.txpower.value);
 	else fprintf(stderr, "unexpected frequency %4dMHz /exponent %d (%2d dBm)\n", frequency, exponent, pwrq.u.txpower.value);
 	}
 
