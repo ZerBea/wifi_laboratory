@@ -2639,7 +2639,6 @@ static inline bool set_channel()
 {
 static struct iwreq pwrq;
 
-printf("debug: %d\n", ptrscanlist->frequency);
 memset(&pwrq, 0, sizeof(pwrq));
 memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
 pwrq.u.freq.flags = IW_FREQ_FIXED;
