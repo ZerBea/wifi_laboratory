@@ -3010,7 +3010,7 @@ static struct iwreq pwrq;
 ptrscanlist = scanlist;
 if((scanband & SCANBAND24) == SCANBAND24)
 	{
-	for(c = 2407; c <= 2477; c++)
+	for(c = 2407; c <= 2489; c++)
 		{
 		if(ptrscanlist >= scanlist +SCANLIST_MAX) break;
 		memset(&pwrq, 0, sizeof(pwrq));
