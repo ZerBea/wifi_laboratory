@@ -2383,8 +2383,6 @@ const uint8_t proberesponse_data[] =
 {
 /* Tag: Supported Rates 6(B), 9, 12(B), 18, 24(B), 36, 48, 54, [Mbit/sec] */
 0x01, 0x08, 0x8c, 0x12, 0x98, 0x24, 0xb0, 0x48, 0x60, 0x6c,
-/* Tag: DS Parameter set: Current Channel: 1 */
-0x03, 0x01, 0x01,
 /* Tag: ERP Information */
 0x2a, 0x01, 0x04,
 /* Tag: RSN Information CCM CCM PSK */
@@ -2424,7 +2422,6 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +1] = essidlen;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE], essid, essidlen);
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +essidlen], &proberesponse_data, PROBERESPONSE_DATA_SIZE);
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +essidlen +0x0c] = ptrscanlist->channel;
 packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +essidlen +PROBERESPONSE_DATA_SIZE;
 fdwrite();
 return;
@@ -2812,8 +2809,6 @@ const uint8_t beacon_data[] =
 {
 /* Tag: Supported Rates 6(B), 9, 12(B), 18, 24(B), 36, 48, 54, [Mbit/sec] */
 0x01, 0x08, 0x8c, 0x12, 0x98, 0x24, 0xb0, 0x48, 0x60, 0x6c,
-/* Tag: DS Parameter set: Current Channel: 1 */
-0x03, 0x01, 0x01,
 /* Tag: TIM Information */
 0x05, 0x04, 0x00, 0x01, 0x00, 0x00,
 /* Tag: ERP Information */
@@ -2861,7 +2856,6 @@ packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +1] = (rgbssidlist +rgbssidlistp)->essidlen;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE], (rgbssidlist +rgbssidlistp)->essid, (rgbssidlist +rgbssidlistp)->essidlen);
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgbssidlist +rgbssidlistp)->essidlen], beacon_data, BEACON_DATA_SIZE);
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgbssidlist +rgbssidlistp)->essidlen +0xc] = ptrscanlist->channel;
 packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +IETAG_SIZE +(rgbssidlist +rgbssidlistp)->essidlen +BEACON_DATA_SIZE;
 fdwrite();
 rgbssidlistp++;
@@ -2946,8 +2940,6 @@ const uint8_t beacon_data[] =
 0x00, 0x00,
 /* Tag: Supported Rates 6(B), 9, 12(B), 18, 24(B), 36, 48, 54, [Mbit/sec] */
 0x01, 0x08, 0x8c, 0x12, 0x98, 0x24, 0xb0, 0x48, 0x60, 0x6c,
-/* Tag: DS Parameter set: Current Channel: 1 */
-0x03, 0x01, 0x01,
 /* Tag: TIM Information */
 0x05, 0x04, 0x00, 0x01, 0x00, 0x00,
 /* Tag: ERP Information */
@@ -2993,7 +2985,6 @@ capap->beaconintervall = 0xc8;
 capap->capabilities = 0x431;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE], beacon_data, BEACON_DATA_SIZE);
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +0xe] = ptrscanlist->channel;
 packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +BEACON_DATA_SIZE;
 fdwrite();
 rgbssidlistp++;
@@ -3056,8 +3047,6 @@ const uint8_t beacon_data[] =
 0x00, 0x00,
 /* Tag: Supported Rates 6(B), 9, 12(B), 18, 24(B), 36, 48, 54, [Mbit/sec] */
 0x01, 0x08, 0x8c, 0x12, 0x98, 0x24, 0xb0, 0x48, 0x60, 0x6c,
-/* Tag: DS Parameter set: Current Channel: 1 */
-0x03, 0x01, 0x01,
 /* Tag: TIM Information */
 0x05, 0x04, 0x00, 0x01, 0x00, 0x00,
 /* Tag: ERP Information */
@@ -3082,7 +3071,6 @@ capap->beaconintervall = 0xc8;
 capap->capabilities = 0x431;
 packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE] = 0;
 memcpy(&packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE], beacon_data, BEACON_DATA_SIZE);
-packetoutptr[HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +0xe] = ptrscanlist->channel;
 packetoutlen = HDRRT_SIZE +MAC_SIZE_NORM +CAPABILITIESAP_SIZE +BEACON_DATA_SIZE;
 fdwrite();
 return;
