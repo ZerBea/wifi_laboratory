@@ -124,6 +124,7 @@ static uint8_t hdradiotap_ack[] =
 0x02, /* rate */
 0x00, 0x00 /* tx flags */
 };
+#define HDRRTACK_SIZE sizeof(hdradiotap_ack)
 
 static scanlist_t scanlist[SCANLIST_MAX +1];
 
@@ -310,7 +311,7 @@ static const uint8_t reassociationresponsedata[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +REASSOCIATIONRESPONSE_SIZE +ASSOCIATIONRESPFRAME_SIZE +1);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_REASSOC_RESP;
@@ -346,7 +347,7 @@ static const uint8_t reassociationresponsedata[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +REASSOCIATIONRESPONSE_SIZE +ASSOCIATIONRESPFRAME_SIZE +1);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_REASSOC_RESP;
@@ -383,7 +384,7 @@ static const uint8_t associationresponsedata[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONRESPONSE_SIZE +1);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_ASSOC_RESP;
@@ -418,7 +419,7 @@ static const uint8_t associationresponsedata[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONRESPONSE_SIZE +1);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_ASSOC_RESP;
@@ -444,7 +445,7 @@ static mac_t *macftx;
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +1);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_DATA;
 macftx->subtype = IEEE80211_STYPE_NULLFUNC;
@@ -622,7 +623,7 @@ static const uint8_t associationrequestwpa2data[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +ASSOCIATIONREQUESTWPA2_SIZE +IETAG_SIZE +(bssidlist +p)->bssidinfo->essidlen);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_ASSOC_REQ;
@@ -683,7 +684,7 @@ static const uint8_t associationrequestwpa2data[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +ASSOCIATIONREQUESTCAPA_SIZE +ASSOCIATIONREQUESTWPA2_SIZE +IETAG_SIZE +(bssidlist +p)->bssidinfo->essidlen);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_ASSOC_REQ;
@@ -1069,7 +1070,7 @@ static const uint8_t authenticationrequestdata[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +MYAUTHENTICATIONREQUEST_SIZE +1);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_AUTH;
@@ -1110,7 +1111,7 @@ static mac_t *macftx;
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +2 +1);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_DISASSOC;
@@ -1453,7 +1454,7 @@ static const uint8_t eaprequestiddata[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +EAPREQUESTIDDATA_SIZE);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_DATA;
 macftx->subtype = IEEE80211_STYPE_DATA;
@@ -1517,7 +1518,7 @@ static const uint8_t wpa2kv3data[] =
 timestamp += 1;
 packetoutptr = epbown_m1 +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +107);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_DATA;
 macftx->subtype = IEEE80211_STYPE_DATA;
@@ -1559,7 +1560,7 @@ static const uint8_t wpa2data[] =
 timestamp += 1;
 packetoutptr = epbown_m1 +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +107);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_DATA;
 macftx->subtype = IEEE80211_STYPE_DATA;
@@ -1600,7 +1601,7 @@ static const uint8_t wpa1data[] =
 timestamp += 1;
 packetoutptr = epbown_m1 +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +107);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_DATA;
 macftx->subtype = IEEE80211_STYPE_DATA;
@@ -2245,7 +2246,7 @@ static const uint8_t authenticationresponsedata[] =
 
 packetoutptr = epbown +EPB_SIZE;
 memset(packetoutptr, 0, HDRRT_SIZE +MAC_SIZE_NORM +AUTHENTICATIONRESPONSE_SIZE +1);
-memcpy(packetoutptr, &hdradiotap_ack, HDRRT_SIZE);
+memcpy(packetoutptr, &hdradiotap_ack, HDRRTACK_SIZE);
 macftx = (mac_t*)(packetoutptr +HDRRT_SIZE);
 macftx->type = IEEE80211_FTYPE_MGMT;
 macftx->subtype = IEEE80211_STYPE_AUTH;
