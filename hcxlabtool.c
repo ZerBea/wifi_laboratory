@@ -4029,7 +4029,6 @@ iwr.u.freq.m = 2412;
 iwr.u.freq.e = 6;
 if(ioctl(fd_socket, SIOCSIWFREQ, &iwr) < 0) return false;
 
-fsync(fd_socket);
 FD_ZERO(&readfds);
 FD_SET(fd_socket, &readfds);
 tsfd.tv_sec = fdrxsectimer;
@@ -4037,7 +4036,6 @@ tsfd.tv_nsec = fdrxnsectimer;
 fdnum = pselect(fd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
 if(fdnum < 0) return true;
 if(FD_ISSET(fd_socket, &readfds)) read(fd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
-fsync(fd_socket);
 return true;
 }
 /*===========================================================================*/
