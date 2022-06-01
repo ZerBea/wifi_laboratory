@@ -3147,16 +3147,6 @@ static uint32_t rthp;
 
 packetlen = read(fd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
 timestamp = ((uint64_t)tv.tv_sec *1000000L) + tv.tv_usec;
-if(packetlen < 0)
-	{
-	errorcount++;
-	return;
-	}
-if(packetlen == 0)
-	{
-	errorcount++;
-	return;
-	}
 if(packetlen < (int)RTH_SIZE)
 	{
 	errorcount++;
@@ -3164,17 +3154,7 @@ if(packetlen < (int)RTH_SIZE)
 	}
 packetptr = &epb[EPB_SIZE];
 rth = (rth_t*)packetptr;
-if(rth->it_version != 0)
-	{
-	errorcount++;
-	return;
-	}
-if(rth->it_pad != 0)
-	{
-	errorcount++;
-	return;
-	}
-if(rth->it_present == 0)
+if((rth->it_version != 0) || (rth->it_pad != 0) || (rth->it_present == 0))
 	{
 	errorcount++;
 	return;
