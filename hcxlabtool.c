@@ -54,6 +54,7 @@ static clientlist_t *clientlist;
 
 static char ifname[IFNAMSIZ +1];
 static uint8_t ifmac[6];
+static uint8_t ifvirtmac[6];
 static struct sock_fprog bpf;
 
 static int fd_socket;
@@ -587,7 +588,6 @@ return;
 static inline void send_association_req_wpa2(int p)
 {
 static mac_t *macftx;
-
 static const uint8_t associationrequestcapa[] =
 {
 0x31, 0x04, 0x05, 0x00
@@ -3994,6 +3994,11 @@ if(ioctl(fd_socket, SIOCETHTOOL, &ifr) < 0) return false;
 if(epmaddr->size != 6) return false;
 memcpy(&ifmac, epmaddr->data, 6);
 free(epmaddr);
+
+memset(&ifvirtmac, 0, sizeof(ifvirtmac));
+memset(&ifr, 0, sizeof(ifr));
+memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
+if(ioctl(fd_socket, SIOCGIFHWADDR, &ifr) >= 0) memcpy(&ifvirtmac, ifr.ifr_hwaddr.sa_data, 6);
 
 memset(&iwr, 0, sizeof(iwr));
 memcpy(&iwr.ifr_name, ifname, IFNAMSIZ);
