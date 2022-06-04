@@ -3642,6 +3642,7 @@ while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 	if(pwrq.u.freq.m > 1000) pwrq.u.freq.e = 6;
 	if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
 	if(ioctl(fd_socket, SIOCGIWFREQ, &pwrq) < 0) continue;
+	if(pwrq.u.freq.m == 0) continue;
 	if(pwrq.u.freq.m > 1000)
 		{
 		if(pwrq.u.freq.e == 6) ptrscanlist->frequency = pwrq.u.freq.m;
@@ -3693,6 +3694,8 @@ if((scanband & SCANBAND24) == SCANBAND24)
 		pwrq.u.freq.m = c;
 		pwrq.u.freq.e = 6;
 		if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
+		if(ioctl(fd_socket, SIOCGIWFREQ, &pwrq) < 0) continue;
+		if(pwrq.u.freq.m == 0) continue;
 		ptrscanlist->frequency = c;
 		if((ptrscanlist->frequency >= 2407) && (ptrscanlist->frequency <= 2477)) ptrscanlist->channel = (ptrscanlist->frequency -2407)/5;
 		else if((ptrscanlist->frequency >= 2479) && (ptrscanlist->frequency <= 2489)) ptrscanlist->channel = (ptrscanlist->frequency -2412)/5;
@@ -3711,7 +3714,9 @@ if((scanband & SCANBAND5) == SCANBAND5)
 		pwrq.u.freq.flags = IW_FREQ_FIXED;
 		pwrq.u.freq.m = c;
 		pwrq.u.freq.e = 6;
-		if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) continue;
+		if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
+		if(ioctl(fd_socket, SIOCGIWFREQ, &pwrq) < 0) continue;
+		if(pwrq.u.freq.m == 0) continue;
 		ptrscanlist->frequency = c;
 		if((ptrscanlist->frequency >= 5005) && (ptrscanlist->frequency <= 5980)) ptrscanlist->channel = (ptrscanlist->frequency -5000)/5;
 		else continue;
@@ -3729,7 +3734,9 @@ if((scanband & SCANBAND6) == SCANBAND6)
 		pwrq.u.freq.flags = IW_FREQ_FIXED;
 		pwrq.u.freq.m = c;
 		pwrq.u.freq.e = 6;
-		if(ioctl(fd_socket , SIOCSIWFREQ, &pwrq) < 0) continue;
+		if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
+		if(ioctl(fd_socket, SIOCGIWFREQ, &pwrq) < 0) continue;
+		if(pwrq.u.freq.m == 0) continue;
 		ptrscanlist->frequency = c;
 		if((ptrscanlist->frequency >= 5955) && (ptrscanlist->frequency <= 6415)) ptrscanlist->channel = (ptrscanlist->frequency -5950)/5;
 		else continue;
