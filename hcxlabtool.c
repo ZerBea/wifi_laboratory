@@ -2723,6 +2723,7 @@ if((bssidlist +p)->bssidinfo->kdv != 0)
 			}
 		else if((((bssidlist +p)->bssidinfo->wpaakm &TAK_PSK) == TAK_PSK))
 			{
+			send_authentication_req_opensystem(p);
 			if(ptrscanlist->frequency < 3000) send_reassociation_req_wpa1(p);
 			else send_reassociation_req_wpa1_5(p);
 			}
