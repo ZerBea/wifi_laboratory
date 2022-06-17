@@ -1772,6 +1772,28 @@ writeepb(fd_pcapng);
 return;
 }
 /*===========================================================================*/
+static inline void process80211data()
+{
+static int p;
+
+if((macfrx->to_ds == 1) && (macfrx->from_ds == 0))
+	{
+	for(p = 0; p < BSSIDLIST_MAX; p++)
+		{
+		if((bssidlist +p)->timestamp == 0) return;
+		if(memcmp((bssidlist +p)->mac, macfrx->addr1, 6) == 0)
+			{
+			(bssidlist +p)->timestamp = timestamp;
+			(bssidlist +p)->bssidinfo->timestampclient = timestamp;
+			memcpy((bssidlist +p)->bssidinfo->macclient, macfrx->addr2, 6);
+			if(p > 25) qsort(bssidlist, p +1, BSSIDLIST_SIZE, sort_bssidlist_by_time);
+			return;
+			}
+		}
+	}
+return;
+}
+/*===========================================================================*/
 /*===========================================================================*/
 /*===========================================================================*/
 static inline void process80211reassociation_resp()
@@ -3252,7 +3274,7 @@ else if(macfrx->type == IEEE80211_FTYPE_DATA)
 		return;
 		}
 	#endif
-//	if((macfrx->to_ds == 1) && (macfrx->from_ds == 0)) printf("data\n");
+	process80211data();
 	#if defined(DUMPWPA) || defined(DUMPWEP)
 	if(macfrx->prot ==1)
 		{
