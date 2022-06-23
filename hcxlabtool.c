@@ -39,6 +39,7 @@ static struct timeval tvtot;
 static struct timeval tvlast;
 static unsigned long int rpisn;
 static uint64_t timestamp;
+static uint64_t tfctimestamp;
 static uint64_t mytime;
 static int staytime;
 static uint32_t m2attempts;
@@ -1198,6 +1199,7 @@ static inline void process80211eapol_m4(uint8_t *wpakptr)
 static int p;
 static wpakey_t *wpak;
 
+tfctimestamp = timestamp;
 writeepb(fd_pcapng);
 for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
@@ -1254,6 +1256,7 @@ static inline void process80211eapol_m3(uint8_t *wpakptr)
 static int p;
 static wpakey_t *wpak;
 
+tfctimestamp = timestamp;
 writeepb(fd_pcapng);
 for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
@@ -1282,6 +1285,7 @@ static int p;
 static wpakey_t *wpak;
 static uint64_t m2rc;
 
+tfctimestamp = timestamp;
 writeepb(fd_pcapng);
 wpak = (wpakey_t*)wpakptr;
 m2rc = be64toh(wpak->replaycount);
@@ -1332,6 +1336,7 @@ static int p;
 static wpakey_t *wpak;
 static pmkid_t *pmkid;
 
+tfctimestamp = timestamp;
 for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
 	if(memcmp((bssidlist +p)->mac, macfrx->addr3, 6) == 0)
@@ -1364,6 +1369,7 @@ static int p;
 static wpakey_t *wpak;
 static pmkid_t *pmkid;
 
+tfctimestamp = timestamp;
 writeepb(fd_pcapng);
 for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
@@ -1812,6 +1818,7 @@ static suite_t *csuiteptr;
 static suitecount_t *asuitecountptr;
 static suite_t *asuiteptr;
 
+tfctimestamp = timestamp;
 wpaptr = (wpaie_t*)ieptr;
 wpalen -= WPAIE_SIZE;
 ieptr += WPAIE_SIZE;
@@ -2057,6 +2064,7 @@ static uint8_t *clientinfoptr;
 static bssidinfo_t bssidinfo;
 #endif
 
+tfctimestamp = timestamp;
 if(macfrx->retry == 1) return;
 writeepb(fd_pcapng);
 clientinfolen = payloadlen -CAPABILITIESREQSTA_SIZE;
@@ -2166,6 +2174,7 @@ static uint16_t clientinfolen;
 static bssidinfo_t bssidinfo;
 #endif
 
+tfctimestamp = timestamp;
 if(macfrx->retry == 1) return;
 writeepb(fd_pcapng);
 #ifdef GETM2
@@ -2251,6 +2260,7 @@ return;
 /*===========================================================================*/
 static inline void process80211association_resp()
 {
+tfctimestamp = timestamp;
 if(macfrx->retry == 1) return;
 if(memcmp(&macrgclient, macfrx->addr1, 6) == 0) send_null();
 writeepb(fd_pcapng);
@@ -2316,6 +2326,7 @@ static inline void process80211authentication()
 {
 static authf_t *authptr;
 
+tfctimestamp = timestamp;
 authptr = (authf_t*)payloadptr;
 if(payloadlen < AUTHENTICATIONFRAME_SIZE) return;
 if(authptr->sequence == 2) return;
@@ -2326,6 +2337,7 @@ static inline void process80211authentication_resp_rg()
 {
 static int p;
 
+tfctimestamp = timestamp;
 if(macfrx->retry == 1) return;
 for(p = 0; p < BSSIDLIST_MAX; p++)
 	{
@@ -2532,6 +2544,7 @@ else
 qsort(rgbssidlist, p +1, RGBSSIDLIST_SIZE, sort_rgbssidlist_by_time);
 qsort(clientlist, CLIENTLIST_MAX, CLIENTLIST_SIZE, sort_clientlist_by_time);
 writeepb(fd_pcapng);
+tfctimestamp = timestamp;
 return;
 }
 /*===========================================================================*/
@@ -2543,6 +2556,7 @@ static int apinfolen;
 static uint8_t *apinfoptr;
 static uint8_t apchannel;
 
+tfctimestamp = timestamp;
 if(payloadlen < CAPABILITIESAP_SIZE +IETAG_SIZE) return;
 apinfoptr = payloadptr +CAPABILITIESAP_SIZE;
 apinfolen = payloadlen -CAPABILITIESAP_SIZE;
@@ -2731,6 +2745,7 @@ memset((bssidlist +p)->bssidinfo->macclient, 0xff, 6);
 (bssidlist +p)->bssidinfo->status = BSSID_BEACON;
 capabilitiesptr = (capap_t*)payloadptr;
 (bssidlist +p)->bssidinfo->capabilities = capabilitiesptr->capabilities;
+tfctimestamp = timestamp;
 #ifdef GETM1234
 if((bssidlist +p)->bssidinfo->kdv != 0)
 	{
@@ -3169,7 +3184,6 @@ static rth_t *rth;
 static uint32_t rthp;
 
 packetlen = read(fd_socket, epb +EPB_SIZE, PCAPNG_MAXSNAPLEN);
-timestamp = ((uint64_t)tv.tv_sec *1000000L) + tv.tv_usec;
 if(packetlen < (int)RTH_SIZE)
 	{
 	errorcount++;
@@ -3345,6 +3359,9 @@ else send_beacon_wildcard_5();
 if(ptrscanlist->frequency < 3000) send_proberequest_wildcard();
 else  send_proberequest_wildcard_5();
 #endif
+gettimeofday(&tv, NULL);
+timestamp = ((uint64_t)tv.tv_sec *1000000L) + tv.tv_usec;
+tfctimestamp = timestamp;
 while(wantstopflag == false)
 	{
 	if(gpiobutton > 0)
@@ -3357,6 +3374,7 @@ while(wantstopflag == false)
 			}
 		}
 	gettimeofday(&tv, NULL);
+	timestamp = ((uint64_t)tv.tv_sec *1000000L) + tv.tv_usec;
 	if(tv.tv_sec >= tvtot.tv_sec)
 		{
 		if(ontot == WANT_POWEROFF) poweroffflag = true;
@@ -3375,6 +3393,10 @@ while(wantstopflag == false)
 	if((tv.tv_sec -tvoldled.tv_sec) >= LEDFLASHINTERVAL)
 		{
 		tvoldled.tv_sec = tv.tv_sec;
+		#ifdef STATUSOUT
+		if(errorcount > lasterrorcount) fprintf(stderr, "ERROR: %d\n", errorcount);
+		lasterrorcount = errorcount;
+		#endif
 		if(gpiostatusled > 0)
 			{
 			GPIO_SET = 1 << gpiostatusled;
@@ -3391,11 +3413,130 @@ while(wantstopflag == false)
 		}
 	if((tv.tv_sec -tvold.tv_sec) >= staytime)
 		{
+		tvold.tv_sec = tv.tv_sec;
+		ptrscanlist++;
+		if(ptrscanlist->frequency == 0) ptrscanlist = scanlist;
+		if(set_channel() == false) errorcount++;
+		#ifdef GETM2
+		if(ptrscanlist->frequency < 3000) send_beacon_wildcard();
+		else send_beacon_wildcard_5();
+		#endif
+		#ifdef GETM1
+		if(ptrscanlist->frequency < 3000) send_proberequest_wildcard();
+		else  send_proberequest_wildcard_5();
+		#endif
+		}
+	FD_ZERO(&readfds);
+	FD_SET(fd_socket, &readfds);
+	tsfd.tv_sec = fdrxsectimer;
+	tsfd.tv_nsec = fdrxnsectimer;
+	fdnum = pselect(fd_socket +1, &readfds, NULL, NULL, &tsfd, NULL);
+	if(fdnum < 0)
+		{
+		if(wantstopflag == false) errorcount++;
+		continue;
+		}
+	if(FD_ISSET(fd_socket, &readfds)) process_packet();
+	#ifdef GETM2
+	#ifdef BEACONUNSET
+	else
+		{
+		if(ptrscanlist->frequency < 3000) send_beacon1();
+		else send_beacon1_5();
+		}
+	#else
+	else
+		{
+		if(ptrscanlist->frequency < 3000) send_beacon();
+		else send_beacon_5();
+		}
+	#endif
+	#endif
+	}
+if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
+fprintf(stdout, "\nterminated loop\n");
+return;
+}
+/*===========================================================================*/
+static inline void fdloopscantfc()
+{
+static int fdnum;
+static fd_set readfds;
+static struct timespec tsfd;
+static struct timespec sleepled;
+
+lasterrorcount = 0;
+sleepled.tv_sec = 0;
+sleepled.tv_nsec = GPIO_LED_DELAY;
+ptrscanlist = scanlist;
+if(set_channel() == false)
+	{
+	errorcount++;
+	return;
+	}
+#ifdef GETM2
+if(ptrscanlist->frequency < 3000) send_beacon_wildcard();
+else send_beacon_wildcard_5();
+#endif
+#ifdef GETM1
+if(ptrscanlist->frequency < 3000) send_proberequest_wildcard();
+else  send_proberequest_wildcard_5();
+#endif
+gettimeofday(&tv, NULL);
+timestamp = ((uint64_t)tv.tv_sec *1000000L) + tv.tv_usec;
+tfctimestamp = timestamp;
+while(wantstopflag == false)
+	{
+	if(gpiobutton > 0)
+		{
+		if(GET_GPIO(gpiobutton) > 0)
+			{
+			if(ongpiobutton == WANT_POWEROFF) poweroffflag = true;
+			if(ongpiobutton == WANT_REBOOT) rebootflag = true;
+			wantstopflag = true;
+			}
+		}
+	gettimeofday(&tv, NULL);
+	timestamp = ((uint64_t)tv.tv_sec *1000000L) + tv.tv_usec;
+	if(tv.tv_sec >= tvtot.tv_sec)
+		{
+		if(ontot == WANT_POWEROFF) poweroffflag = true;
+		if(ontot == WANT_REBOOT) rebootflag = true;
+		wantstopflag = true;
+		}
+	if(errorcount >= ERROR_MAX)
+		{
+		if(onerror == WANT_POWEROFF) poweroffflag = true;
+		if(onerror == WANT_REBOOT) rebootflag = true;
+		wantstopflag = true;
+		fprintf(stderr, "error count reached ERROR_MAX\n");
+		if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
+		continue;
+		}
+	if((tv.tv_sec -tvoldled.tv_sec) >= LEDFLASHINTERVAL)
+		{
+		tvoldled.tv_sec = tv.tv_sec;
 		#ifdef STATUSOUT
 		if(errorcount > lasterrorcount) fprintf(stderr, "ERROR: %d\n", errorcount);
 		lasterrorcount = errorcount;
 		#endif
-		tvold.tv_sec = tv.tv_sec;
+		if(gpiostatusled > 0)
+			{
+			GPIO_SET = 1 << gpiostatusled;
+			nanosleep(&sleepled, NULL);
+			GPIO_CLR = 1 << gpiostatusled;
+			if((tv.tv_sec - tvlast.tv_sec) > WATCHDOG)
+				{
+				nanosleep(&sleepled, NULL);
+				GPIO_SET = 1 << gpiostatusled;
+				nanosleep(&sleepled, NULL);
+				GPIO_CLR = 1 << gpiostatusled;
+				}
+			}
+		}
+	if((timestamp -tfctimestamp) >= FDLASTMSECTIMER)
+		{
+		tfctimestamp = timestamp;
 		ptrscanlist++;
 		if(ptrscanlist->frequency == 0) ptrscanlist = scanlist;
 		if(set_channel() == false) errorcount++;
@@ -3464,6 +3605,9 @@ else send_beacon_wildcard_5();
 if(ptrscanlist->frequency < 3000) send_proberequest_wildcard();
 else  send_proberequest_wildcard_5();
 #endif
+gettimeofday(&tv, NULL);
+timestamp = ((uint64_t)tv.tv_sec *1000000L) + tv.tv_usec;
+tfctimestamp = timestamp;
 while(wantstopflag == false)
 	{
 	if(gpiobutton > 0)
@@ -3476,6 +3620,7 @@ while(wantstopflag == false)
 			}
 		}
 	gettimeofday(&tv, NULL);
+	timestamp = ((uint64_t)tv.tv_sec *1000000L) + tv.tv_usec;
 	if(tv.tv_sec >= tvtot.tv_sec)
 		{
 		if(ontot == WANT_POWEROFF) poweroffflag = true;
@@ -3496,11 +3641,11 @@ while(wantstopflag == false)
 		}
 	if((tv.tv_sec -tvold.tv_sec) >= LEDFLASHINTERVAL)
 		{
+		tvold.tv_sec = tv.tv_sec;
 		#ifdef STATUSOUT
 		if(errorcount > lasterrorcount) fprintf(stderr, "ERROR: %d\n", errorcount);
 		lasterrorcount = errorcount;
 		#endif
-		tvold.tv_sec = tv.tv_sec;
 		#ifdef GETM2
 		if(ptrscanlist->frequency < 3000) send_beacon_wildcard();
 		else send_beacon_wildcard_5();
@@ -4224,6 +4369,7 @@ static unsigned int gpiobasemem = 0;
 
 gettimeofday(&tv, NULL);
 timestamp = ((uint64_t)tv.tv_sec *1000000L) +tv.tv_usec;
+tfctimestamp = timestamp;
 tvold.tv_sec = tv.tv_sec;
 tvold.tv_usec = tv.tv_usec;
 tvoldled.tv_sec = tv.tv_sec;
@@ -4426,6 +4572,7 @@ fprintf(stdout, "%s %s (C) %s ZeroBeat\n"
 	"                 if no channels are available, interface is probably in use or doesn't support monitor mode\n"
 	"                 if more channels are available, firmware, driver and regulatory domain is probably patched\n"
 	"-t <seconds>   : stay time on channel before hopping to the next channel\n"
+	"                 default: dynamic channel management\n" 
 	"-m <interface> : set monitor mode by ioctl() system call and quit\n"
 	"-I             : show WLAN interfaces and quit\n"
 	"-h             : show this help\n"
@@ -4592,9 +4739,9 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 
 		case HCX_STAYTIME:
 		staytime = strtol(optarg, NULL, 10);
-		if(staytime < 2)
+		if(staytime < 1)
 			{
-			fprintf(stderr, "stay time must be >= 2\n");
+			fprintf(stderr, "stay time must be >= 1\n");
 			exit (EXIT_FAILURE);
 			}
 		break;
@@ -4813,14 +4960,22 @@ if(showchannelflag == true) show_channels();
 else if(userscanlist == NULL)
 	{
 	getscanlist(scanband);
-	if(ptrscanlist != scanlist) fdloopscan();
+	if(ptrscanlist != scanlist)
+		{
+		if(staytime == 0) fdloopscantfc();
+		else fdloopscan();
+		}
 	else fprintf(stderr, "interface doesn't support frequency scan\n");
 	}
 else
 	{
 	getchannel(userscanlist);
 	if(ptrscanlist == scanlist +1) fdloop();
-	else if(ptrscanlist > scanlist +1) fdloopscan();
+	else if(ptrscanlist > scanlist +1)
+		{
+		if(staytime == 0) fdloopscantfc();
+		else fdloopscan();
+		}
 	else fprintf(stderr, "interface doesn't support selected frequencies/channels\n");
 	}
 

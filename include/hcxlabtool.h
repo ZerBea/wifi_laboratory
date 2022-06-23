@@ -34,16 +34,17 @@
 
 #define SCANLIST_MAX		256
 
-#define M2ATTEMPTS		10
+#define M2ATTEMPTS		2
 
 #define ESSID_LEN_MAX		32
 
 #define FDRXSECTIMER		0L
 #define FDRXNSECTIMER		102400000L /* 0,1024 second interval */
+#define FDLASTMSECTIMER		1000000 /* 1 second */
 
 #define FDTXSECTIMER		5L /* 5 second timeout */
 #define RGAPLISTCOUNT		10
-#define STAYTIME		5
+#define STAYTIME		0
 
 #define SCANBAND24		0b00000001
 #define SCANBAND5		0b00000010
