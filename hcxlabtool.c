@@ -4102,6 +4102,7 @@ else
 				if(ioctl(fd_socket, SIOCGIWNAME, &iwr) != -1)
 					{
 					memcpy(&ifname, ifa->ifa_name, IFNAMSIZ);
+					if(fd_socket > 0) close(fd_socket);
 					break;
 					}
 				if(fd_socket > 0) close(fd_socket);
