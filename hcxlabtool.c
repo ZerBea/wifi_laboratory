@@ -4080,12 +4080,16 @@ static int enable = 1;
 static int fdnum;
 static fd_set readfds;
 static struct timespec tsfd;
+static struct timespec waitdevice;
 
+waitdevice.tv_sec = 5;
+waitdevice.tv_nsec = 0;
 memset(&ifname, 0, IFNAMSIZ +1);
 memset(&ifmac, 0, sizeof(ifmac));
 if(interfacename != NULL) strncpy(ifname, interfacename, IFNAMSIZ);
 else
 	{
+	if(getifaddrs(&ifaddr) == -1) nanosleep(&waitdevice, NULL);
 	if(getifaddrs(&ifaddr) == -1) return false;
 	for(ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
 		{
