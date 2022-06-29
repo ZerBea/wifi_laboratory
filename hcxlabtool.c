@@ -4628,7 +4628,7 @@ fprintf(stdout, "%s %s (C) %s ZeroBeat\n"
 	"                            default: %s\n"
 	"--help                    : show this help\n"
 	"--version                 : show version\n",
-	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, eigenname, M2ATTEMPTS, RGBSSIDLIST_MAX, FDRXNSECTIMER, weakcandidate);
+	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, eigenname, RGBSSIDLIST_MAX, M2ATTEMPTS, FDRXNSECTIMER, weakcandidate);
 exit(EXIT_SUCCESS);
 }
 /*---------------------------------------------------------------------------*/
