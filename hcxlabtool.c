@@ -4084,12 +4084,12 @@ static struct timespec waitdevice;
 
 waitdevice.tv_sec = 5;
 waitdevice.tv_nsec = 0;
+nanosleep(&waitdevice, NULL);
 memset(&ifname, 0, IFNAMSIZ +1);
 memset(&ifmac, 0, sizeof(ifmac));
 if(interfacename != NULL) strncpy(ifname, interfacename, IFNAMSIZ);
 else
 	{
-	if(getifaddrs(&ifaddr) == -1) nanosleep(&waitdevice, NULL);
 	if(getifaddrs(&ifaddr) == -1) return false;
 	for(ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
 		{
@@ -4111,7 +4111,11 @@ else
 		}
 	freeifaddrs(ifaddr);
 	}
-if(ifname[0] == 0) return false;
+if(ifname[0] == 0)
+	{
+	fprintf(stderr, "failed to detect interface\n");
+	return false;
+	}
 if((fd_socket = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) return false;
 
 memset(&iwrinfo, 0, sizeof(iwr));
