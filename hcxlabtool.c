@@ -2529,6 +2529,7 @@ memcpy((rgbssidlist +p)->essid, essidinfo.essid, essidinfo.essidlen);
 (rgbssidlist +p)->mac[1] = (ouirgap >> 8) & 0xff;
 (rgbssidlist +p)->mac[0] = (ouirgap >> 16) & 0xff;
 nicrgap += 1;
+tfctimestamp = timestamp;
 #ifdef GETM2
 if(memcmp(&mac_broadcast, macfrx->addr3, 6) == 0)
 	{
@@ -2544,7 +2545,6 @@ else
 qsort(rgbssidlist, p +1, RGBSSIDLIST_SIZE, sort_rgbssidlist_by_time);
 qsort(clientlist, CLIENTLIST_MAX, CLIENTLIST_SIZE, sort_clientlist_by_time);
 writeepb(fd_pcapng);
-tfctimestamp = timestamp;
 return;
 }
 /*===========================================================================*/
