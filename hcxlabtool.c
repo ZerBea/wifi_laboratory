@@ -4066,10 +4066,39 @@ for(c = 5955; c <= 7115; c++)
 return;
 }
 /*===========================================================================*/
-static inline bool opensocket(char *interfacename)
+static inline void getfirstinterfacename()
 {
+static int fd_socketinfo;
 static struct ifaddrs *ifaddr = NULL;
 static struct ifaddrs *ifa = NULL;
+static struct iwreq iwrinfo;
+
+if(getifaddrs(&ifaddr) == -1) return;
+for(ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+	{
+	if((ifa->ifa_addr) && (ifa->ifa_addr->sa_family == AF_PACKET))
+		{
+		if((fd_socketinfo = socket(AF_INET, SOCK_STREAM, 0)) != -1)
+			{
+			memset(&iwrinfo, 0, sizeof(iwrinfo));
+			memcpy(&iwrinfo.ifr_name, ifa->ifa_name, IFNAMSIZ);
+			if(ioctl(fd_socketinfo, SIOCGIWNAME, &iwrinfo) != -1)
+				{
+				memcpy(&ifname, ifa->ifa_name, IFNAMSIZ);
+				if(fd_socketinfo > 0) close(fd_socketinfo);
+				freeifaddrs(ifaddr);
+				return;
+				}
+			if(fd_socketinfo > 0) close(fd_socketinfo);
+			}
+		}
+	}
+freeifaddrs(ifaddr);
+return;
+}
+/*===========================================================================*/
+static inline bool opensocket(char *interfacename)
+{
 static struct iwreq iwrinfo, iwr;
 static struct iw_param param;
 static struct ifreq ifr;
@@ -4082,34 +4111,19 @@ static fd_set readfds;
 static struct timespec tsfd;
 static struct timespec waitdevice;
 
-waitdevice.tv_sec = 5;
-waitdevice.tv_nsec = 0;
-nanosleep(&waitdevice, NULL);
 memset(&ifname, 0, IFNAMSIZ +1);
 memset(&ifmac, 0, sizeof(ifmac));
 if(interfacename != NULL) strncpy(ifname, interfacename, IFNAMSIZ);
 else
 	{
-	if(getifaddrs(&ifaddr) == -1) return false;
-	for(ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next)
+	getfirstinterfacename();
+	if(ifname[0] == 0)
 		{
-		if((ifa->ifa_addr) && (ifa->ifa_addr->sa_family == AF_PACKET))
-			{
-			if((fd_socket = socket(AF_INET, SOCK_STREAM, 0)) != -1)
-				{
-				memset(&iwr, 0, sizeof(iwr));
-				memcpy(&iwr.ifr_name, ifa->ifa_name, IFNAMSIZ);
-				if(ioctl(fd_socket, SIOCGIWNAME, &iwr) != -1)
-					{
-					memcpy(&ifname, ifa->ifa_name, IFNAMSIZ);
-					if(fd_socket > 0) close(fd_socket);
-					break;
-					}
-				if(fd_socket > 0) close(fd_socket);
-				}
-			}
+		waitdevice.tv_sec = 5;
+		waitdevice.tv_nsec = 0;
+		nanosleep(&waitdevice, NULL);
+		getfirstinterfacename();
 		}
-	freeifaddrs(ifaddr);
 	}
 if(ifname[0] == 0)
 	{
