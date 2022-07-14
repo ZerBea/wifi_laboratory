@@ -4164,6 +4164,7 @@ memset(&ifr, 0, sizeof(ifr));
 memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
 if(ioctl(fd_socket, SIOCSIFFLAGS, &ifr) < 0) return false; /* set interface down */
 
+
 memset(&iwr, 0, sizeof(iwr));
 iwr.u.mode = IW_MODE_MONITOR;
 memcpy(&iwr.ifr_name, ifname, IFNAMSIZ);
@@ -4432,6 +4433,7 @@ beaconsequence = 1;
 memset(&bpf, 0, sizeof(bpf));
 memset(&ifname, 0, sizeof(ifname));
 memset(&ifmac, 0, sizeof(ifmac));
+
 ouirgap = (myvendorap[rand() %((MYVENDORAP_SIZE /sizeof(int)))]) &0xfcffff;
 nicrgap = (rand() & 0x0fffff);
 macrgbwcopen[5] = nicrgap & 0xff;
