@@ -4100,7 +4100,6 @@ return;
 static inline bool opensocket(char *interfacename)
 {
 static struct iwreq iwrinfo, iwr;
-static struct iw_param param;
 static struct ifreq ifr;
 static struct sockaddr_ll ll;
 static struct packet_mreq mr;
@@ -4169,12 +4168,6 @@ memset(&iwr, 0, sizeof(iwr));
 iwr.u.mode = IW_MODE_MONITOR;
 memcpy(&iwr.ifr_name, ifname, IFNAMSIZ);
 if(ioctl(fd_socket, SIOCSIWMODE, &iwr) < 0) return false;
-
-memset(&iwr, 0, sizeof(iwr));
-memcpy(&iwr.ifr_name, ifname, IFNAMSIZ);
-memset(&param,0 , sizeof(param));
-iwr.u.data.pointer = &param;
-ioctl(fd_socket, SIOCSIWPOWER, &iwr);
 
 memset(&ifr, 0, sizeof(ifr));
 memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
