@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <arpa/inet.h>
+#include <linux/version.h>
 #include <linux/ethtool.h>
 #include <linux/sockios.h>
 #include <linux/filter.h>
@@ -4158,7 +4159,9 @@ mr.mr_ifindex = ifr.ifr_ifindex;
 mr.mr_type = PACKET_MR_PROMISC;
 if(setsockopt(fd_socket, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mr, sizeof(mr)) < 0) return false;
 
+#if(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0))
 if(setsockopt(fd_socket, SOL_PACKET, PACKET_IGNORE_OUTGOING, &enable, sizeof(int)) < 0) perror("ioctl(PACKET_IGNORE_OUTGOING) not supported by driver");
+#endif
 
 memset(&ifr, 0, sizeof(ifr));
 memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
