@@ -4347,18 +4347,24 @@ if((gpiobutton > 0) || (gpiostatusled > 0))
 	{
 	if(gpiobutton == gpiostatusled)
 		{
-		fprintf(stderr, "same value for wpi_button and wpi_statusled is not allowed\n");
+		fprintf(stderr, "same value for wpi_button and wpi_statusled is not possible\n");
+		gpiostatusled = 0;
+		gpiobutton = 0;
 		return false;
 		}
 	gpiobasemem = getgpiobasemem();
 	if(gpiobasemem == 0)
 		{
 		fprintf(stderr, "failed to locate GPIO\n");
+		gpiostatusled = 0;
+		gpiobutton = 0;
 		return false;
 		}
 	if(initgpio(gpiobasemem) == false)
 		{
 		fprintf(stderr, "failed to init GPIO\n");
+		gpiostatusled = 0;
+		gpiobutton = 0;
 		return false;
 		}
 	if(gpiostatusled > 0)
@@ -4366,10 +4372,7 @@ if((gpiobutton > 0) || (gpiostatusled > 0))
 		INP_GPIO(gpiostatusled);
 		OUT_GPIO(gpiostatusled);
 		}
-	if(gpiobutton > 0)
-		{
-		INP_GPIO(gpiobutton);
-		}
+	if(gpiobutton > 0) INP_GPIO(gpiobutton);
 	}
 seed = rpisn +tv.tv_sec;
 srand(seed);
