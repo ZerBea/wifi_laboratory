@@ -1,5 +1,5 @@
 #define VERSIONTAG		"1.0.1"
-#define VERSIONYEAR		"2022"
+#define VERSIONYEAR		"2023"
 #define VERSIONNAME		"hcxlabtool"
 
 #define HCX_GPIO_BUTTON		1
