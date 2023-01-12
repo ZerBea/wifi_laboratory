@@ -4055,6 +4055,8 @@ static int fdnum;
 static fd_set readfds;
 static struct timespec tsfd;
 static struct timespec waitdevice;
+static struct stat sinfo;
+static char path[PATH_MAX];
 
 memset(&ifname, 0, IFNAMSIZ +1);
 memset(&ifmac, 0, sizeof(ifmac));
@@ -4073,6 +4075,12 @@ else
 if(ifname[0] == 0)
 	{
 	fprintf(stderr, "failed to detect interface\n");
+	return false;
+	}
+snprintf(path, PATH_MAX -1, "/sys/class/net/%s/phy80211", ifname);
+if (stat(path, &sinfo) != 0)
+	{
+	fprintf(stderr, "driver is not cfg80211 based\n");
 	return false;
 	}
 if((fd_socket = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) return false;
@@ -4153,7 +4161,6 @@ iwr.u.freq.flags = IW_FREQ_FIXED;
 iwr.u.freq.m = 2412;
 iwr.u.freq.e = 6;
 if(ioctl(fd_socket, SIOCSIWFREQ, &iwr) < 0) return false;
-
 FD_ZERO(&readfds);
 FD_SET(fd_socket, &readfds);
 tsfd.tv_sec = fdrxsectimer;
