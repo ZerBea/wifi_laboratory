@@ -104,3 +104,17 @@ entire AUTHENTICATION process should be done running a data rate of 1.0 Mb/s.
 there are (much) better ways than injecting stupid DEAUTHENTICATION frames to disconnect a CLIENT. 
 
 the most useful frame is an EAPOL M2 frame!
+
+
+Warning
+--------------
+
+WiFi laboratory is designed to be an analysis tool. 
+
+It should only be used in a 100% controlled environment(!).
+
+If you can't control the environment it is absolutely mandatory to set the BPF.
+
+Everything is requested/stored by default and unwanted information must be filtered out by option/filter or later on (offline)! 
+
+You must use WiFi laboratoy only on networks you have permission to do this and if you know what you are doing.
