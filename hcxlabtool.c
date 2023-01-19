@@ -4089,7 +4089,11 @@ memset(&iwrinfo, 0, sizeof(iwr));
 memcpy(&iwrinfo.ifr_name, ifname, IFNAMSIZ);
 if(ioctl(fd_socket, SIOCGIWNAME, &iwrinfo) == -1) return false;
 
-if(bpf.len > 0) if(setsockopt(fd_socket, SOL_SOCKET, SO_ATTACH_FILTER, &bpf, sizeof(bpf)) < 0) return false;
+if(bpf.len > 0)
+	{
+	if(setsockopt(fd_socket, SOL_SOCKET, SO_ATTACH_FILTER, &bpf, sizeof(bpf)) < 0) return false;
+	}
+else fprintf(stderr, "BPF is unset. Make sure hcxlabtool is running in a 100%% controlled environment!\n");
 
 memset(&ifr, 0, sizeof(ifr));
 memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
