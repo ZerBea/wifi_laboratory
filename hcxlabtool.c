@@ -4093,7 +4093,9 @@ if(bpf.len > 0)
 	{
 	if(setsockopt(fd_socket, SOL_SOCKET, SO_ATTACH_FILTER, &bpf, sizeof(bpf)) < 0) return false;
 	}
+#ifdef STATUSOUT
 else fprintf(stderr, "BPF is unset. Make sure hcxlabtool is running in a 100%% controlled environment!\n");
+#endif
 
 memset(&ifr, 0, sizeof(ifr));
 memcpy(&ifr.ifr_name, ifname, IFNAMSIZ);
@@ -4887,6 +4889,10 @@ if(getuid() != 0)
 	fprintf(stderr, "this program requires root privileges\n");
 	exit(EXIT_FAILURE);
 	}
+#ifdef STATUSOUT
+fprintf(stdout, "\nThis is a highly experimental penetration testing tool!\n"
+		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n");
+#endif
 
 if(monitormodeflag == true)
 	{
