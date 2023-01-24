@@ -3740,6 +3740,7 @@ return len;
 /*===========================================================================*/
 static inline void getchannel(char *scanlistin)
 {
+static int wantedfrequency;
 static struct iwreq pwrq;
 static char *scanlistdup;
 static char *tokptr;
@@ -3753,7 +3754,8 @@ while((tokptr != NULL) && (ptrscanlist < scanlist +SCANLIST_MAX))
 	memset(&pwrq, 0, sizeof(pwrq));
 	memcpy(&pwrq.ifr_name, ifname, IFNAMSIZ);
 	pwrq.u.freq.flags = IW_FREQ_FIXED;
-	pwrq.u.freq.m = atoi(tokptr);
+	wantedfrequency = atoi(tokptr);
+	pwrq.u.freq.m = wantedfrequency;
 	tokptr = strtok(NULL, ",");
 	if(pwrq.u.freq.m > 1000) pwrq.u.freq.e = 6;
 	if(ioctl(fd_socket, SIOCSIWFREQ, &pwrq) < 0) continue;
