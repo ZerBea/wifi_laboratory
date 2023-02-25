@@ -330,7 +330,6 @@ static bool show_interfacelist()
 size_t i;
 static interface_t *iffoundlist;
 
-
 if((iffoundlist = (interface_t*)calloc(INTERFACELIST_MAX, INTERFACELIST_SIZE)) == NULL) return false;
 if(nl_get_interfacelist(iffoundlist) == true)
 	{
