@@ -2025,7 +2025,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		}
 	if(reassociationflag == true)
 		{
-		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
+		if(((aplist + i)->count % 2) == 0) send_80211_reassociationrequest(i);
 		}
 	(aplist + i)->tshold2 = tsakt;
 	return;
