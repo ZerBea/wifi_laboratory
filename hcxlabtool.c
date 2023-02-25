@@ -111,6 +111,7 @@ static struct timeval tvakt = { 0 };
 static u64 tsakt = 0;
 static u64 tshold = 0;
 static u64 tottime = 0;
+static u64 timehold = TIMEHOLD;
 static u32 clientm2count = CLIENTM2COUNT;
 
 static size_t errorcountmax = ERROR_MAX;
@@ -2125,7 +2126,7 @@ while(!wanteventflag)
 			read(fd_timer1, &timer1count, sizeof(u64));
 			gettimeofday(&tvakt, NULL);
 			tsakt = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
-			if((tsakt - tshold) > TIMEHOLD)
+			if((tsakt - tshold) > timehold)
 				{
 				scanlistindex++;
 				if(nl_set_frequency() == false) errorcount++;
@@ -3281,6 +3282,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                  to disable frequency management, set this option to a single frequency/channel\n" 
 	"-f <digit>     : set frequency (2412,2417,5180,...)\n"
 	"-F             : use available frequencies from INTERFACE\n"
+	"-t >second>    : minimum stay time (will increase on new stations and/or authentications\n"
 	"-m <INTERFACE> : set monitor mode and terminate\n"
 	"-L             : show INTERFACE list\n"
 	"-h             : show this help\n"
@@ -3375,7 +3377,7 @@ static char *userchannellistname = NULL;
 static char *userfrequencylistname = NULL;
 static const char *rebootstring = "reboot";
 static const char *poweroffstring = "poweroff";
-static const char *short_options = "i:c:f:m:I:FLhv";
+static const char *short_options = "i:c:f:m:I:t:FLhv";
 static const struct option long_options[] =
 {
 	{"bpf",				required_argument,	NULL,	HCX_BPF},
@@ -3473,10 +3475,19 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 			}
 		break;
 
+		case HCX_HOLD_TIME:
+		if((timehold = strtoull(optarg, NULL, 10)) < 2)
+			{
+			fprintf(stderr, "hold time must be > 2 secondsn");
+			exit(EXIT_FAILURE);
+			}
+		timehold *= 1000000;
+		break;
+
 		case HCX_TOT:
 		if((tottime = strtoul(optarg, NULL, 10)) < 1)
 			{
-			fprintf(stderr, "time out timer must be > 0\n");
+			fprintf(stderr, "time out timer must be > 0 minutes\n");
 			exit(EXIT_FAILURE);
 			}
 		tottime *= 60;

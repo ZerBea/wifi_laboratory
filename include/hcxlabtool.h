@@ -30,6 +30,7 @@
 #define HCX_SET_SCANLIST_FROM_USER_FREQ	'f'
 #define HCX_SET_SCANLIST_FROM_INTERFACE	'F'
 #define HCX_SHOW_INTERFACE_LIST		'L'
+#define HCX_HOLD_TIME			't'
 #define HCX_HELP			'h'
 #define HCX_VERSION			'v'
 /*---------------------------------------------------------------------------*/
