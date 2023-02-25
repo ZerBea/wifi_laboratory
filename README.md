@@ -15,9 +15,9 @@ Brief description
 
 It is made to detect vulnerabilities in your NETWORK mercilessly!
 
-Is is also designed to run headless on a modified (GPIO push button and LED) Raspberry Pi.
+It is also designed to run headless (remove -DSTATUSOUT from Makefile) on a modified (GPIO push button and LED) Raspberry Pi.
 
-Main purpose is to understand 802.11 protocol and to detect weak points.
+Main purpose is to understand 802.11 protocol and to detect its weak points.
 
 
 
@@ -52,9 +52,9 @@ connect WiFi adapter
 
 run hcxlabtool
 
-hcxlabtool will create a pcapng file which contain the recorded traffic
+hcxlabtool will create a pcapng file which contain selected frames
 
-traffic can be monitored on the fly by tshark or Wireshark on the same INTERFACE 
+entire traffic can be monitored on the fly by tshark or Wireshark on the same INTERFACE 
 
 
 Usual commandlines:
@@ -78,44 +78,52 @@ or a combination of this options. See -h or --help for more options
 Lessons learned (to be continued)
 --------------
 
-a beautiful status output make the attack tool slow and sluggish.
+a beautiful status output make the attack tool slow and sluggish
 
-too many features make an attack slow and sluggish.
+too many features make an attack slow and sluggish
 
-response time behavior becomes very bad on big ringbuffers.
+response time behavior becomes very bad on big ringbuffers
 
-transmitting too many packets make a channel busy.
+transmitting too many packets makes a channel busy
 
-a Raspberry Pi is not able to handle more than one interface at the same time.
+a Raspberry Pi is not able to handle more than one interface at the same time
 
-multiple interfaces interfere with each other.
+multiple interfaces interfere with each other
 
-pselect doesn't like to be interrupted by another timer.
+pselect doesn't like to be interrupted by another timer
 
-active monitor require to set MAC on interface - that is too slow.
+epoll is a better solution than pselect
 
-setting a short preamble in radiotap header is ignored on tx.
+timerfd in combination with epoll is easier to handle than comparing timestamps
 
-entire AUTHENTICATION process should be done using a low data rate of 1.0 Mb/s and a small bandwidth.
+active monitor require to set virtual MAC on interface - that is too slow
 
-there are (much) better ways than injecting stupid DEAUTHENTICATION frames to disconnect a CLIENT. 
+setting a short preamble in radiotap header is ignored on tx
 
-the most useful frame is an EAPOL M2 frame!
+entire AUTHENTICATION process should be done using a low data rate of 1.0 Mb/s and a low bandwidth
 
-NL80211 provide more options than WIRLESS EXTENSIONS
+there are (much) better ways than injecting stupid DEAUTHENTICATION frames to disconnect a CLIENT
+
+the most useful frame is an EAPOL M2 frame(!)
+
+NL80211 provide a lot more features than WIRLESS EXTENSIONS
 
 NL80211 / RTNETLINK can be used without libnl dependency
+
+sharing the interface (e.g. iw phy phy1 interface add mon0 type monitor) is counterproductive
 
 
 Warning
 --------------
 
-hcxlabtool is designed to be an analysis tool. 
+hcxlabtool is designed to be an analysis tool
 
-It should only be used in a 100% controlled environment(!).
+It should only be used in a 100% controlled environment(!)
 
-If you can't control the environment it is absolutely mandatory to set the BPF.
+If you can't control the environment it is absolutely mandatory to set a Berkeley Packet Filter (BPF)
 
-Everything is requested/stored by default and unwanted information must be filtered out by option/filter or later on (offline)! 
+Using the BPF to remove unwanted frames save CPU cycles (not type ctl subtype ack and not type ctl subtype rts and not type ctl subtype cts)
 
-You must use hcxlabtool only on networks you have permission to do this and if you know what you are doing.
+Everything is requested/stored by default and unwanted information must be filtered out by option/filter or later on (offline)
+
+You must use hcxlabtool only on networks you have permission to do this and if you know what you are doing
