@@ -221,6 +221,29 @@ static const uint8_t authenticationresponsedata[] =
 };
 #define AUTHENTICATIONRESPONSE_SIZE sizeof(authenticationresponsedata)
 
+
+static const uint8_t reassociationrequestdata[] =
+{
+/* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6(B), 9, 12(B), 18, [Mbit/sec] */
+0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x8c, 0x12, 0x98, 0x24,
+/* Tag: Extended Supported Rates 24(B), 36, 48, 54, [Mbit/sec] */
+0x32, 0x04, 0xb0, 0x48, 0x60, 0x6c,
+/* RSN information AES PSK (WPA2) */
+0x30, 0x14, 0x01, 0x00,
+0x00, 0x0f, 0xac, 0x04, /* group cipher */
+0x01, 0x00, /* count */
+0x00, 0x0f, 0xac, 0x04, /* pairwise cipher */
+0x01, 0x00, /* count */
+0x00, 0x0f, 0xac, 0x02, /* AKM */
+0x80, 0x00,
+/* RM Enabled Capabilities */
+0x46, 0x05, 0x7b, 0x00, 0x02, 0x00, 0x00,
+/* Supported Operating Classes */
+0x3b, 0x04, 0x51, 0x51, 0x53, 0x54
+};
+#define REASSOCIATIONREQUEST_SIZE sizeof(reassociationrequestdata)
+
+
 static const uint8_t associationrequestcapa[] =
 {
 0x31, 0x04, 0x05, 0x00
@@ -304,7 +327,7 @@ static void show_interfaceinformation2()
 {
 static size_t i;
 
-fprintf(stdout, "interface: %s\n"
+fprintf(stdout, "\ninterface: %s\n"
 	"index phy: %d\n"
 	"index....: %d\n"
 	"driver...: %.*s\n"
@@ -894,6 +917,43 @@ errorcount++;
 return;
 }
 /*---------------------------------------------------------------------------*/
+static inline void send_80211_reassociationrequest(size_t i)
+{
+static ssize_t ii;
+static ieee80211_reassoc_req_t *reassociationrequest;
+
+ii = RTHTX_SIZE;
+macftx = (ieee80211_mac_t*)(packetoutptr + ii);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_REASSOC_REQ;
+packetoutptr[ii + 1] = 0;
+macftx->duration = 0x013a;
+memcpy(macftx->addr1, (aplist + i)->macap, ETH_ALEN);
+memcpy(macftx->addr2, (aplist + i)->macclient, ETH_ALEN);
+memcpy(macftx->addr3, (aplist + i)->macap, ETH_ALEN);
+macftx->sequence = seqcounter3++ << 4;
+if(seqcounter1 > 4095) seqcounter3 = 1;
+ii += MAC_SIZE_NORM;
+reassociationrequest = (ieee80211_reassoc_req_t*)(packetoutptr + ii);
+reassociationrequest->capability = 0x431;
+reassociationrequest->listen_interval = 0x14;
+memcpy(reassociationrequest->current_macap, (aplist + i)->macap, ETH_ALEN);
+ii += sizeof(ieee80211_reassoc_req_t);
+packetoutptr[ii ++] = 0;
+packetoutptr[ii ++] = (aplist + i)->ie.essidlen;
+memcpy(&packetoutptr[ii], (aplist + i)->ie.essid, (aplist + i)->ie.essidlen);
+ii += (aplist + i)->ie.essidlen;
+memcpy(&packetoutptr[ii], &reassociationrequestdata, REASSOCIATIONREQUEST_SIZE);
+if(((aplist + i)->ie.flags & APGS_CCMP) == APGS_CCMP) packetoutptr[ii +0x17] = RSN_CS_CCMP;
+else if(((aplist + i)->ie.flags & APGS_TKIP) == APGS_TKIP) packetoutptr[ii +0x17] = RSN_CS_TKIP;
+if(((aplist + i)->ie.flags & APCS_CCMP) == APCS_CCMP) packetoutptr[ii +0x1d] = RSN_CS_CCMP;
+else if(((aplist + i)->ie.flags & APCS_TKIP) == APCS_TKIP) packetoutptr[ii +0x1d] = RSN_CS_TKIP;
+ii += REASSOCIATIONREQUEST_SIZE;
+if((write(fd_socket_tx, packetoutptr, ii)) == ii) return;
+errorcount++;
+return;
+}
+/*---------------------------------------------------------------------------*/
 static inline void send_80211_authenticationrequest()
 {
 macftx = (ieee80211_mac_t*)(packetoutptr + RTHTX_SIZE);
@@ -1457,6 +1517,8 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline void process80211eapol_m2()
 {
+printf("m2\n");
+
 authseqakt.replaycountm2 = be64toh(wpakey->replaycount);
 if(replaycountrg == authseqakt.replaycountm2)
 	{
@@ -1579,6 +1641,8 @@ else if(auth->type == EAPOL_START)
 	send_eap_request_id(macfrx->addr2, macfrx->addr1);
 	}
 */
+
+printf("write\n");
 writeepb();
 return;
 }
@@ -1690,7 +1754,6 @@ qsort(clientlist, i + 1, CLIENTLIST_SIZE, sort_clientlist_by_tsakt);
 writeepb();
 return;
 }
-
 /*---------------------------------------------------------------------------*/
 static inline void process80211authentication_fmclient()
 {
@@ -1898,6 +1961,10 @@ if((aplist + i)->ie.channel == (scanlist + scanlistindex)->channel)
 		{
 		if(((aplist + i)->ie.flags & APIE_ESSID) == 0) send_80211_proberequest_undirected();
 		}
+	if(reassociationflag == true)
+		{
+		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
+		}
 	}
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 tshold = tsakt;
@@ -1962,7 +2029,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		}
 	if(reassociationflag == true)
 		{
-//		if((aplist + i)->rsnakm == 0) return;
+		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
 		}
 	(aplist + i)->tshold2 = tsakt;
 	return;
@@ -1993,6 +2060,10 @@ if((aplist + i)->ie.channel == (scanlist +scanlistindex)->channel)
 	if(proberequestflag == true)
 		{
 		if(((aplist + i)->ie.flags & APIE_ESSID) == 0) send_80211_proberequest_undirected();
+		}
+	if(reassociationflag == true)
+		{
+		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
 		}
 	}
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
