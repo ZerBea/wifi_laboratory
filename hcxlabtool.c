@@ -1261,7 +1261,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	}
 action = (ieee80211_action_t*)payloadptr;
 if(payloadlen < (IEEE80211_ACTION_SIZE + IEEE80211_IETAG_SIZE)) return;
-if(action->category == RADIO_MEASUREMENT) writeepb();
+if((action->category == RADIO_MEASUREMENT) && (action->code == NEIGHBOR_REPORT_REQUEST)) writeepb();
 return;
 }
 /*---------------------------------------------------------------------------*/
