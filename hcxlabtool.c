@@ -1641,8 +1641,6 @@ else if(auth->type == EAPOL_START)
 	send_eap_request_id(macfrx->addr2, macfrx->addr1);
 	}
 */
-
-printf("write\n");
 writeepb();
 return;
 }
