@@ -1,11 +1,11 @@
 hcxlabtool
 ==============
 
-Skeleton to test WiFi adapters, to understand 802.11 protocol and to discover potential weak points.
+This is a highly experimental penetration testing tool!
 
 Feature requests will be ignored!
 
-It is not made for newbies and comes without any warnings.
+It is not made for newbies and it comes without warnings.
 
 Code will often change!
 
@@ -13,13 +13,12 @@ Code will often change!
 Brief description
 --------------
 
-This skeleton is designed to understand 802.11 protocol and to provide a laboratory environment to test WiFi adapters and code snippets for hcxdumptool/hcxtools.
+It is made to detect vulnerabilities in your NETWORK mercilessly!
 
-There are only a few basic options and there is no status output.
+Is is also designed to run headless on a modified (GPIO push button and LED) Raspberry Pi.
 
-All additional test functions must be compiled individually (gcc -D - see Makefile).
+Main purpose is to understand 802.11 protocol and to provide a laboratory environment to test WiFi adapters and code snippets for hcxdumptool/hcxtools.
 
-hcxlabtool is designed to run headless on a modified (GPIO push button and LED) Raspberry Pi.
 
 
 Requirements
@@ -39,9 +38,7 @@ Requirements
 
 * driver must support full monitor mode and full packet injection
 
-* diver must not depend on NETLINK
-
-* tshark or Wireshark to monitor interface
+* tshark or Wireshark to monitor traffic on the same INTERFACE
 
 * tcpdump to create BPF code
 
@@ -53,27 +50,27 @@ General workflow
 
 connect WiFi adapter
 
-run hcxlabxxxx tool
+run hcxlabtool
 
-hcxlabxxxx will create a pcapng file which contain the recorded traffic
+hcxlabtool will create a pcapng file which contain the recorded traffic
 
-traffic can be monitored by tshark or Wireshark on the fly 
+traffic can be monitored on the fly by tshark or Wireshark on the same INTERFACE 
 
 
 Usual commandlines:
 --------------
 
-$ sudo hcxlabgetmall -gpio_button=4 --gpio_statusled=17 <br />  control behavior on a modified RPI 
+$ sudo hcxlabtool  <br /> use first suitable INTERFACE and scan all available frequencies
 
-$ sudo hcxlabgetmall --bpfc=own.bpfc <br /> we need to protect own devices
+$ sudo hcxlabtool -gpio_button=4 --gpio_statusled=17 <br />  control behavior on a modified RPI 
 
-$ sudo hcxlabgetmall -c 1,6,11  <br /> scan this channels only
+$ sudo hcxlabtool --bpf=own.bpfc <br /> we need to protect own devices
 
-$ sudo hcxlabgetmall -c 1  <br /> use this channel only
+$ sudo hcxlabtool -c 1a,6a,11a  <br /> scan this channels only
 
-$ sudo hcxlabgetmall  <br /> use all available channels
+$ sudo hcxlabtool -c 1a  <br /> use this channel only
 
-$ sudo hcxlabgetmall -i interface <br /> use this interface - otherwise the first detected interface is used  <br /> on a RPI the internal WiFi chip must be disabled by boot options
+$ sudo hcxlabtool -i interface <br /> use this interface - otherwise the first detected interface is used  <br /> on a RPI the internal WiFi chip must be disabled by boot options
 
 or a combination of this options.
 
@@ -109,7 +106,7 @@ the most useful frame is an EAPOL M2 frame!
 Warning
 --------------
 
-WiFi laboratory is designed to be an analysis tool. 
+hcxlabtool is designed to be an analysis tool. 
 
 It should only be used in a 100% controlled environment(!).
 
@@ -117,4 +114,4 @@ If you can't control the environment it is absolutely mandatory to set the BPF.
 
 Everything is requested/stored by default and unwanted information must be filtered out by option/filter or later on (offline)! 
 
-You must use WiFi laboratoy only on networks you have permission to do this and if you know what you are doing.
+You must use hcxlabtool only on networks you have permission to do this and if you know what you are doing.
