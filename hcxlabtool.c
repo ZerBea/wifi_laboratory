@@ -1517,8 +1517,6 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline void process80211eapol_m2()
 {
-printf("m2\n");
-
 authseqakt.replaycountm2 = be64toh(wpakey->replaycount);
 if(replaycountrg == authseqakt.replaycountm2)
 	{
