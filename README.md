@@ -3,11 +3,11 @@ hcxlabtool
 
 This is a highly experimental penetration testing tool!
 
-Feature requests will be ignored!
+Full NL80211 / RTNETLINK support instead of WIRELESS EXTENSIONS.
 
-It is not made for newbies and it comes without warnings.
+It is not made for newbies and it comes without warnings and limited status display.
 
-Code will often change!
+Feature requests will be ignored and code will often change! 
 
 
 Brief description
@@ -17,7 +17,7 @@ It is made to detect vulnerabilities in your NETWORK mercilessly!
 
 Is is also designed to run headless on a modified (GPIO push button and LED) Raspberry Pi.
 
-Main purpose is to understand 802.11 protocol and to provide a laboratory environment to test WiFi adapters and code snippets for hcxdumptool/hcxtools.
+Main purpose is to understand 802.11 protocol and to detect weak points.
 
 
 
@@ -72,7 +72,7 @@ $ sudo hcxlabtool -c 1a  <br /> use this channel only
 
 $ sudo hcxlabtool -i interface <br /> use this interface - otherwise the first detected interface is used  <br /> on a RPI the internal WiFi chip must be disabled by boot options
 
-or a combination of this options.
+or a combination of this options. See -h or --help for more options
 
 
 Lessons learned (to be continued)
@@ -80,7 +80,7 @@ Lessons learned (to be continued)
 
 a beautiful status output make the attack tool slow and sluggish.
 
-too many features make the attack tool slow and sluggish.
+too many features make an attack slow and sluggish.
 
 response time behavior becomes very bad on big ringbuffers.
 
@@ -88,19 +88,23 @@ transmitting too many packets make a channel busy.
 
 a Raspberry Pi is not able to handle more than one interface at the same time.
 
+multiple interfaces interfere with each other.
+
 pselect doesn't like to be interrupted by another timer.
 
-active monitor mode (enabled by radiotap header) is mandatatory on AUTHENTICATION, ASSOCIATION and EAPOL frames!
-
-it is mandatory to ACK NULL and ACTION frames within a 4way handshake!
+active monitor require to set MAC on interface - that is too slow.
 
 setting a short preamble in radiotap header is ignored on tx.
 
-entire AUTHENTICATION process should be done running a data rate of 1.0 Mb/s.
+entire AUTHENTICATION process should be done using a low data rate of 1.0 Mb/s and a small bandwidth.
 
 there are (much) better ways than injecting stupid DEAUTHENTICATION frames to disconnect a CLIENT. 
 
 the most useful frame is an EAPOL M2 frame!
+
+NL80211 provide more options than WIRLESS EXTENSIONS
+
+NL80211 / RTNETLINK can be used without libnl dependency
 
 
 Warning
