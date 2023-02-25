@@ -1461,9 +1461,9 @@ if((authseqakt.status & AP_EAPOL_M2) == AP_EAPOL_M2)
 							{
 							if(memcmp((aplist + i)->macap, authseqakt.macap, ETH_ALEN) == 0)
 								{
-								(aplist + i)->status |= AP_EAPOL_M3;
 								tshold = tsakt;
 								authseqakt.status = 0;
+								if(((aplist + i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) return;
 								#ifdef STATUSOUT
 								fprintf(stdout, "%5d [%3d] ", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
 								for(ii = 0; ii < ETH_ALEN; ii++) fprintf(stdout, "%02x", macfrx->addr1[ii]);
@@ -1471,6 +1471,7 @@ if((authseqakt.status & AP_EAPOL_M2) == AP_EAPOL_M2)
 								for(ii = 0; ii < ETH_ALEN; ii++) fprintf(stdout, "%02x", macfrx->addr2[ii]);
 								fprintf(stdout, " %.*s [EAPOL M1M2M3]\n", (aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
 								#endif
+								(aplist + i)->status |= AP_EAPOL_M3;
 								return;
 								}
 							}
@@ -1499,6 +1500,10 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	if(memcmp(macfrx->addr2, (clientlist + i)->macclient, ETH_ALEN) != 0) continue;
 	if(memcmp(macfrx->addr1, (clientlist + i)->macap, ETH_ALEN) != 0) continue;
 	(clientlist + i)->tsakt = tsakt;
+	if((clientlist + i)->count == 0) return;
+	if(memcmp((clientlist + i)->mic, &wpakey->keymic[0], 4) == 0) return;
+	memcpy((clientlist + i)->mic, &wpakey->keymic[0], 4);
+	(clientlist + i)->count--;
 	#ifdef STATUSOUT
 	fprintf(stdout, "%5d [%3d] ", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
 	for(ii = 0; ii < ETH_ALEN; ii++) fprintf(stdout, "%02x", macfrx->addr2[ii]);
@@ -1506,10 +1511,6 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	for(ii = 0; ii < ETH_ALEN; ii++) fprintf(stdout, "%02x", macfrx->addr1[ii]);
 	fprintf(stdout, " %.*s [M1M2 ROGUE CHALLENGE]\n", (clientlist + i)->ie.essidlen, (clientlist + i)->ie.essid);
 	#endif
-	if((clientlist + i)->count == 0) return;
-	if(memcmp((clientlist + i)->mic, &wpakey->keymic[0], 4) == 0) return;
-	memcpy((clientlist + i)->mic, &wpakey->keymic[0], 4);
-	(clientlist + i)->count--;
 	return;
 	}
 return;
@@ -1577,9 +1578,9 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	{
 	if(memcmp((aplist + i)->macap, authseqakt.macap, ETH_ALEN) == 0)
 		{
-		(aplist + i)->status |= authseqakt.status;
+		if(((aplist + i)->status & AP_PMKID) == AP_PMKID) return;
 		#ifdef STATUSOUT
-		if(((aplist + i)->status & AP_PMKID) == AP_PMKID)
+		if((authseqakt.status & AP_PMKID) == AP_PMKID)
 			{
 			fprintf(stdout, "%5d [%3d] ", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
 			for(ii = 0; ii < ETH_ALEN; ii++) fprintf(stdout, "%02x", macfrx->addr1[ii]);
@@ -1588,6 +1589,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 			fprintf(stdout, " %.*s [PMKID]\n", (aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
 			}
 		#endif
+		(aplist + i)->status |= authseqakt.status;
 		return;
 		}
 	}
@@ -1667,6 +1669,8 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	(clientlist + i)->tsakt = tsakt;
 	if(((clientlist + i)->status & CLIENT_REASSOCIATION) == 0) writeepb();
 	(clientlist + i)->status |= CLIENT_REASSOCIATION;
+	if(macfrx->retry == 1) return;
+	if(macfrx->retry == 1) return;
 	if((clientlist + i)->count == 0) return;
 	tagwalk_channel_essid_rsn(&(clientlist + i)->ie, reassociationrequestlen, reassociationrequest->ie);
 	if(((clientlist + i)->ie.flags & APRSNAKM_PSK) != 0)
@@ -1722,13 +1726,14 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	(clientlist + i)->tsakt = tsakt;
 	if(((clientlist + i)->status & CLIENT_ASSOCIATION) == 0) writeepb();
 	(clientlist + i)->status |= CLIENT_ASSOCIATION;
+	if(macfrx->retry == 1) return;
 	if((clientlist + i)->count == 0) return;
 	tagwalk_channel_essid_rsn(&(clientlist + i)->ie, associationrequestlen, associationrequest->ie);
 	if(((clientlist + i)->ie.flags & APRSNAKM_PSK) != 0)
 		{
 		send_80211_associationresponse();
 		send_80211_eapolm1();
-		(clientlist + i)->count++;
+		(clientlist + i)->count--;
 		}
 	else (clientlist + i)->count = 0;
 	return;
@@ -1784,6 +1789,7 @@ size_t i;
 static ieee80211_auth_t *auth;
 
 tshold = tsakt;
+if(macfrx->retry == 1) return;
 auth = (ieee80211_auth_t*)payloadptr;
 if(payloadlen < IEEE80211_AUTH_SIZE) return;
 if(auth->algorithm == OPEN_SYSTEM)
@@ -2088,7 +2094,6 @@ ieee82011ptr = packetptr +rthlen;
 ieee82011len = packetlen -rthlen;
 if(ieee82011len <= MAC_SIZE_RTS) return;
 macfrx = (ieee80211_mac_t*)ieee82011ptr;
-if(macfrx->retry == 1) return;
 if((macfrx->from_ds == 1) && (macfrx->to_ds == 1))
 	{
 	payloadptr = ieee82011ptr +MAC_SIZE_LONG;
