@@ -29,6 +29,7 @@
 #define HCX_SET_SCANLIST_FROM_USER_CH	'c'
 #define HCX_SET_SCANLIST_FROM_USER_FREQ	'f'
 #define HCX_SET_SCANLIST_FROM_INTERFACE	'F'
+#define HCX_SHOW_INTERFACE_LIST		'L'
 #define HCX_HELP			'h'
 #define HCX_VERSION			'v'
 /*---------------------------------------------------------------------------*/
@@ -255,5 +256,6 @@ typedef struct
 }req_t;
 /*===========================================================================*/
 static bool read_bpf(char *bpfname);
+static bool nl_get_interfacelist(interface_t *iffoundlist);
 static inline bool nl_set_frequency();
 /*===========================================================================*/

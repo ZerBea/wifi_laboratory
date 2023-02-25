@@ -325,6 +325,26 @@ return;
 }
 #endif
 /*---------------------------------------------------------------------------*/
+static bool show_interfacelist()
+{
+size_t i;
+static interface_t *iffoundlist;
+
+
+if((iffoundlist = (interface_t*)calloc(INTERFACELIST_MAX, INTERFACELIST_SIZE)) == NULL) return false;
+if(nl_get_interfacelist(iffoundlist) == true)
+	{
+	fprintf(stdout, "\navailable WiFi interfaces:\n--------------------------\n");
+	for(i = 0; i < (INTERFACELIST_MAX - 1); i++)
+		{
+		if((iffoundlist + i)->index == 0) continue;
+		fprintf(stdout, "%s [%d]\n", (iffoundlist + i)->name ,(iffoundlist + i)->index);
+		}
+	}
+free(iffoundlist);
+return true;
+}
+/*---------------------------------------------------------------------------*/
 static void show_interfaceinformation()
 {
 static size_t i;
@@ -2754,7 +2774,6 @@ static size_t i;
 static interface_t *iffoundlist;
 
 if((iffoundlist = (interface_t*)calloc(INTERFACELIST_MAX, INTERFACELIST_SIZE)) == NULL) return false;
-
 if(nl_get_interfacelist(iffoundlist) == true)
 	{
 	for(i = 0; i < (INTERFACELIST_MAX - 1); i++)
@@ -3264,6 +3283,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"-f <digit>     : set frequency (2412,2417,5180,...)\n"
 	"-F             : use available frequencies from INTERFACE\n"
 	"-m <INTERFACE> : set monitor mode and terminate\n"
+	"-L             : show INTERFACE list\n"
 	"-h             : show this help\n"
 	"-v             : show version\n"
 	"\n",
@@ -3349,13 +3369,14 @@ static u8 exiterrorflag = 0;
 static bool monitormodeflag = false;
 static bool interfaceinfoflag = false;
 static bool interfacefrequencyflag = false;
+static bool interfacelistflag = false;
 static char *bpfname = NULL;
 static char *essidlistname = NULL;
 static char *userchannellistname = NULL;
 static char *userfrequencylistname = NULL;
 static const char *rebootstring = "reboot";
 static const char *poweroffstring = "poweroff";
-static const char *short_options = "i:c:f:m:I:Fhv";
+static const char *short_options = "i:c:f:m:I:FLhv";
 static const struct option long_options[] =
 {
 	{"bpf",				required_argument,	NULL,	HCX_BPF},
@@ -3551,6 +3572,10 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		monitormodeflag = true;
 		break;
 
+		case HCX_SHOW_INTERFACE_LIST:
+		interfacelistflag = true;
+		break;
+
 		case HCX_HELP:
 		usage(basename(argv[0]));
 		break;
@@ -3617,6 +3642,16 @@ if(nlfamily == 0)
 	ifakt.type = 0;
 	goto byebye;
 	}
+if(interfacelistflag == true)
+	{
+	if(show_interfacelist() == false)
+		{
+		errorcount++;
+		fprintf(stderr, "failed to get INTERFACE information\n");
+		ifakt.type = 0;
+		}
+	goto byebye;
+	}
 if(ifakt.index == 0)
 	{
 	if(get_first_suitable_interface() == false)
@@ -3641,10 +3676,6 @@ if(interfaceinfoflag == true)
 	ifakt.type = 0;
 	goto byebye;
 	}
-
-//calculate scanlist
-
-/*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 if(getuid() != 0)
 	{
