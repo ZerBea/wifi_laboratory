@@ -126,7 +126,7 @@ typedef struct __attribute__((__packed__))
 {
  u8	category;
 #define RADIO_MEASUREMENT	5
- u8	action;
+ u8	code;
 #define NEIGHBOR_REPORT_REQUEST	4
  u8	dialog;
  u8	ie[0];
