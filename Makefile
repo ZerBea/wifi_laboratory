@@ -10,7 +10,7 @@ build:
 	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabtool hcxlabtool.c -DSTATUSOUT
 
 install: build
-	install -D -m 0755 hcxlabgetm1 $(INSTALLDIR)/hcxlabgetm1
+	install -D -m 0755 hcxlabtool $(INSTALLDIR)/hcxlabtool
 
 	rm -f hcxlabtool
 	rm -f *.o *~
@@ -20,4 +20,4 @@ clean:
 	rm -f *.o *~
 
 uninstall:
-	rm -f $(INSTALLDIR)/hcxlablabtool
+	rm -f $(INSTALLDIR)/hcxlabtool
