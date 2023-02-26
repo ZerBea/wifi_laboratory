@@ -2019,44 +2019,46 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		(aplist + i)->tsbeacon = tsakt;
 		}
 	if((aplist + i)->count == 0) return;
-	if((aplist + i)->tsakt - (aplist + i)->tsbeacon < TIMEBEACONWAIT) return; 
-	(aplist + i)->count--;
-	if(associationflag == true)
+	if((aplist + i)->tsakt - (aplist + i)->tsbeacon > TIMEBEACONWAIT)
 		{
-		if(((aplist + i)->status & AP_EAPOL_M1) == 0)
+		(aplist + i)->count--;
+		if(associationflag == true)
 			{
-			if(((aplist + i)->status & AP_ESSID) == AP_ESSID)
+			if(((aplist + i)->status & AP_EAPOL_M1) == 0)
 				{
-				if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_authenticationrequest();
-				}
-			}
-		}
-	if(deauthenticationflag == true)
-		{
-		if(((aplist + i)->ie.flags & AP_MFP) == 0)
-			{
-			if(((aplist + i)->ie.flags & APAKM_MASK) != 0)
-				{
-				if(memcmp(&macbc, (aplist + i)->macclient, ETH_ALEN) != 0)
+				if(((aplist + i)->status & AP_ESSID) == AP_ESSID)
 					{
-					send_80211_deauthentication_fm_ap((aplist + i)->macclient, (aplist + i)->macap, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
-					send_80211_deauthentication_fm_client((aplist + i)->macclient, (aplist + i)->macap, WLAN_REASON_DEAUTH_LEAVING);
+					if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_authenticationrequest();
 					}
-				else send_80211_deauthentication_fm_ap(macbc, (aplist + i)->macap, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 				}
 			}
+		if(deauthenticationflag == true)
+			{
+			if(((aplist + i)->ie.flags & AP_MFP) == 0)
+				{
+				if(((aplist + i)->ie.flags & APAKM_MASK) != 0)
+					{
+					if(memcmp(&macbc, (aplist + i)->macclient, ETH_ALEN) != 0)
+						{
+						send_80211_deauthentication_fm_ap((aplist + i)->macclient, (aplist + i)->macap, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+						send_80211_deauthentication_fm_client((aplist + i)->macclient, (aplist + i)->macap, WLAN_REASON_DEAUTH_LEAVING);
+						}
+					else send_80211_deauthentication_fm_ap(macbc, (aplist + i)->macap, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
+					}
+				}
+			}
+		if(reassociationflag == true)
+			{
+			if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
+			}
+		(aplist + i)->tsbeacon = tsakt;
 		}
-	if(reassociationflag == true)
-		{
-		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
-		}
-	(aplist + i)->tsbeacon = tsakt;
 	return;
 	}
 memset((aplist + i), 0, APLIST_SIZE);
 (aplist + i)->tsakt = tsakt;
 (aplist + i)->tshold1 = tsakt;
-(aplist + i)->tsbeacon = tsakt;
+(aplist + i)->tsbeacon = tsfirst;
 (aplist + i)->tsauth = tsfirst;
 (aplist + i)->count = attemptapmax;
 memcpy((aplist + i)->macap, macfrx->addr3, ETH_ALEN);
@@ -2128,7 +2130,7 @@ packetcount++;
 if(macfrx->type == IEEE80211_FTYPE_MGMT)
 	{
 	if(macfrx->subtype == IEEE80211_STYPE_BEACON) process80211beacon();
-	else if(macfrx->subtype == IEEE80211_STYPE_BEACON) process80211proberesponse();
+	else if(macfrx->subtype == IEEE80211_STYPE_PROBE_RESP) process80211proberesponse();
 	else if(macfrx->subtype == IEEE80211_STYPE_PROBE_REQ)
 		{
 		if(memcmp(&macbc, macfrx->addr3, ETH_ALEN) == 0) process80211proberequest_undirected();
