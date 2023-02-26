@@ -109,6 +109,7 @@ static u64 replaycountrg = 0;
 
 static struct timeval tvakt = { 0 };
 static u64 tsakt = 0;
+static u64 tsfirst = 0;
 static u64 tshold = 0;
 static u64 tottime = 0;
 static u64 timehold = TIMEHOLD;
@@ -1667,11 +1668,9 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	if(memcmp(macfrx->addr2, (clientlist + i)->macclient, ETH_ALEN) != 0) continue;
 	if(memcmp(macfrx->addr1, (clientlist + i)->macap, ETH_ALEN) != 0) continue;
 	(clientlist + i)->tsakt = tsakt;
-	if(((clientlist + i)->status & CLIENT_REASSOCIATION) == 0) writeepb();
-	(clientlist + i)->status |= CLIENT_REASSOCIATION;
-	if(macfrx->retry == 1) return;
-	if(macfrx->retry == 1) return;
 	if((clientlist + i)->count == 0) return;
+	if((tsakt - (clientlist + i)->tsassoc) < TIMEREASSOCWAIT) return;
+	(clientlist + i)->tsassoc = tsakt;
 	tagwalk_channel_essid_rsn(&(clientlist + i)->ie, reassociationrequestlen, reassociationrequest->ie);
 	if(((clientlist + i)->ie.flags & APRSNAKM_PSK) != 0)
 		{
@@ -1681,12 +1680,14 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 		(clientlist + i)->count--;
 		}
 	else (clientlist + i)->count = 0;
+	writeepb();
 	return;
 	}
 memset((clientlist + i), 0, CLIENTLIST_SIZE);
 (clientlist + i)->tsakt = tsakt;
+(clientlist + i)->tsassoc = tsfirst;
+(clientlist + i)->tsreassoc = tsfirst;
 (clientlist + i)->count = clientm2count;
-(clientlist + i)->status |= CLIENT_REASSOCIATION;
 (clientlist + i)->aid = 1;
 memcpy((clientlist + i)->macclient, macfrx->addr2, ETH_ALEN);
 memcpy((clientlist + i)->macap, macfrx->addr1, ETH_ALEN);
@@ -1724,10 +1725,9 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	if(memcmp(macfrx->addr2, (clientlist + i)->macclient, ETH_ALEN) != 0) continue;
 	if(memcmp(macfrx->addr1, (clientlist + i)->macap, ETH_ALEN) != 0) continue;
 	(clientlist + i)->tsakt = tsakt;
-	if(((clientlist + i)->status & CLIENT_ASSOCIATION) == 0) writeepb();
-	(clientlist + i)->status |= CLIENT_ASSOCIATION;
-	if(macfrx->retry == 1) return;
 	if((clientlist + i)->count == 0) return;
+	if((tsakt - (clientlist + i)->tsassoc) < TIMEASSOCWAIT) return;
+	(clientlist + i)->tsassoc = tsakt;
 	tagwalk_channel_essid_rsn(&(clientlist + i)->ie, associationrequestlen, associationrequest->ie);
 	if(((clientlist + i)->ie.flags & APRSNAKM_PSK) != 0)
 		{
@@ -1736,12 +1736,14 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 		(clientlist + i)->count--;
 		}
 	else (clientlist + i)->count = 0;
+	writeepb();
 	return;
 	}
 memset((clientlist + i), 0, CLIENTLIST_SIZE);
 (clientlist + i)->tsakt = tsakt;
+(clientlist + i)->tsassoc = tsfirst;
+(clientlist + i)->tsreassoc = tsfirst;
 (clientlist + i)->count = clientm2count;
-(clientlist + i)->status |= CLIENT_ASSOCIATION;
 memcpy((clientlist + i)->macclient, macfrx->addr2, ETH_ALEN);
 memcpy((clientlist + i)->macap, macfrx->addr1, ETH_ALEN);
 tagwalk_channel_essid_rsn(&(clientlist + i)->ie, associationrequestlen, associationrequest->ie);
@@ -1765,16 +1767,16 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	if(memcmp(macfrx->addr2, (clientlist + i)->macclient, ETH_ALEN) != 0) continue;
 	if(memcmp(macfrx->addr1, (clientlist + i)->macap, ETH_ALEN) != 0) continue;
 	(clientlist + i)->tsakt = tsakt;
-	if(((clientlist + i)->status & CLIENT_AUTHENTICATION) == 0) writeepb();
-	(clientlist + i)->status |= CLIENT_AUTHENTICATION;
+	if(tsakt - (clientlist + i)->tsauth < TIMEAUTHWAIT) return;
 	if((clientlist + i)->count == 0) return;
 	send_80211_authenticationresponse();
+	writeepb();
 	return;
 	}
 memset((clientlist + i), 0, CLIENTLIST_SIZE);
 (clientlist + i)->tsakt = tsakt;
+(clientlist + i)->tsauth = tsfirst;
 (clientlist + i)->count = clientm2count;
-(clientlist + i)->status |= CLIENT_AUTHENTICATION;
 memcpy((clientlist + i)->macclient, macfrx->addr2, ETH_ALEN);
 memcpy((clientlist + i)->macap, macfrx->addr1, ETH_ALEN);
 send_80211_authenticationresponse();
@@ -1803,7 +1805,9 @@ if(auth->algorithm == OPEN_SYSTEM)
 				{
 				if(memcmp((aplist + i)->macap, macfrx->addr2, ETH_ALEN) == 0)
 					{
+					if((tsakt - (aplist + i)->tsauth) < TIMEAUTHWAIT) return;
 					if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_associationrequest(i);
+					writeepb();
 					break;
 					}
 				}
@@ -1939,7 +1943,8 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 memset((aplist + i), 0, APLIST_SIZE);
 (aplist + i)->tsakt = tsakt;
 (aplist + i)->tshold1 = tsakt;
-(aplist + i)->tshold2 = tsakt;
+(aplist + i)->tsbeacon = tsakt;
+(aplist + i)->tsauth = tsfirst;
 (aplist + i)->count = attemptapmax;
 memcpy((aplist + i)->macap, macfrx->addr3, ETH_ALEN);
 memcpy((aplist + i)->macclient, &macbc, ETH_ALEN);
@@ -1999,10 +2004,10 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		(aplist + i)->count = attemptapmax;
 		memcpy((aplist + i)->macclient, &macbc, ETH_ALEN);
 		(aplist + i)->tshold1 = tsakt;
-		(aplist + i)->tshold2 = tsakt;
+		(aplist + i)->tsbeacon = tsakt;
 		}
 	if((aplist + i)->count == 0) return;
-	if((aplist + i)->tsakt - (aplist + i)->tshold2 < TIMEBEACONWAIT) return; 
+	if((aplist + i)->tsakt - (aplist + i)->tsbeacon < TIMEBEACONWAIT) return; 
 	(aplist + i)->count--;
 	if(associationflag == true)
 		{
@@ -2033,13 +2038,14 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		{
 		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
 		}
-	(aplist + i)->tshold2 = tsakt;
+	(aplist + i)->tsbeacon = tsakt;
 	return;
 	}
 memset((aplist + i), 0, APLIST_SIZE);
 (aplist + i)->tsakt = tsakt;
 (aplist + i)->tshold1 = tsakt;
-(aplist + i)->tshold2 = tsakt;
+(aplist + i)->tsbeacon = tsakt;
+(aplist + i)->tsauth = tsfirst;
 (aplist + i)->count = attemptapmax;
 memcpy((aplist + i)->macap, macfrx->addr3, ETH_ALEN);
 memcpy((aplist + i)->macclient, &macbc, ETH_ALEN);
@@ -3044,11 +3050,18 @@ return true;
 static void init_values()
 {
 static size_t i;
+static struct timespec waitfordevice;
 static const char *macaprgfirst = "internet";
 
+waitfordevice.tv_sec = 1;
+waitfordevice.tv_nsec = 0;
+gettimeofday(&tvakt, NULL);
+tsfirst = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
+nanosleep(&waitfordevice, NULL);
 gettimeofday(&tvakt, NULL);
 tsakt = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
 tshold = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
+
 seed += tvakt.tv_usec & 0x7fffffff;
 srand(seed);
 

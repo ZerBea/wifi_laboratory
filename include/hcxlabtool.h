@@ -62,6 +62,9 @@
 #define TIMEHOLD		2000000ULL
 #define TIMEBEACONWAIT		1000000ULL
 #define TIMEBEACONNEW		3600000000ULL
+#define	TIMEAUTHWAIT		500000ULL
+#define	TIMEASSOCWAIT		500000ULL
+#define	TIMEREASSOCWAIT		500000ULL
 #define EPOLL_EVENTS_MAX	5
 
 #define APLIST_MAX		250
@@ -128,7 +131,8 @@ typedef struct __attribute__((__packed__))
 {
  u64	tsakt;
  u64	tshold1;
- u64	tshold2;
+ u64	tsbeacon;
+ u64	tsauth;
  u8	count;
  u8	macap[6];
  u8	macclient[6];
@@ -175,13 +179,16 @@ return 0;
 typedef struct __attribute__((__packed__)) 
 {
  u64	tsakt;
+ u64	tsauth;
+ u64	tsassoc;
+ u64	tsreassoc;
  u16	aid;
  u8	macclient[6];
  u8	macap[6];
  u8	mic[4];
-#define CLIENT_AUTHENTICATION	0b00000001
-#define CLIENT_ASSOCIATION	0b00000010
-#define CLIENT_REASSOCIATION	0b00000100
+//#define CLIENT_AUTHENTICATION	0b00000001
+//#define CLIENT_ASSOCIATION	0b00000010
+//#define CLIENT_REASSOCIATION	0b00000100
  u8	status;
  u8	count;
  infoelement_t	ie;
