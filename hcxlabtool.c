@@ -1429,10 +1429,13 @@ for(i = 0; i < APLIST_MAX -1; i++)
 	if(memcmp((aplist + i)->macap, macfrx->addr3, ETH_ALEN) == 0)
 		{
 		if((aplist + i)->status >= AP_EAPOL_M3) return;
-		if(((aplist + i)->ie.flags & APAKM_MASK) == 0)
+		if(deauthenticationflag == true)
 			{
-			send_80211_disassociation_fm_ap((aplist + i)->macclient, (aplist + i)->macap, WLAN_REASON_DISASSOC_AP_BUSY);
-			send_80211_disassociation_fm_client(macfrx->addr2, (aplist + i)->macap, WLAN_REASON_DISASSOC_STA_HAS_LEFT);
+			if(((aplist + i)->ie.flags & APAKM_MASK) == 0)
+				{
+				send_80211_disassociation_fm_ap((aplist + i)->macclient, (aplist + i)->macap, WLAN_REASON_DISASSOC_AP_BUSY);
+				send_80211_disassociation_fm_client(macfrx->addr2, (aplist + i)->macap, WLAN_REASON_DISASSOC_STA_HAS_LEFT);
+				}
 			}
 		memcpy((aplist + i)->macclient, macfrx->addr2, ETH_ALEN);
 		return;
