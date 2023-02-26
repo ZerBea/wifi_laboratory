@@ -1674,18 +1674,20 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	if(memcmp(macfrx->addr1, (clientlist + i)->macap, ETH_ALEN) != 0) continue;
 	(clientlist + i)->tsakt = tsakt;
 	if((clientlist + i)->count == 0) return;
-	if((tsakt - (clientlist + i)->tsassoc) < TIMEREASSOCWAIT) return;
-	(clientlist + i)->tsassoc = tsakt;
-	tagwalk_channel_essid_rsn(&(clientlist + i)->ie, reassociationrequestlen, reassociationrequest->ie);
-	if(((clientlist + i)->ie.flags & APRSNAKM_PSK) != 0)
+	if((tsakt - (clientlist + i)->tsassoc) > TIMEREASSOCWAIT)
 		{
-		send_80211_reassociationresponse((clientlist + i)->aid++);
-		if((clientlist + i)->aid > 0xff) (clientlist + i)->aid  = 1;
-		send_80211_eapolm1();
-		(clientlist + i)->count--;
+		tagwalk_channel_essid_rsn(&(clientlist + i)->ie, reassociationrequestlen, reassociationrequest->ie);
+		if(((clientlist + i)->ie.flags & APRSNAKM_PSK) != 0)
+			{
+			send_80211_reassociationresponse((clientlist + i)->aid++);
+			if((clientlist + i)->aid > 0xff) (clientlist + i)->aid  = 1;
+			send_80211_eapolm1();
+			(clientlist + i)->count--;
+			}
+		else (clientlist + i)->count = 0;
+		writeepb();
 		}
-	else (clientlist + i)->count = 0;
-	writeepb();
+	(clientlist + i)->tsassoc = tsakt;
 	return;
 	}
 memset((clientlist + i), 0, CLIENTLIST_SIZE);
@@ -1731,17 +1733,19 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	if(memcmp(macfrx->addr1, (clientlist + i)->macap, ETH_ALEN) != 0) continue;
 	(clientlist + i)->tsakt = tsakt;
 	if((clientlist + i)->count == 0) return;
-	if((tsakt - (clientlist + i)->tsassoc) < TIMEASSOCWAIT) return;
-	(clientlist + i)->tsassoc = tsakt;
-	tagwalk_channel_essid_rsn(&(clientlist + i)->ie, associationrequestlen, associationrequest->ie);
-	if(((clientlist + i)->ie.flags & APRSNAKM_PSK) != 0)
+	if((tsakt - (clientlist + i)->tsassoc) > TIMEASSOCWAIT)
 		{
-		send_80211_associationresponse();
-		send_80211_eapolm1();
-		(clientlist + i)->count--;
+		tagwalk_channel_essid_rsn(&(clientlist + i)->ie, associationrequestlen, associationrequest->ie);
+		if(((clientlist + i)->ie.flags & APRSNAKM_PSK) != 0)
+			{
+			send_80211_associationresponse();
+			send_80211_eapolm1();
+			(clientlist + i)->count--;
+			}
+		else (clientlist + i)->count = 0;
+		writeepb();
 		}
-	else (clientlist + i)->count = 0;
-	writeepb();
+	(clientlist + i)->tsassoc = tsakt;
 	return;
 	}
 memset((clientlist + i), 0, CLIENTLIST_SIZE);
@@ -1772,15 +1776,20 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	if(memcmp(macfrx->addr2, (clientlist + i)->macclient, ETH_ALEN) != 0) continue;
 	if(memcmp(macfrx->addr1, (clientlist + i)->macap, ETH_ALEN) != 0) continue;
 	(clientlist + i)->tsakt = tsakt;
-	if(tsakt - (clientlist + i)->tsauth < TIMEAUTHWAIT) return;
 	if((clientlist + i)->count == 0) return;
-	send_80211_authenticationresponse();
-	writeepb();
+	if((tsakt - (clientlist + i)->tsauth) > TIMEAUTHWAIT)
+		{
+		send_80211_authenticationresponse();
+		writeepb();
+		}
+	(clientlist + i)->tsauth = tsakt;
 	return;
 	}
 memset((clientlist + i), 0, CLIENTLIST_SIZE);
 (clientlist + i)->tsakt = tsakt;
 (clientlist + i)->tsauth = tsfirst;
+(clientlist + i)->tsassoc = tsfirst;
+(clientlist + i)->tsreassoc = tsfirst;
 (clientlist + i)->count = clientm2count;
 memcpy((clientlist + i)->macclient, macfrx->addr2, ETH_ALEN);
 memcpy((clientlist + i)->macap, macfrx->addr1, ETH_ALEN);
@@ -1809,9 +1818,12 @@ if(auth->algorithm == OPEN_SYSTEM)
 				{
 				if(memcmp((aplist + i)->macap, macfrx->addr2, ETH_ALEN) == 0)
 					{
-					if((tsakt - (aplist + i)->tsauth) < TIMEAUTHWAIT) return;
-					if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_associationrequest(i);
-					writeepb();
+					if((tsakt - (aplist + i)->tsauth) > TIMEAUTHWAIT)
+						{
+						if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_associationrequest(i);
+						writeepb();
+						}
+					(aplist + i)->tsauth = tsakt;
 					break;
 					}
 				}
