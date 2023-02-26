@@ -1968,10 +1968,6 @@ if((aplist + i)->ie.channel == (scanlist + scanlistindex)->channel)
 		{
 		if((((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) && (((aplist + i)->ie.flags & APIE_ESSID) == 0)) send_80211_authenticationrequest();
 		}
-	if(proberequestflag == true)
-		{
-		if(((aplist + i)->ie.flags & APIE_ESSID) == 0) send_80211_proberequest_undirected();
-		}
 	if(reassociationflag == true)
 		{
 		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
