@@ -1791,7 +1791,6 @@ size_t i;
 static ieee80211_auth_t *auth;
 
 tshold = tsakt;
-if(macfrx->retry == 1) return;
 auth = (ieee80211_auth_t*)payloadptr;
 if(payloadlen < IEEE80211_AUTH_SIZE) return;
 if(auth->algorithm == OPEN_SYSTEM)
