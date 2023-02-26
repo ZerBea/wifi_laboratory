@@ -3268,7 +3268,7 @@ if((fd_devinfo = open("/dev/mem", O_RDWR | O_SYNC)) < 0)
 	fprintf(stderr, "failed to get device memory\n");
 	return false;
 	}
-gpio_map = mmap(NULL, BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd_devinfo, gpioperi);
+gpio_map = mmap(NULL, RPI_BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd_devinfo, gpioperi);
 close(fd_devinfo);
 if(gpio_map == MAP_FAILED)
 	{
