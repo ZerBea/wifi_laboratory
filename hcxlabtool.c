@@ -386,6 +386,50 @@ for(i = 0; i < FREQUENCYLIST_MAX; i++)
 fprintf(stdout, "\n");
 return;
 }
+/*---------------------------------------------------------------------------*/
+#ifdef STATUSOUT
+static inline void show_realtime()
+{
+size_t i;
+size_t p;
+static const char *pmkideapolstr = "PMKID & M1M2M3";
+static const char *pmkidstr = "PMKID";
+static const char *eapolstr = "M1M2M3";
+static const char *pkstr = "-";
+static const char *pk = NULL;
+static char rtb[1024];
+
+system("clear");
+sprintf(rtb, "  FREQ   CH  MAC-AP       ESSID (STATUS)\n"
+	"-----------------------------------------------------------------------\n");
+p = strlen(rtb);
+for(i = 0; i < 20; i++)
+	{
+	if((aplist + i)->tsakt != 0)
+		{
+		if((aplist + i)->ie.channel != (scanlist + scanlistindex)->channel) continue;
+		if(((aplist +i)->status & AP_PMKID_EAPOL) == AP_PMKID_EAPOL) pk = pmkideapolstr;
+		else if(((aplist +i)->status & AP_PMKID) == AP_PMKID) pk = pmkidstr;
+		else if(((aplist +i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) pk = eapolstr;
+		else pk = pkstr;
+		sprintf(&rtb[p], "%6d [%3d] %02x%02x%02x%02x%02x%02x %.*s (%s)\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel, (aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5], (aplist + i)->ie.essidlen, (aplist + i)->ie.essid, pk);
+		p = strlen(rtb);
+		}
+	}
+sprintf(&rtb[p], "\n\n             MAC-CLIENT   ESSID (STATUS)\n"
+	"-----------------------------------------------------------------------\n");
+p = strlen(rtb);
+for(i = 0; i < 20; i++)
+	{
+	if(((clientlist + i)->status & CLIENT_EAPOL_M2) != CLIENT_EAPOL_M2) continue;
+	sprintf(&rtb[p], "             %02x%02x%02x%02x%02x%02x %.*s (%s)\n", (clientlist + i)->macclient[0], (clientlist + i)->macclient[1], (clientlist + i)->macclient[2], (clientlist + i)->macclient[3], (clientlist + i)->macclient[4], (clientlist + i)->macclient[5], (clientlist + i)->ie.essidlen, (clientlist + i)->ie.essid, "M2 ROGUE");
+	p = strlen(rtb);
+	}
+rtb[p] = 0;
+fprintf(stdout, "%s", rtb); 
+return;
+}
+#endif
 /*===========================================================================*/
 /* frequency handling */
 /*---------------------------------------------------------------------------*/
@@ -1432,9 +1476,6 @@ return;
 static inline void process80211eapol_m3()
 {
 static size_t i;
-#ifdef STATUSOUT
-static size_t ii;
-#endif
 
 if((authseqakt.status & AP_EAPOL_M2) == AP_EAPOL_M2)
 	{
@@ -1455,13 +1496,6 @@ if((authseqakt.status & AP_EAPOL_M2) == AP_EAPOL_M2)
 								tshold = tsakt;
 								authseqakt.status = 0;
 								if(((aplist + i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) return;
-								#ifdef STATUSOUT
-								fprintf(stdout, "%5d [%3d] ", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
-								for(ii = 0; ii < ETH_ALEN; ii++) fprintf(stdout, "%02x", macfrx->addr1[ii]);
-								fprintf(stdout, " ");
-								for(ii = 0; ii < ETH_ALEN; ii++) fprintf(stdout, "%02x", macfrx->addr2[ii]);
-								fprintf(stdout, " %.*s [EAPOL M1M2M3]\n", (aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
-								#endif
 								(aplist + i)->status |= AP_EAPOL_M3;
 								return;
 								}
@@ -1480,9 +1514,6 @@ return;
 static inline void process80211eapol_m2rg()
 {
 size_t i;
-#ifdef STATUSOUT
-static size_t ii;
-#endif
 
 authseqakt.status = 0;
 writeepbm1();
@@ -1491,17 +1522,11 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	if(memcmp(macfrx->addr2, (clientlist + i)->macclient, ETH_ALEN) != 0) continue;
 	if(memcmp(macfrx->addr1, (clientlist + i)->macap, ETH_ALEN) != 0) continue;
 	(clientlist + i)->tsakt = tsakt;
+	(clientlist + i)->status |= CLIENT_EAPOL_M2;
 	if((clientlist + i)->count == 0) return;
 	if(memcmp((clientlist + i)->mic, &wpakey->keymic[0], 4) == 0) return;
 	memcpy((clientlist + i)->mic, &wpakey->keymic[0], 4);
 	(clientlist + i)->count--;
-	#ifdef STATUSOUT
-	fprintf(stdout, "%5d [%3d] ", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
-	for(ii = 0; ii < ETH_ALEN; ii++) fprintf(stdout, "%02x", macfrx->addr2[ii]);
-	fprintf(stdout, " ");
-	for(ii = 0; ii < ETH_ALEN; ii++) fprintf(stdout, "%02x", macfrx->addr1[ii]);
-	fprintf(stdout, " %.*s [M1M2 ROGUE CHALLENGE]\n", (clientlist + i)->ie.essidlen, (clientlist + i)->ie.essid);
-	#endif
 	return;
 	}
 return;
@@ -1539,9 +1564,6 @@ return;
 static inline void process80211eapol_m1()
 {
 static size_t i;
-#ifdef STATUSOUT
-static size_t ii;
-#endif
 
 memset(&authseqakt, 0, AUTHSEQAKT_SIZE);
 tshold = tsakt;
@@ -1570,16 +1592,6 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(memcmp((aplist + i)->macap, authseqakt.macap, ETH_ALEN) == 0)
 		{
 		if(((aplist + i)->status & AP_PMKID) == AP_PMKID) return;
-		#ifdef STATUSOUT
-		if((authseqakt.status & AP_PMKID) == AP_PMKID)
-			{
-			fprintf(stdout, "%5d [%3d] ", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
-			for(ii = 0; ii < ETH_ALEN; ii++) fprintf(stdout, "%02x", macfrx->addr1[ii]);
-			fprintf(stdout, " ");
-			for(ii = 0; ii < ETH_ALEN; ii++) fprintf(stdout, "%02x", macfrx->addr2[ii]);
-			fprintf(stdout, " %.*s [PMKID]\n", (aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
-			}
-		#endif
 		(aplist + i)->status |= authseqakt.status;
 		return;
 		}
@@ -2205,6 +2217,9 @@ while(!wanteventflag)
 			tsakt = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
 			if((tsakt - tshold) > timehold)
 				{
+				#ifdef STATUSOUT
+				show_realtime();
+				#endif
 				scanlistindex++;
 				if(nl_set_frequency() == false) errorcount++;
 				tshold = tsakt;

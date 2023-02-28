@@ -144,6 +144,7 @@ typedef struct __attribute__((__packed__))
 #define AP_EAPOL_M2		0b00010000
 #define AP_EAPOL_M3		0b00100000
 #define AP_PMKID		0b01000000
+#define AP_PMKID_EAPOL		0b01100000
  infoelement_t	ie;
 }aplist_t;
 #define APLIST_SIZE (sizeof(aplist_t))
@@ -186,9 +187,7 @@ typedef struct __attribute__((__packed__))
  u8	macclient[6];
  u8	macap[6];
  u8	mic[4];
-//#define CLIENT_AUTHENTICATION	0b00000001
-//#define CLIENT_ASSOCIATION	0b00000010
-//#define CLIENT_REASSOCIATION	0b00000100
+#define CLIENT_EAPOL_M2		0b00010000
  u8	status;
  u8	count;
  infoelement_t	ie;
