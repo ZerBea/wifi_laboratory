@@ -347,7 +347,7 @@ for(i = 0; i < ifpresentlistcounter; i++)
 		if(i % 4 == 0) fprintf(stdout, "\n");
 		else  fprintf(stdout, "\t");
 		if((iffreql + i)->status == 0) fprintf(stdout, "%6d [%3d] %.1f dBm", (iffreql + i)->frequency, (iffreql + i)->channel, 0.01 *(iffreql + i)->pwr);
-		else fprintf(stdout, "%6d [%3d] disabled", (iffreql + i)->frequency, (iffreql + i)->channel);
+		else fprintf(stdout, "%6d [%3d]", (iffreql + i)->frequency, (iffreql + i)->channel);
 		}
 	fprintf(stdout, "\n");
 	fprintf(stdout, "\n\nscan frequencies: frequency [channel] tx-power\n");
@@ -2169,8 +2169,11 @@ while(!wanteventflag)
 		if(events[i].data.fd == fd_socket_rx) process_packet();
 		else if(events[i].data.fd == fd_timer1)
 			{
-			lifetime++;
 			read(fd_timer1, &timer1count, sizeof(u64));
+			lifetime++;
+			#ifdef STATUSOUT
+			show_realtime();
+			#endif
 			gettimeofday(&tvakt, NULL);
 			tsakt = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
 			if((tsakt - tshold) > timehold)
@@ -2179,9 +2182,6 @@ while(!wanteventflag)
 				if(nl_set_frequency() == false) errorcount++;
 				tshold = tsakt;
 				}
-			#ifdef STATUSOUT
-			show_realtime();
-			#endif
 			if((lifetime % 10) == 0)
 				{
 				if(gpiostatusled > 0)
@@ -2887,6 +2887,7 @@ for(i = 0; i < (FREQUENCYLIST_MAX -1); i++)
 			(scanlist + scanlistindex)->frequency = ufrq;
 			(scanlist + scanlistindex)->channel = frequency_to_channel(ufrq);
 			scanlistindex++;
+			if(scanlistindex >= (FREQUENCYLIST_MAX -1)) return;
 			return;
 			}
 		}
@@ -2933,6 +2934,7 @@ if(interfacefrequencyflag == true)
 			(scanlist + scanlistindex)->frequency = (ifaktfrequencylist + i)->frequency;
 			(scanlist + scanlistindex)->channel = (ifaktfrequencylist + i)->channel;
 			scanlistindex++;
+			if(scanlistindex >= (FREQUENCYLIST_MAX -1)) break;
 			}
 		if((ifaktfrequencylist + i)->frequency == 0) break;
 		}

@@ -222,7 +222,7 @@ else if(ai->tsakt > bi->tsakt) return -1;
 return 0;
 }
 /*---------------------------------------------------------------------------*/
-#define SCANLIST_MAX		1024
+#define SCANLIST_MAX		512
 #define FREQUENCYLIST_MAX	256
 typedef struct __attribute__((__packed__))
 {
