@@ -3915,8 +3915,8 @@ if(monitormodeflag == true)
 		{
 		errorcount++;
 		fprintf(stderr, "failed to set monitor mode\n");
-		goto byebye;
 		}
+	goto byebye;
 	}
 if(set_interface(interfacefrequencyflag, userfrequencylistname, userchannellistname) == false)
 	{
