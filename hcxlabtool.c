@@ -73,13 +73,21 @@ static int fd_timer1 = 0;
 static int fd_pcapng = 0;
 static struct sock_fprog bpf = { 0 };
 
+static int ifaktindex = 0;
+static u8 ifaktstatus = 0;
+static frequencylist_t *ifaktfrequencylist = NULL;
+static char ifaktname[IF_NAMESIZE] = { 0 };
+static u8 ifakthwmac[ETH_ALEN] = { 0 };
+
 static u16 nlfamily = 0;
 static u32 nlseqcounter = 1;
+
+static size_t ifpresentlistcounter = 0;
 
 static size_t scanlistindex = 0;
 static frequencylist_t *scanlist = NULL;
 
-static frequencylist_t *ifaktfrequencylist = NULL;
+static interface_t *ifpresentlist;
 
 static aplist_t* aplist = NULL;
 static aprglist_t* aprglist = NULL;
@@ -290,8 +298,6 @@ static uint8_t eapolm1data[] =
 };
 #define EAPOLM1DATA_SIZE sizeof(eapolm1data)
 
-static interface_t ifakt;
-
 static u8 macaprg[ETH_ALEN] = { 0 };
 static u8 macclientrg[ETH_ALEN] = { 0 };
 static u8 anoncerg[32] = { 0 };
@@ -305,56 +311,95 @@ static u8 nlrxbuffer[NLRX_SIZE] = { 0 };
 
 static u8 epbown[PCAPNG_SNAPLEN * 2] = { 0 };
 static u8 epb[PCAPNG_SNAPLEN * 2] = { 0 };
+
+#ifdef STATUSOUT
+static char rtb[9128] = { 0 };
+#endif
 /*===========================================================================*/
 /*===========================================================================*/
 /* status print */
-#ifdef STATUSOUT
-static void show_interfaceinformation2()
+static void show_interfacecapabilities2()
 {
 static size_t i;
+static const char *po = "N/A";
+static const char *mode = "-";
+static frequencylist_t *iffreql;
 
-fprintf(stdout, "\ninterface: %s\n"
-	"index phy: %d\n"
-	"index....: %d\n"
-	"driver...: %.*s\n"
-	"hwmac....: %02x%02x%02x%02x%02x%02x\n"
-	"vimac....: %02x%02x%02x%02x%02x%02x\n",
-	ifakt.name, ifakt.wiphy, ifakt.index, IF_NAMESIZE, ifakt.driver,
-	ifakt.hwmac[0], ifakt.hwmac[1], ifakt.hwmac[2], ifakt.hwmac[3], ifakt.hwmac[4], ifakt.hwmac[5],
-	ifakt.vimac[0], ifakt.vimac[1], ifakt.vimac[2], ifakt.vimac[3], ifakt.vimac[4], ifakt.vimac[5]);
-fprintf(stdout, "\nscan frequencies: frequency [channel]");
-for(i = 0; i < SCANLIST_MAX; i++)
+for(i = 0; i < ifpresentlistcounter; i++)
 	{
-	if(((scanlist + i)->frequency) == 0) break;
-	if(i % 5 == 0) fprintf(stdout, "\n");
-	else  fprintf(stdout, "\t");
-	fprintf(stdout, "%6d [%3d]", (scanlist + i)->frequency, (scanlist + i)->channel);
+	if((ifpresentlist + i)->index != ifaktindex) continue;
+	fprintf(stdout, "\ninterface information:\n\nphy idx hw-mac       virtual-mac  m ifname           driver (protocol)\n"
+			"---------------------------------------------------------------------------------------------\n");
+	if(((ifpresentlist + i)->type & IF_HAS_NLWEXT) == IF_HAS_NLWEXT) po = "NETLINK & WIRELESS EXTENSIONS";
+	else if(((ifpresentlist + i)->type & IF_HAS_NETLINK) == IF_HAS_NETLINK) po = "NETLINK";
+	else if(((ifpresentlist + i)->type & IF_HAS_WEXT) == IF_HAS_WEXT) po = "WIRELESS EXTENSIONS";
+	if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
+	fprintf(stdout, "%3d %3d %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %s %-*s %s (%s)\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
+		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
+		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
+		mode, IF_NAMESIZE, (ifpresentlist + i)->name, (ifpresentlist + i)->driver, po);
+	iffreql = (ifpresentlist + i)->frequencylist;
+	fprintf(stdout, "\n\navailable frequencies: frequency [channel] tx-power\n");
+	for(i = 0; i < FREQUENCYLIST_MAX; i++)
+		{
+		if((iffreql + i)->frequency == 0) break;
+		if(i % 4 == 0) fprintf(stdout, "\n");
+		else  fprintf(stdout, "\t");
+		if((iffreql + i)->status == 0) fprintf(stdout, "%6d [%3d] %.1f dBm", (iffreql + i)->frequency, (iffreql + i)->channel, 0.01 *(iffreql + i)->pwr);
+		else fprintf(stdout, "%6d [%3d] disabled", (iffreql + i)->frequency, (iffreql + i)->channel);
+		}
+	fprintf(stdout, "\n");
+	fprintf(stdout, "\n\nscan frequencies: frequency [channel] tx-power\n");
+	for(i = 0; i < FREQUENCYLIST_MAX; i++)
+		{
+		if((scanlist + i)->frequency == 0) break;
+		if(i % 4 == 0) fprintf(stdout, "\n");
+		else  fprintf(stdout, "\t");
+		fprintf(stdout, "%6d [%3d] disabled", (scanlist + i)->frequency, (scanlist + i)->channel);
+		}
+	fprintf(stdout, "\n");
 	}
-fprintf(stdout, "\n\nstarting...\n\n");
 return;
 }
-#endif
 /*---------------------------------------------------------------------------*/
-static bool show_interfacelist()
+/*---------------------------------------------------------------------------*/
+static void show_interfacecapabilities()
 {
-size_t i;
-static interface_t *iffoundlist;
+static size_t i;
+static const char *po = "N/A";
+static const char *mode = "-";
+static frequencylist_t *iffreql;
 
-if((iffoundlist = (interface_t*)calloc(INTERFACELIST_MAX, INTERFACELIST_SIZE)) == NULL) return false;
-if(nl_get_interfacelist(iffoundlist) == true)
+for(i = 0; i < ifpresentlistcounter; i++)
 	{
-	fprintf(stdout, "\navailable WiFi interfaces:\n--------------------------\n");
-	for(i = 0; i < (INTERFACELIST_MAX - 1); i++)
+	if((ifpresentlist + i)->index != ifaktindex) continue;
+	fprintf(stdout, "\ninterface information:\n\nphy idx hw-mac       virtual-mac  m ifname           driver (protocol)\n"
+			"---------------------------------------------------------------------------------------------\n");
+	if(((ifpresentlist + i)->type & IF_HAS_NLWEXT) == IF_HAS_NLWEXT) po = "NETLINK & WIRELESS EXTENSIONS";
+	else if(((ifpresentlist + i)->type & IF_HAS_NETLINK) == IF_HAS_NETLINK) po = "NETLINK";
+	else if(((ifpresentlist + i)->type & IF_HAS_WEXT) == IF_HAS_WEXT) po = "WIRELESS EXTENSIONS";
+	if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
+	fprintf(stdout, "%3d %3d %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %s %-*s %s (%s)\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
+		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
+		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
+		mode, IF_NAMESIZE, (ifpresentlist + i)->name, (ifpresentlist + i)->driver, po);
+	iffreql = (ifpresentlist + i)->frequencylist;
+	fprintf(stdout, "\n\navailable frequencies: frequency [channel] tx-power\n");
+	for(i = 0; i < FREQUENCYLIST_MAX; i++)
 		{
-		if((iffoundlist + i)->index == 0) continue;
-		fprintf(stdout, "%s [%d]\n", (iffoundlist + i)->name ,(iffoundlist + i)->index);
+		if((iffreql + i)->frequency == 0) break;
+		if(i % 4 == 0) fprintf(stdout, "\n");
+		else  fprintf(stdout, "\t");
+		if((iffreql + i)->status == 0) fprintf(stdout, "%6d [%3d] %.1f dBm", (iffreql + i)->frequency, (iffreql + i)->channel, 0.01 *(iffreql + i)->pwr);
+		else fprintf(stdout, "%6d [%3d] disabled", (iffreql + i)->frequency, (iffreql + i)->channel);
 		}
+	fprintf(stdout, "\n");
 	}
-free(iffoundlist);
-return true;
+return;
 }
 /*---------------------------------------------------------------------------*/
-static void show_interfaceinformation()
+/*---------------------------------------------------------------------------*/
+static void show_interfacelist()
 {
 static size_t i;
 static const char *po = "N/A";
@@ -362,28 +407,22 @@ static const char *mode = "-";
 
 fprintf(stdout, "\navailable wlan devices:\n\nphy idx hw-mac       virtual-mac  m ifname           driver (protocol)\n"
 		"---------------------------------------------------------------------------------------------\n");
-if((ifakt.type & IF_HAS_NLWEXT) == IF_HAS_NLWEXT) po = "NETLINK & WIRELESS EXTENSIONS";
-else if((ifakt.type & IF_HAS_NETLINK) == IF_HAS_NETLINK) po = "NETLINK";
-else if((ifakt.type & IF_HAS_WEXT) == IF_HAS_WEXT) po = "WIRELESS EXTENSIONS";
-if((ifakt.type & IFTYPEMON) == IFTYPEMON) mode = "+";
-fprintf(stdout, "%3d %3d %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %s %-*s %s (%s)\n", ifakt.wiphy, ifakt.index,
-	ifakt.hwmac[0], ifakt.hwmac[1], ifakt.hwmac[2], ifakt.hwmac[3], ifakt.hwmac[4], ifakt.hwmac[5],
-	ifakt.vimac[0], ifakt.vimac[1], ifakt.vimac[2], ifakt.vimac[3], ifakt.vimac[4], ifakt.vimac[5],
-	mode, IF_NAMESIZE, ifakt.name, ifakt.driver, po);
+for(i = 0; i < ifpresentlistcounter; i++)
+	{
+	if(((ifpresentlist + i)->type & IF_HAS_NLWEXT) == IF_HAS_NLWEXT) po = "NETLINK & WIRELESS EXTENSIONS";
+	else if(((ifpresentlist + i)->type & IF_HAS_NETLINK) == IF_HAS_NETLINK) po = "NETLINK";
+	else if(((ifpresentlist + i)->type & IF_HAS_WEXT) == IF_HAS_WEXT) po = "WIRELESS EXTENSIONS";
+	if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
+	fprintf(stdout, "%3d %3d %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %s %-*s %s (%s)\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
+		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
+		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
+		mode, IF_NAMESIZE, (ifpresentlist + i)->name, (ifpresentlist + i)->driver, po);
+	}
+
 fprintf(stdout, "\n"
 		"+ monitor mode available\n"
 		"- no monitor mode available\n"
 		"\n");
-fprintf(stdout, "available frequencies: frequency [channel] tx-power");
-for(i = 0; i < FREQUENCYLIST_MAX; i++)
-	{
-	if(((ifaktfrequencylist + i)->frequency) == 0) break;
-	if(i % 4 == 0) fprintf(stdout, "\n");
-	else  fprintf(stdout, "\t");
-	if((ifaktfrequencylist + i)->status == 0) fprintf(stdout, "%6d [%3d] %.1f dBm", (ifaktfrequencylist + i)->frequency, (ifaktfrequencylist + i)->channel, 0.01 *(ifaktfrequencylist + i)->pwr);
-	else fprintf(stdout, "%6d [%3d] disabled", (ifaktfrequencylist + i)->frequency, (ifaktfrequencylist + i)->channel);
-	}
-fprintf(stdout, "\n");
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -393,16 +432,14 @@ static inline void show_realtime()
 size_t i;
 size_t p;
 size_t pc;
-static const char *pmkideapolstr = "PMKID & M1M2M3";
-static const char *pmkidstr = "PMKID";
-static const char *eapolstr = "M1M2M3";
-static const char *pkstr = "-";
-static const char *pk = NULL;
-static char rtb[1024];
+static char *pmdef = " ";
+static char *pmok = "+";
+static char *ps;
+static char *ms;
 
 system("clear");
-sprintf(rtb, "  FREQ   CH  MAC-AP       ESSID (STATUS)                     %6u kHz\n"
-	"-----------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency);
+sprintf(&rtb[0], "  FREQ    CH PM MAC-AP       ESSID (STATUS)                     %6u MHz\n"
+	"--------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency);
 p = strlen(rtb);
 pc = 0;
 for(i = 0; i < 20; i++)
@@ -411,24 +448,24 @@ for(i = 0; i < 20; i++)
 		{
 		if((aplist + i)->ie.channel == (scanlist + scanlistindex)->channel)
 			{
-			if(((aplist +i)->status & AP_PMKID_EAPOL) == AP_PMKID_EAPOL) pk = pmkideapolstr;
-			else if(((aplist +i)->status & AP_PMKID) == AP_PMKID) pk = pmkidstr;
-			else if(((aplist +i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) pk = eapolstr;
-			else pk = pkstr;
-			sprintf(&rtb[p], "[%3d] %02x%02x%02x%02x%02x%02x %.*s (%s)\n", (aplist +i)->ie.channel, (aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5], (aplist + i)->ie.essidlen, (aplist + i)->ie.essid, pk);
+			if(((aplist +i)->status & AP_PMKID) == AP_PMKID) ps = pmok;
+			else ps = pmdef;
+			if(((aplist +i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) ms = pmok;
+			else ms = pmdef;
+			sprintf(&rtb[p], "%6d [%3d] %s%s %02x%02x%02x%02x%02x%02x %.*s\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel, ps, ms, (aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5], (aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
 			p = strlen(rtb);
 			pc++;
 			}
 		}
 	}
 for(i = 0; i < (22 - pc); i++) rtb[p++] = '\n';
-sprintf(&rtb[p], "             MAC-CLIENT   ESSID (STATUS)\n"
+sprintf(&rtb[p], " M MAC-CLIENT   ESSID\n"
 	"-----------------------------------------------------------------------\n");
 p = strlen(rtb);
 for(i = 0; i < 20; i++)
 	{
 	if(((clientlist + i)->status & CLIENT_EAPOL_M2) != CLIENT_EAPOL_M2) continue;
-	sprintf(&rtb[p], "             %02x%02x%02x%02x%02x%02x %.*s (%s)\n", (clientlist + i)->macclient[0], (clientlist + i)->macclient[1], (clientlist + i)->macclient[2], (clientlist + i)->macclient[3], (clientlist + i)->macclient[4], (clientlist + i)->macclient[5], (clientlist + i)->ie.essidlen, (clientlist + i)->ie.essid, "M2 ROGUE");
+	sprintf(&rtb[p], " + %02x%02x%02x%02x%02x%02x %.*s\n", (clientlist + i)->macclient[0], (clientlist + i)->macclient[1], (clientlist + i)->macclient[2], (clientlist + i)->macclient[3], (clientlist + i)->macclient[4], (clientlist + i)->macclient[5], (clientlist + i)->ie.essidlen, (clientlist + i)->ie.essid);
 	p = strlen(rtb);
 	}
 rtb[p] = 0;
@@ -481,91 +518,6 @@ else if(frequency >= 58320 && frequency <= 70200) return (frequency - 56160) / 2
 else return 0;
 }
 /*===========================================================================*/
-static void set_scanlist(bool wantiffreqs, char *wantuserfrequency, char *wantuserchannel)
-{
-static size_t i;
-static size_t is;
-static char *ufld = NULL;
-static char *tokptr = NULL;
-static char *userband = NULL;
-static u32 ftemp = 0;
-static u32 frequency = 0;
-
-if(wantiffreqs == true) 
-	{
-	is = 0;
-	for(i = 0; i < (FREQUENCYLIST_MAX -1); i++)
-		{
-		if((ifaktfrequencylist + i)->status == 0)
-			{
-			(scanlist + is)->frequency = (ifaktfrequencylist + i)->frequency;
-			(scanlist + is)->channel = (ifaktfrequencylist + i)->channel;
-			is++;
-			}
-		if((ifaktfrequencylist + i)->frequency == 0) break;
-		}
-	return;
-	}
-if(wantuserfrequency != NULL)
-	{
-	ufld = strdup(wantuserfrequency);
-	tokptr = strtok(ufld, ",");
-	i = 0;
-	while((tokptr != NULL) && (i < (SCANLIST_MAX - 1)))
-		{
-		ftemp = strtol(tokptr, NULL, 10);
-		for(is = 0; is < (FREQUENCYLIST_MAX - 1); is++)
-			{
-			if((ifaktfrequencylist + i)->status != 0) continue;
-			if((ifaktfrequencylist + is)->frequency == 0) break;
-			if((ifaktfrequencylist + is)->frequency == ftemp)
-				{
-				(scanlist +i)->frequency = (ifaktfrequencylist + is)->frequency;
-				(scanlist +i)->channel = (ifaktfrequencylist + is)->channel;
-				i++;
-				}
-			}
-		(scanlist +i)->frequency = 0;
-		(scanlist +i)->channel = 0;
-		tokptr = strtok(NULL, ",");
-		}
-	free(ufld);
-	}
-if(wantuserchannel != NULL)
-	{
-	ufld = strdup(wantuserchannel);
-	tokptr = strtok(ufld, ",");
-	i = 0;
-	while((tokptr != NULL) && (i < (SCANLIST_MAX - 1)))
-		{
-		ftemp = strtol(tokptr, &userband, 10);
-		if(userband[0] == 'a') frequency = channel_to_frequency(ftemp, NL80211_BAND_2GHZ);
-		else if(userband[0] == 'b') frequency = channel_to_frequency(ftemp, NL80211_BAND_5GHZ);
-		else if(userband[0] == 'c') frequency = channel_to_frequency(ftemp, NL80211_BAND_6GHZ);
-		else if(userband[0] == 'd') frequency = channel_to_frequency(ftemp, NL80211_BAND_60GHZ);
-		else if(userband[0] == 'e') frequency = channel_to_frequency(ftemp, NL80211_BAND_S1GHZ);
-		else frequency = 0;
-		if(frequency > 0)
-			{
-			for(is = 0; is < (FREQUENCYLIST_MAX - 1); is++)
-				{
-				if((ifaktfrequencylist + i)->status != 0) continue;
-				if((ifaktfrequencylist + is)->frequency == frequency)
-					{
-					(scanlist +i)->frequency = (ifaktfrequencylist + is)->frequency;
-					(scanlist +i)->channel = (ifaktfrequencylist + is)->channel;
-					i++;
-					}
-				}
-			}
-		(scanlist +i)->frequency = 0;
-		(scanlist +i)->channel = 0;
-		tokptr = strtok(NULL, ",");
-		}
-	free(ufld);
-	}
-return;
-}
 /*===========================================================================*/
 static u16 addoption(u8 *posopt, u16 optioncode, u16 optionlen, char *option)
 {
@@ -748,8 +700,8 @@ idbhdr->block_type = IDBID;
 idbhdr->linktype = DLT_IEEE802_11_RADIO;
 idbhdr->reserved = 0;
 idbhdr->snaplen = PCAPNG_SNAPLEN;
-idblen += addoption(idb +idblen, IF_NAME, strnlen(ifakt.name, IF_NAMESIZE), ifakt.name);
-idblen += addoption(idb +idblen, IF_MACADDR, 6, (char*)ifakt.hwmac);
+idblen += addoption(idb +idblen, IF_NAME, strnlen(ifaktname, IF_NAMESIZE), ifaktname);
+idblen += addoption(idb +idblen, IF_MACADDR, 6, (char*)ifakthwmac);
 tr[0] = TSRESOL_USEC;
 idblen += addoption(idb +idblen, IF_TSRESOL, 1, tr);
 idblen += addoption(idb +idblen, SHB_EOC, 0, NULL);
@@ -804,10 +756,10 @@ static char pcapngname[PATH_MAX];
 
 c = 0;
 strftime(timestring, PATH_MAX, "%Y%m%d%H%M%S", localtime(&tvakt.tv_sec));
-snprintf(pcapngname, PATH_MAX, "%s-%s.pcapng", timestring, ifakt.name);
+snprintf(pcapngname, PATH_MAX, "%s-%s.pcapng", timestring, ifaktname);
 while(stat(pcapngname, &statinfo) == 0)
 	{
-	snprintf(pcapngname, PATH_MAX, "%s-%s-%02d.pcapng", timestring, ifakt.name, c);
+	snprintf(pcapngname, PATH_MAX, "%s-%s-%02d.pcapng", timestring, ifaktname, c);
 	c++;
 	}
 umask(0);
@@ -2197,10 +2149,11 @@ ev.events = EPOLLIN;
 if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_timer1, &ev) < 0) return false;
 epi++;
 
-scanlistindex = 0;
-if(nl_set_frequency() == false) errorcount++;
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
+
+printf("scanloop\n");
+
 while(!wanteventflag)
 	{
 	epret = epoll_pwait(fd_epoll, events, epi, -1, NULL);
@@ -2270,7 +2223,7 @@ static struct iwreq iwrq;
 
 if(((scanlist + scanlistindex)->frequency) == 0) scanlistindex = 0;
 memset(&iwrq, 0, sizeof(iwrq));
-strncpy(iwrq.ifr_name, ifakt.name, IF_NAMESIZE);
+strncpy(iwrq.ifr_name, ifaktname, IF_NAMESIZE);
 iwrq.u.freq.flags = IW_FREQ_FIXED;
 iwrq.u.freq.m = (scanlist + scanlistindex)->frequency;
 iwrq.u.freq.e = 6;
@@ -2279,15 +2232,15 @@ errorcount++;
 return;
 }
 /*---------------------------------------------------------------------------*/
-static void ioctl_get_wireless_extensions()
+static void ioctl_get_wireless_extensions(size_t i)
 {
 struct iwreq pwrq;
 static const char *protocol80211 = "IEEE 802.11";
 
 memset(&pwrq, 0, sizeof(pwrq));
-memcpy(pwrq.ifr_name, ifakt.name, IF_NAMESIZE);
+memcpy(pwrq.ifr_name, (ifpresentlist + i)->name, IF_NAMESIZE);
 if(ioctl(fd_socket_unix, SIOCGIWNAME, &pwrq) < 0) return;
-if(strncmp(protocol80211, pwrq.u.name, IF_NAMESIZE) == 0) ifakt.type |= IF_HAS_WEXT;
+if(strncmp(protocol80211, pwrq.u.name, IF_NAMESIZE) == 0) (ifpresentlist + i)->type |= IF_HAS_WEXT;
 return;
 }
 /*===========================================================================*/
@@ -2315,13 +2268,13 @@ static void *nla_data(const struct nlattr *nla)
 return (u8*)nla + NLA_HDRLEN;
 }
 /*---------------------------------------------------------------------------*/
-static void nl_get_supported_bands(struct nlattr* nla)
+static void nl_get_supported_bands(frequencylist_t *freql, struct nlattr* nla)
 {
 static ssize_t i;
 static struct nlattr *index, *pos, *index2, *pos2;
 static size_t nestremlen, nestremlen1, nestremlen2, nestremlen3;
 
-i = 0;
+i = (freql + i)->i;
 for(index = (struct nlattr*) nla_data(nla), nestremlen = nla_datalen(nla); nla_ok(index, nestremlen); index = nla_next(index, &(nestremlen)))
 	{
 	for(pos = (struct nlattr*) nla_data(index), nestremlen1 = nla_datalen(index); nla_ok(pos, nestremlen1); pos = nla_next(pos, &(nestremlen1)))
@@ -2334,13 +2287,14 @@ for(index = (struct nlattr*) nla_data(nla), nestremlen = nla_datalen(nla); nla_o
 					{
 					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_FREQ)
 						{
-						(ifaktfrequencylist + i)->frequency = *((u32*)nla_data(pos2));
-						(ifaktfrequencylist + i)->channel = frequency_to_channel((ifaktfrequencylist + i)->frequency);
+						(freql + i)->frequency = *((u32*)nla_data(pos2));
+						(freql + i)->channel = frequency_to_channel((freql + i)->frequency);
 						}
-					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_MAX_TX_POWER) (ifaktfrequencylist + i)->pwr = *((u32*)nla_data(pos2));
-					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_DISABLED) (ifaktfrequencylist + i)->status = IF_STAT_FREQ_DISABLED;
+					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_MAX_TX_POWER) (freql + i)->pwr = *((u32*)nla_data(pos2));
+					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_DISABLED) (freql + i)->status = IF_STAT_FREQ_DISABLED;
 					}
 				i++;
+				(freql + i)->i = i;
 				if(i > FREQUENCYLIST_MAX -1) return;
 				}
 			}
@@ -2361,16 +2315,20 @@ for(pos = (struct nlattr*) nla_data(nla), nestremlen = nla_datalen(nla); nla_ok(
 return 0;
 }
 /*---------------------------------------------------------------------------*/
-static bool nl_get_interfacelist(interface_t *iffoundlist)
+static bool nl_get_interfacelist()
 {
 static ssize_t i;
+static size_t ii;
 static ssize_t msglen;
 static size_t nlremlen = 0;
-static size_t iffix = 0;
+static u32 ifindex;
+static u32 wiphy;
 static struct nlmsghdr *nlh;
 static struct genlmsghdr *glh;
 static struct nlattr *nla;
 static struct nlmsgerr *nle;
+static char ifname[IF_NAMESIZE];
+static u8 vimac[ETH_ALEN];
 
 i = 0;
 nlh = (struct nlmsghdr*)nltxbuffer;
@@ -2386,6 +2344,7 @@ glh->reserved = 0;
 i += sizeof(struct genlmsghdr);
 nlh->nlmsg_len = i;
 if((write(fd_socket_nl, nltxbuffer, i)) != i) return false;
+ii = 0;
 while(1)
 	{
 	msglen = read(fd_socket_nl, &nlrxbuffer, NLRX_SIZE);
@@ -2408,16 +2367,31 @@ while(1)
 		nlremlen = 0;
 		for(nla = nla, nlremlen = NLMSG_PAYLOAD(nlh, 0); nla_ok(nla, nlremlen); nla = nla_next(nla, &(nlremlen)))
 			{
-			if(nla->nla_type == NL80211_ATTR_IFINDEX) (iffoundlist + iffix)->index = *((u32*)nla_data(nla));
-			if(nla->nla_type == NL80211_ATTR_IFNAME) strncpy((iffoundlist + iffix)->name, nla_data(nla), IF_NAMESIZE -1);
+			if(nla->nla_type == NL80211_ATTR_IFINDEX) ifindex = *((u32*)nla_data(nla));
+			if(nla->nla_type == NL80211_ATTR_IFNAME) strncpy(ifname, nla_data(nla), IF_NAMESIZE -1);
+			if(nla->nla_type == NL80211_ATTR_WIPHY) wiphy = *((u32*)nla_data(nla));
+			if(nla->nla_type == NL80211_ATTR_MAC)
+				{
+				if(nla->nla_len == 10) memcpy(vimac, nla_data(nla), ETH_ALEN);
+				}
+
 			}
-		if(iffix < INTERFACELIST_MAX - 1) iffix++;
+		for(ii = 0; ii < INTERFACELIST_MAX; ii++)
+			{
+			if((ifpresentlist + ii)->wiphy == wiphy)
+				{
+				(ifpresentlist + ii)->index = ifindex;
+				strncpy((ifpresentlist + ii)->name, ifname, IF_NAMESIZE);
+				memcpy((ifpresentlist + ii)->vimac, &vimac, ETH_ALEN);
+				break;
+				}
+			}
 		}
 	}
 return false;
 }
 /*---------------------------------------------------------------------------*/
-static bool nl_get_interfacetatus()
+static bool nl_get_interfacestatus()
 {
 static ssize_t i;
 static ssize_t msglen;
@@ -2442,7 +2416,7 @@ i += sizeof(struct genlmsghdr);
 nla = (struct nlattr*)(nltxbuffer + i);
 nla->nla_len = 8;
 nla->nla_type = NL80211_ATTR_IFINDEX;
-*(u32*)nla_data(nla) = ifakt.index;
+*(u32*)nla_data(nla) = ifaktindex;
 i += 8;
 nlh->nlmsg_len = i;
 if((write(fd_socket_nl, nltxbuffer, i)) != i) return false;
@@ -2468,13 +2442,9 @@ while(1)
 		nlremlen = 0;
 		for(nla = nla, nlremlen = NLMSG_PAYLOAD(nlh, 0); nla_ok(nla, nlremlen); nla = nla_next(nla, &(nlremlen)))
 			{
-			if(nla->nla_type == NL80211_ATTR_MAC)
-				{
-				if(nla->nla_len == 10) memcpy(ifakt.vimac, nla_data(nla), ETH_ALEN);
-				}
 			if(nla->nla_type == NL80211_ATTR_IFTYPE)
 				{
-				if(*((u32*)nla_data(nla)) == NL80211_IFTYPE_MONITOR) ifakt.status |= IF_STAT_MONITOR;
+				if(*((u32*)nla_data(nla)) == NL80211_IFTYPE_MONITOR) ifaktstatus |= IF_STAT_MONITOR;
 				}
 			}
 		}
@@ -2485,6 +2455,7 @@ return false;
 static bool nl_get_interfacecapabilities()
 {
 static ssize_t i;
+static ssize_t ii;
 static ssize_t msglen;
 static size_t nlremlen;
 static size_t dnlen;
@@ -2498,7 +2469,7 @@ static char driverlink[128] = { 0 };
 
 nlh = (struct nlmsghdr*)nltxbuffer;
 nlh->nlmsg_type = nlfamily; 
-nlh->nlmsg_flags =  NLM_F_REQUEST | NLM_F_ACK;
+nlh->nlmsg_flags =  NLM_F_REQUEST | NLM_F_DUMP | NLM_F_ACK;
 nlh->nlmsg_seq = nlseqcounter++;
 nlh->nlmsg_pid = hcxpid;
 i += sizeof(struct nlmsghdr);
@@ -2508,12 +2479,13 @@ glh->version = 1;
 glh->reserved = 0;
 i += sizeof(struct genlmsghdr);
 nla = (struct nlattr*)(nltxbuffer + i);
-nla->nla_len = 8;
-nla->nla_type = NL80211_ATTR_IFINDEX;
-*(u32*)nla_data(nla) = ifakt.index;
-i += 8;
+nla->nla_len = 4;
+nla->nla_type = NL80211_ATTR_SPLIT_WIPHY_DUMP;
+*(u32*)nla_data(nla) = ifaktindex;
+i += 4;
 nlh->nlmsg_len = i;
 if((write(fd_socket_nl, nltxbuffer, i)) != i) return false;
+ii = 0;
 while(1)
 	{
 	msglen = read(fd_socket_nl, &nlrxbuffer, NLRX_SIZE);
@@ -2537,22 +2509,23 @@ while(1)
 			{
 			if(nla->nla_type == NL80211_ATTR_WIPHY) 
 				{
-				ifakt.wiphy = *((u32*)nla_data(nla));
-				snprintf(driverfmt, 64, "/sys/class/ieee80211/phy%d/device/driver", ifakt.wiphy);
+				(ifpresentlist + ii)->wiphy = *((u32*)nla_data(nla));
+				snprintf(driverfmt, 64, "/sys/class/ieee80211/phy%d/device/driver", (ifpresentlist + ii)->wiphy);
 				if((dnlen = readlink(driverfmt, driverlink, 64)) > 0)
 					{
 					drivername = basename(driverlink);
-					if(drivername != NULL) strncpy(ifakt.driver, drivername, DRIVERNAME_MAX -1);
+					if(drivername != NULL) strncpy((ifpresentlist + ii)->driver, drivername, DRIVERNAME_MAX -1);
 					}
 				}
 			if(nla->nla_type == NL80211_ATTR_SUPPORTED_IFTYPES)
 				{
-				ifakt.type |= nl_get_supported_iftypes(nla);
-				ifakt.type |= IF_HAS_NETLINK;
+				(ifpresentlist + ii)->type |= nl_get_supported_iftypes(nla);
+				(ifpresentlist + ii)->type |= IF_HAS_NETLINK;
 				}
-			else if(nla->nla_type == NL80211_ATTR_WIPHY_BANDS) nl_get_supported_bands(nla);
+			if(nla->nla_type == NL80211_ATTR_WIPHY_BANDS) nl_get_supported_bands((ifpresentlist + ii)->frequencylist, nla);
 			}
 		}
+	if(ii < INTERFACELIST_MAX) ii++;
 	}
 return false;
 }
@@ -2582,7 +2555,7 @@ i += sizeof(struct genlmsghdr);
 nla = (struct nlattr*)(nltxbuffer + i);
 nla->nla_len = 8;
 nla->nla_type = NL80211_ATTR_IFINDEX;
-*(u32*)nla_data(nla) = ifakt.index;
+*(u32*)nla_data(nla) = ifaktindex;
 i += 8;
 nla = (struct nlattr*)(nltxbuffer + i);
 nla->nla_len = 8;
@@ -2650,7 +2623,7 @@ i += sizeof(struct genlmsghdr);
 nla = (struct nlattr*)(nltxbuffer + i);
 nla->nla_len = 8;
 nla->nla_type = NL80211_ATTR_IFINDEX;
-*(u32*)nla_data(nla) = ifakt.index;
+*(u32*)nla_data(nla) = ifaktindex;
 i += 8;
 nla = (struct nlattr*)(nltxbuffer + i);
 nla->nla_len = 8;
@@ -2703,7 +2676,7 @@ i += sizeof(struct nlmsghdr);
 ifih = (struct ifinfomsg*)(nltxbuffer+ i);
 ifih->ifi_family = 0;
 ifih->ifi_type = 0;
-ifih->ifi_index = ifakt.index;
+ifih->ifi_index = ifaktindex;
 ifih->ifi_flags = condition;
 ifih->ifi_change = 1;
 i += sizeof(struct ifinfomsg);
@@ -2736,8 +2709,6 @@ static ssize_t msglen;
 static struct nlmsghdr *nlh;
 static struct ifinfomsg *ifih;
 static struct nlmsgerr *nle;
-static struct rtattr *rta;
-size_t rtaremlen;
 
 i = 0;
 nlh = (struct nlmsghdr*)nltxbuffer;
@@ -2749,7 +2720,7 @@ i += sizeof(struct nlmsghdr);
 ifih = (struct ifinfomsg*)(nltxbuffer+ i);
 ifih->ifi_family = AF_PACKET;
 ifih->ifi_type = 0;
-ifih->ifi_index = ifakt.index;
+ifih->ifi_index = ifaktindex;
 ifih->ifi_flags = 0;
 ifih->ifi_change = 0;
 i += sizeof(struct ifinfomsg);
@@ -2771,17 +2742,75 @@ while(1)
 			return false;
 			}
 		ifih = (struct ifinfomsg*)NLMSG_DATA(nlh);
-		if((ifih->ifi_flags & IFF_UP) == IFF_UP) ifakt.status |= IF_STAT_UP;
+		if((ifih->ifi_flags & IFF_UP) == IFF_UP) ifaktstatus |= IF_STAT_UP;
+		}
+	}
+return false;
+}
+/*---------------------------------------------------------------------------*/
+static bool rt_get_interfacelist()
+{
+static ssize_t i;
+static ssize_t msglen;
+static struct nlmsghdr *nlh;
+static struct ifinfomsg *ifih;
+static struct nlmsgerr *nle;
+static struct rtattr *rta;
+static size_t rtaremlen;
+static u8 hwmac[ETH_ALEN];
+
+i = 0;
+nlh = (struct nlmsghdr*)nltxbuffer;
+nlh->nlmsg_type = RTM_GETLINK;
+nlh->nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP;
+nlh->nlmsg_seq = nlseqcounter++;
+nlh->nlmsg_pid = hcxpid;
+i += sizeof(struct nlmsghdr);
+ifih = (struct ifinfomsg*)(nltxbuffer+ i);
+ifih->ifi_family = AF_PACKET;
+ifih->ifi_type = 0;
+ifih->ifi_index = 0;
+ifih->ifi_flags = 0;
+ifih->ifi_change = 0;
+i += sizeof(struct ifinfomsg);
+rta = (struct rtattr*)(nltxbuffer+ i);
+rta->rta_type = IFLA_EXT_MASK;
+*(u32*)rta_data(rta) = 1;
+rta->rta_len = 8;
+i += 8;
+nlh->nlmsg_len = i;
+if((write(fd_socket_rt, nltxbuffer, i)) != i) return false;
+while(1)
+	{
+	msglen = read(fd_socket_rt, &nlrxbuffer, NLRX_SIZE);
+	if(msglen == -1) break;
+	if(msglen == 0) break;
+	for(nlh = (struct nlmsghdr*)nlrxbuffer; NLMSG_OK(nlh, msglen); nlh = NLMSG_NEXT (nlh, msglen))
+		{
+		if(nlh->nlmsg_type == NLMSG_DONE) return true;
+		if(nlh->nlmsg_type == NLMSG_ERROR)
+			{
+			nle = (struct nlmsgerr*)(nlrxbuffer + sizeof(struct nlmsghdr));
+			if(nle->error == 0) return true;
+			errorcount++;
+			return false;
+			}
+		ifih = (struct ifinfomsg*)NLMSG_DATA(nlh);
+		if((ifih->ifi_flags & IFF_UP) == IFF_UP) ifaktstatus |= IF_STAT_UP;
 		rta = (struct rtattr*)(NLMSG_DATA(nlh) + sizeof(struct ifinfomsg));
 		rtaremlen = NLMSG_PAYLOAD(nlh, 0) - sizeof(struct ifinfomsg);
 		for(rta = rta; RTA_OK(rta, rtaremlen); rta = RTA_NEXT(rta, rtaremlen))
 			{
 			if(rta->rta_type == IFLA_PERM_ADDRESS)
 				{
-				if(rta->rta_len == 10) memcpy(&ifakt.hwmac, rta_data(rta), ETH_ALEN);
+				if(rta->rta_len == 10) memcpy(hwmac, rta_data(rta), ETH_ALEN);
 				}
 			}
-
+		for(i = 0; i < INTERFACELIST_MAX; i++)
+			{
+			if((ifpresentlist + i)->index == ifih->ifi_index)
+				memcpy((ifpresentlist + i)->hwmac, &hwmac, ETH_ALEN);
+			}
 		}
 	}
 return false;
@@ -2847,50 +2876,153 @@ nlfamily = 0;
 return false;
 }
 /*===========================================================================*/
+static void usrfrequency_to_scanlist(u16 ufrq)
+{
+size_t i;
+
+if(ufrq == 0) return;
+for(i = 0; i < (FREQUENCYLIST_MAX -1); i++)
+	{
+	if((ifaktfrequencylist + i)->status == 0)
+		{
+		if((ifaktfrequencylist + i)->frequency == ufrq)
+			{
+			(scanlist + scanlistindex)->frequency = ufrq;
+			(scanlist + scanlistindex)->channel = frequency_to_channel(ufrq);
+			scanlistindex++;
+			return;
+			}
+		}
+	}
+return;
+}
+/*---------------------------------------------------------------------------*/
+static bool set_interface(bool interfacefrequencyflag, char *userfrequencylistname, char *userchannellistname)
+{
+static size_t i;
+static char *ufld = NULL;
+static char *tokptr = NULL;
+static char *userband = NULL;
+static u16 uband;
+static u32 ufreq;
+
+if(ifaktindex == 0)
+	{
+	for(i = 0; i < ifpresentlistcounter; i++)
+		{
+		if(((ifpresentlist + i)->type & IF_HAS_NLMON) == IF_HAS_NLMON)
+			{
+			ifaktindex = (ifpresentlist + i )->index;
+			memcpy(&ifaktname, (ifpresentlist + i )->name, IF_NAMESIZE);
+			memcpy(&ifakthwmac, (ifpresentlist + i )->hwmac, ETH_ALEN);
+			ifaktfrequencylist = (ifpresentlist + i)->frequencylist;
+			break;
+			}
+		}
+	}
+if(rt_set_interface(0) == false) return false;
+if(nl_set_monitormode() == false) return false;
+if(rt_set_interface(IFF_UP) == false) return false;
+if(nl_get_interfacestatus() == false) return false;
+if(rt_get_interfacestatus() == false) return false;
+
+scanlistindex = 0;
+if(interfacefrequencyflag == true)
+	{
+	for(i = 0; i < (FREQUENCYLIST_MAX -1); i++)
+		{
+		if((ifaktfrequencylist + i)->status == 0)
+			{
+			(scanlist + scanlistindex)->frequency = (ifaktfrequencylist + i)->frequency;
+			(scanlist + scanlistindex)->channel = (ifaktfrequencylist + i)->channel;
+			scanlistindex++;
+			}
+		if((ifaktfrequencylist + i)->frequency == 0) break;
+		}
+	}
+else if((userfrequencylistname != NULL) || (userchannellistname != NULL))
+	{
+	if(userfrequencylistname != NULL)
+		{
+		ufld = strdup(userfrequencylistname);
+		tokptr = strtok(ufld, ",");
+		while((tokptr != NULL) && (i < (SCANLIST_MAX - 1)))
+			{
+			usrfrequency_to_scanlist(strtol(tokptr, NULL, 10));
+			tokptr = strtok(NULL, ",");
+			}
+		free(ufld);
+		}
+	if(userchannellistname != NULL)
+		{
+		ufld = strdup(userchannellistname);
+		tokptr = strtok(ufld, ",");
+		while((tokptr != NULL) && (i < (SCANLIST_MAX - 1)))
+			{
+			uband = strtol(tokptr, &userband, 10);
+			if(userband[0] == 'a') ufreq = channel_to_frequency(uband, NL80211_BAND_2GHZ);
+			else if(userband[0] == 'b') ufreq = channel_to_frequency(uband, NL80211_BAND_5GHZ);
+			else if(userband[0] == 'c') ufreq = channel_to_frequency(uband, NL80211_BAND_6GHZ);
+			else if(userband[0] == 'd') ufreq = channel_to_frequency(uband, NL80211_BAND_60GHZ);
+			else if(userband[0] == 'e') ufreq = channel_to_frequency(uband, NL80211_BAND_S1GHZ);
+			usrfrequency_to_scanlist(ufreq);
+			tokptr = strtok(NULL, ",");
+			}
+		}
+	free(ufld);
+	}
+else
+	{
+	(scanlist + scanlistindex)->frequency = 2412;
+	(scanlist + scanlistindex++)->channel = 1;
+	(scanlist + scanlistindex)->frequency = 2437;
+	(scanlist + scanlistindex++)->channel = 6;
+	(scanlist + scanlistindex)->frequency = 2462;
+	(scanlist + scanlistindex++)->channel = 11;
+	(scanlist + scanlistindex)->frequency = 0;
+	(scanlist + scanlistindex)->channel = 0;
+	}
+scanlistindex = 0;
+if(nl_set_frequency() == false) return false;
+
+show_interfacecapabilities2();
+return true;
+}
 /*===========================================================================*/
 static bool set_monitormode()
 {
 if(rt_set_interface(0) == false) return false;
 if(nl_set_monitormode() == false) return false;
-if(nl_get_interfacetatus() == false) return false;
 if(rt_set_interface(IFF_UP) == false) return false;
+if(nl_get_interfacestatus() == false) return false;
 if(rt_get_interfacestatus() == false) return false;
-if((ifakt.status & IF_STAT_OK) != IF_STAT_OK) return false;
+show_interfacecapabilities();
+fprintf(stdout, "\n\nmonitor mode is active...\n");
 return true;
 }
 /*===========================================================================*/
-static bool get_interfaceinformation()
-{
-ioctl_get_wireless_extensions();
-if(nl_get_interfacetatus() == false) return false;
-if(nl_get_interfacecapabilities() == false) return false;
-if(rt_get_interfacestatus() == false) return false;
-return true;
-}
-/*---------------------------------------------------------------------------*/
-static bool get_first_suitable_interface()
+static bool get_interfacelist()
 {
 static size_t i;
-static interface_t *iffoundlist;
 
-if((iffoundlist = (interface_t*)calloc(INTERFACELIST_MAX, INTERFACELIST_SIZE)) == NULL) return false;
-if(nl_get_interfacelist(iffoundlist) == true)
+nl_get_familyid();
+if(nlfamily == 0)
 	{
-	for(i = 0; i < (INTERFACELIST_MAX - 1); i++)
-		{
-		if((iffoundlist + i)->index == 0) break;
-		ifakt.index = (iffoundlist + i)->index;
-		memcpy(ifakt.name, (iffoundlist + i)->name, IF_NAMESIZE);
-		if(nl_get_interfacecapabilities() == true)
-			{
-			if((ifakt.type & IF_HAS_MONITOR) == IF_HAS_MONITOR)
-			free(iffoundlist);
-			return true;
-			}
-		}
+	return false;
+	errorcount++;
 	}
-free(iffoundlist);
-return false;
+if(nl_get_interfacecapabilities() == false) return false;
+if(nl_get_interfacelist() == false) return false;
+for(i = 0; i < INTERFACELIST_MAX -1; i++)
+	{
+	if((ifpresentlist + i)->index == 0) break;
+	ioctl_get_wireless_extensions(i);
+	ifpresentlistcounter++;
+	}
+if(rt_get_interfacelist() == false) return false;
+if(ifpresentlistcounter == 0) return false;
+qsort(ifpresentlist, ifpresentlistcounter, INTERFACELIST_SIZE, sort_interfacelist_by_index);
+return true;
 }
 /*===========================================================================*/
 /* RAW PACKET SOCKET */
@@ -2902,12 +3034,12 @@ static int socket_rx_flags;
 
 if((fd_socket_tx = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) return false;
 memset(&mrq, 0, sizeof(mrq));
-mrq.mr_ifindex = ifakt.index;
+mrq.mr_ifindex = ifaktindex;
 mrq.mr_type = PACKET_MR_PROMISC;
 if(setsockopt(fd_socket_tx, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mrq, sizeof(mrq)) < 0) return false;
 memset(&saddr, 0, sizeof(saddr));
 saddr.sll_family = PF_PACKET;
-saddr.sll_ifindex = ifakt.index;
+saddr.sll_ifindex = ifaktindex;
 saddr.sll_protocol = htons(ETH_P_ALL);
 saddr.sll_halen = ETH_ALEN;
 saddr.sll_pkttype = PACKET_OTHERHOST;
@@ -2937,7 +3069,7 @@ if(bpfname != NULL)
 	}
 if((fd_socket_rx = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) return false;
 memset(&mrq, 0, sizeof(mrq));
-mrq.mr_ifindex = ifakt.index;
+mrq.mr_ifindex = ifaktindex;
 mrq.mr_type = PACKET_MR_PROMISC;
 if(setsockopt(fd_socket_rx, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mrq, sizeof(mrq)) < 0) return false;
 
@@ -2952,7 +3084,7 @@ if(bpf.len > 0)
 
 memset(&saddr, 0, sizeof(saddr));
 saddr.sll_family = PF_PACKET;
-saddr.sll_ifindex = ifakt.index;
+saddr.sll_ifindex = ifaktindex;
 saddr.sll_protocol = htons(ETH_P_ALL);
 saddr.sll_halen = ETH_ALEN;
 saddr.sll_pkttype = PACKET_OTHERHOST;
@@ -3087,16 +3219,6 @@ tshold = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
 seed += tvakt.tv_usec & 0x7fffffff;
 srand(seed);
 
-(scanlist + scanlistindex)->frequency = 2412;
-(scanlist + scanlistindex++)->channel = 1;
-(scanlist + scanlistindex)->frequency = 2437;
-(scanlist + scanlistindex++)->channel = 6;
-(scanlist + scanlistindex)->frequency = 2462;
-(scanlist + scanlistindex++)->channel = 11;
-(scanlist + scanlistindex)->frequency = 0;
-(scanlist + scanlistindex)->channel = 0;
-
-
 ouiaprg = (vendoraprg[rand() %((VENDORAPRG_SIZE / sizeof(int)))]) &0xffffff;
 nicaprg = rand() & 0xffffff;
 macaprg[5] = nicaprg & 0xff;
@@ -3140,11 +3262,21 @@ return;
 /*---------------------------------------------------------------------------*/
 static void close_lists()
 {
-if(maclist != 0) free(maclist);
-if(clientlist != 0) free(clientlist);
-if(aprglist != 0) free(aprglist);
-if(aplist != 0) free(aplist);
-if(scanlist != 0) free(scanlist);
+static size_t i;
+
+if(maclist != NULL) free(maclist);
+if(clientlist != NULL) free(clientlist);
+if(aprglist != NULL) free(aprglist);
+if(aplist != NULL) free(aplist);
+if(scanlist != NULL) free(scanlist);
+if(ifpresentlist != NULL)
+	{
+	for(i = 0; i < INTERFACELIST_MAX; i++)
+		{
+		if((ifpresentlist + i)->frequencylist != NULL) free((ifpresentlist + i)->frequencylist);
+		}
+	free(ifpresentlist);
+	}
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -3157,12 +3289,18 @@ return;
 /*---------------------------------------------------------------------------*/
 static bool init_lists()
 {
-if((ifaktfrequencylist = (frequencylist_t*)calloc(FREQUENCYLIST_MAX, FREQUENCYLIST_SIZE)) == NULL) return false;
+ssize_t i;
+
 if((scanlist = (frequencylist_t*)calloc(SCANLIST_MAX, FREQUENCYLIST_SIZE)) == NULL) return false;
 if((aplist = (aplist_t*)calloc(APLIST_MAX, APLIST_SIZE)) == NULL) return false;
 if((aprglist = (aprglist_t*)calloc(APRGLIST_MAX, APRGLIST_SIZE)) == NULL) return false;
 if((clientlist = (clientlist_t*)calloc(CLIENTLIST_MAX, CLIENTLIST_SIZE)) == NULL) return false;
 if((maclist = (maclist_t*)calloc(MACLIST_MAX, MACLIST_SIZE)) == NULL) return false;
+if((ifpresentlist = (interface_t*)calloc(INTERFACELIST_MAX, INTERFACELIST_SIZE)) == NULL) return false;
+for(i = 0; i < INTERFACELIST_MAX; i++)
+	{
+	if(((ifpresentlist + i)->frequencylist = (frequencylist_t*)calloc(FREQUENCYLIST_MAX, FREQUENCYLIST_SIZE)) == NULL) return false;
+	}
 return true;
 }
 /*===========================================================================*/
@@ -3514,18 +3652,17 @@ static const struct option long_options[] =
 };
 optind = 1;
 optopt = 0;
-memset(&ifakt, 0, INTERFACELIST_SIZE);
 while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) != -1)
 	{
 	switch (auswahl)
 		{
 		case HCX_IFNAME:
-		if((ifakt.index = if_nametoindex(optarg)) == 0)
+		if((ifaktindex = if_nametoindex(optarg)) == 0)
 			{
 			perror("failed to get interface index");
 			exit(EXIT_FAILURE);
 			}
-		strncpy(ifakt.name, optarg, IF_NAMESIZE -1);
+		strncpy(ifaktname, optarg, IF_NAMESIZE -1);
 		break;
 
 		case HCX_BPF:
@@ -3672,22 +3809,22 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		break;
 
 		case HCX_INTERFACE_INFO:
-		if((ifakt.index = if_nametoindex(optarg)) == 0)
+		if((ifaktindex = if_nametoindex(optarg)) == 0)
 			{
 			perror("failed to get interface index");
 			exit(EXIT_FAILURE);
 			}
-		strncpy(ifakt.name, optarg, IF_NAMESIZE -1);
+		strncpy(ifaktname, optarg, IF_NAMESIZE -1);
 		interfaceinfoflag = true;
 		break;
 
 		case HCX_SET_MONITORMODE:
-		if((ifakt.index = if_nametoindex(optarg)) == 0)
+		if((ifaktindex = if_nametoindex(optarg)) == 0)
 			{
 			perror("failed to get interface index");
 			exit(EXIT_FAILURE);
 			}
-		strncpy(ifakt.name, optarg, IF_NAMESIZE -1);
+		strncpy(ifaktname, optarg, IF_NAMESIZE -1);
 		monitormodeflag = true;
 		break;
 
@@ -3717,7 +3854,6 @@ if(set_signal_handler() == false)
 	{
 	errorcount++;
 	fprintf(stderr, "failed to initialize signal handler\n");
-	ifakt.type = 0;
 	goto byebye;
 	}
 if((gpiobutton + gpiostatusled) > 0)
@@ -3726,14 +3862,12 @@ if((gpiobutton + gpiostatusled) > 0)
 		{
 		errorcount++;
 		fprintf(stderr, "GPIO pin ERROR (same value of GPIO button and GPIO status LED)\n");
-		ifakt.type = 0;
 		goto byebye;
 		}
 	if(init_rpi() == false)
 		{
 		errorcount++;
 		fprintf(stderr, "failed to initialize Raspberry Pi GPIO\n");
-		ifakt.type = 0;
 		goto byebye;
 		}
 	}
@@ -3741,7 +3875,6 @@ if(init_lists() == false)
 	{
 	errorcount++;
 	fprintf(stderr, "failed to open control sockets\n");
-	ifakt.type = 0;
 	goto byebye;
 	}
 init_values();
@@ -3750,49 +3883,22 @@ if(open_control_sockets() == false)
 	{
 	errorcount++;
 	fprintf(stderr, "failed to open control sockets\n");
-	ifakt.type = 0;
 	goto byebye;
 	}
-nl_get_familyid();
-if(nlfamily == 0)
+if(get_interfacelist() == false)
 	{
 	errorcount++;
-	fprintf(stderr, "failed to get NL80211 family ID\n");
-	ifakt.type = 0;
+	fprintf(stderr, "failed to get interface list\n");
 	goto byebye;
 	}
 if(interfacelistflag == true)
 	{
-	if(show_interfacelist() == false)
-		{
-		errorcount++;
-		fprintf(stderr, "failed to get INTERFACE information\n");
-		ifakt.type = 0;
-		}
+	show_interfacelist();
 	goto byebye;
 	}
-if(ifakt.index == 0)
-	{
-	if(get_first_suitable_interface() == false)
-		{
-		errorcount++;
-		fprintf(stderr, "failed to get NL80211 family ID\n");
-		ifakt.type = 0;
-		goto byebye;
-		}
-	}
-if(get_interfaceinformation() == false)
-		{
-		errorcount++;
-		fprintf(stderr, "failed to get INTERFACE information\n");
-		ifakt.type = 0;
-		goto byebye;
-		}
 if(interfaceinfoflag == true)
 	{
-	show_interfaceinformation();
-	if(ifaktfrequencylist != NULL) free(ifaktfrequencylist);
-	ifakt.type = 0;
+	show_interfacecapabilities();
 	goto byebye;
 	}
 /*---------------------------------------------------------------------------*/
@@ -3800,65 +3906,57 @@ if(getuid() != 0)
 	{
 	errorcount++;
 	fprintf(stderr, "%s must be run as root\n", basename(argv[0]));
-	ifakt.type = 0;
-	goto byebye;
-	}
-if(set_monitormode() == false)
-	{
-	errorcount++;
-	fprintf(stderr, "failed to set monitor mode\n");
-	ifakt.type = 0;
 	goto byebye;
 	}
 if(monitormodeflag == true)
 	{
-	show_interfaceinformation();
-	if(ifaktfrequencylist != NULL) free(ifaktfrequencylist);
-	ifakt.type = 0;
+	if(set_monitormode() == false)
+		{
+		errorcount++;
+		fprintf(stderr, "failed to set monitor mode\n");
+		goto byebye;
+		}
+	}
+if(set_interface(interfacefrequencyflag, userfrequencylistname, userchannellistname) == false)
+	{
+	errorcount++;
+	fprintf(stderr, "failed to arm interface\n");
+	goto byebye;
+	}
+if(essidlistname != NULL) read_essidlist(essidlistname);
+if(open_pcapng() == false)
+	{
+	errorcount++;
+	fprintf(stderr, "failed to open dump file\n");
 	goto byebye;
 	}
 if(open_socket_rx(bpfname) == false)
 	{
 	errorcount++;
 	fprintf(stderr, "failed to open raw packet socket\n");
-	ifakt.type = 0;
 	goto byebye;
 	}
 if(open_socket_tx() == false)
 	{
 	errorcount++;
 	fprintf(stderr, "failed to open transmit socket\n");
-	ifakt.type = 0;
 	goto byebye;
 	}
 if(set_timer() == false)
 	{
 	errorcount++;
 	fprintf(stderr, "failed to initialize timer\n");
-	ifakt.type = 0;
 	goto byebye;
 	}
-if(essidlistname != NULL) read_essidlist(essidlistname);
-set_scanlist(interfacefrequencyflag, userfrequencylistname, userchannellistname);
-if(open_pcapng() == false)
-	{
-	errorcount++;
-	fprintf(stderr, "failed to open dump file\n");
-	ifakt.type = 0;
-	goto byebye;
-	}
-fprintf(stdout, "\nThis is a highly experimental penetration testing tool!\n"
+/*---------------------------------------------------------------------------*/
+fprintf(stdout, "\e[?25l\nThis is a highly experimental penetration testing tool!\n"
 		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n");
 if(bpf.len == 0) fprintf(stderr, "BPF is unset. Make sure hcxlabtool is running in a 100%% controlled environment!\n");
-#ifdef STATUSOUT
-show_interfaceinformation2();
-#endif
-if(ifaktfrequencylist != NULL) free(ifaktfrequencylist);
+
 if(nl_scanloop() == false)
 	{
 	errorcount++;
 	fprintf(stderr, "failed to intitalize epoll\n");
-	ifakt.type = 0;
 	}
 /*---------------------------------------------------------------------------*/
 byebye:
@@ -3921,7 +4019,7 @@ else if((wanteventflag & EXIT_ON_ERROR) == EXIT_ON_ERROR)
 		if(system("poweroff") != 0) fprintf(stderr, "\ncan't power off\n");
 		}
 	}
-fprintf(stdout, "\nbye-bye\n");
+fprintf(stdout, "\nbye-bye\n\e[?25h");
 return EXIT_SUCCESS;
 }
 /*===========================================================================*/

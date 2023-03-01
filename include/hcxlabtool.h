@@ -83,7 +83,7 @@
 
 #define PCAPNG_SNAPLEN		0xffff
 
-#define NLTX_SIZE		0xff
+#define NLTX_SIZE		0xfff
 #define NLRX_SIZE		0xffff
 
 #define WEAKCANDIDATEDEF	"12345678"
@@ -222,21 +222,22 @@ return 0;
 }
 /*---------------------------------------------------------------------------*/
 #define SCANLIST_MAX		1024
-#define FREQUENCYLIST_MAX	1024
+#define FREQUENCYLIST_MAX	256
 typedef struct __attribute__((__packed__))
 {
  u32	frequency;
  u32	channel;
  u32	pwr;
+ size_t	i;
 #define IF_STAT_FREQ_DISABLED	0b00000001
  u8	status;
 }frequencylist_t;
 #define FREQUENCYLIST_SIZE (sizeof(frequencylist_t))
 /*---------------------------------------------------------------------------*/
-#define INTERFACELIST_MAX	1024
+#define INTERFACELIST_MAX	64
 typedef struct __attribute__((__packed__)) 
 {
- u32	index;
+ int	index;
  u32	wiphy;
 #define IF_HAS_WEXT		0b00000001
 #define IF_HAS_NETLINK		0b00000010
@@ -252,8 +253,19 @@ typedef struct __attribute__((__packed__))
  u8	vimac[6];
  char	name[IFNAMSIZ];
  char	driver[DRIVERNAME_MAX];
+ frequencylist_t *frequencylist;
 }interface_t;
 #define INTERFACELIST_SIZE (sizeof(interface_t))
+
+static int sort_interfacelist_by_index(const void *a, const void *b)
+{
+const interface_t *ia = (const interface_t *)a;
+const interface_t *ib = (const interface_t *)b;
+
+if(ia->index > ib->index) return 1;
+else if(ia->index < ib->index) return -1;
+return 0;
+}
 /*===========================================================================*/
 typedef struct
 {
@@ -263,6 +275,5 @@ typedef struct
 }req_t;
 /*===========================================================================*/
 static bool read_bpf(char *bpfname);
-static bool nl_get_interfacelist(interface_t *iffoundlist);
 static inline bool nl_set_frequency();
 /*===========================================================================*/
