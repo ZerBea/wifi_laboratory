@@ -347,7 +347,7 @@ for(i = 0; i < ifpresentlistcounter; i++)
 		if(i % 4 == 0) fprintf(stdout, "\n");
 		else  fprintf(stdout, "\t");
 		if((iffreql + i)->status == 0) fprintf(stdout, "%6d [%3d] %.1f dBm", (iffreql + i)->frequency, (iffreql + i)->channel, 0.01 *(iffreql + i)->pwr);
-		else fprintf(stdout, "%6d [%3d]", (iffreql + i)->frequency, (iffreql + i)->channel);
+		else fprintf(stdout, "%6d [%3d] disabled", (iffreql + i)->frequency, (iffreql + i)->channel);
 		}
 	fprintf(stdout, "\n");
 	fprintf(stdout, "\n\nscan frequencies: frequency [channel] tx-power\n");
@@ -356,7 +356,7 @@ for(i = 0; i < ifpresentlistcounter; i++)
 		if((scanlist + i)->frequency == 0) break;
 		if(i % 4 == 0) fprintf(stdout, "\n");
 		else  fprintf(stdout, "\t");
-		fprintf(stdout, "%6d [%3d] disabled", (scanlist + i)->frequency, (scanlist + i)->channel);
+		fprintf(stdout, "%6d [%3d]", (scanlist + i)->frequency, (scanlist + i)->channel);
 		}
 	fprintf(stdout, "\n");
 	}
@@ -432,7 +432,7 @@ static inline void show_realtime()
 {
 static size_t i;
 static size_t p;
-static size_t pc;
+static size_t pa;
 static char *pmdef = " ";
 static char *pmok = "+";
 static char *ps;
@@ -442,24 +442,23 @@ system("clear");
 sprintf(&rtb[0], " PM MAC-AP       ESSID (STATUS)            %6u MHz [%3d]\n"
 	"-----------------------------------------------------------\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
 p = strlen(rtb);
-pc = 0;
-for(i = 0; i < 20; i++)
+i = 0;
+pa = 0;
+for(i = 0; i < 20 ; i++)
 	{
-	if((aplist + i)->tsakt != 0)
+	if((aplist + i)->tsakt == 0) break;
+	if((aplist + i)->ie.channel == (scanlist + scanlistindex)->channel)
 		{
-		if((aplist + i)->ie.channel == (scanlist + scanlistindex)->channel)
-			{
-			if(((aplist +i)->status & AP_PMKID) == AP_PMKID) ps = pmok;
-			else ps = pmdef;
-			if(((aplist +i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) ms = pmok;
-			else ms = pmdef;
-			sprintf(&rtb[p], " %s%s %02x%02x%02x%02x%02x%02x %.*s\n", ps, ms, (aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5], (aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
-			p = strlen(rtb);
-			pc++;
-			}
+		if(((aplist +i)->status & AP_PMKID) == AP_PMKID) ps = pmok;
+		else ps = pmdef;
+		if(((aplist +i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) ms = pmok;
+		else ms = pmdef;
+		sprintf(&rtb[p], " %s%s %02x%02x%02x%02x%02x%02x %.*s\n", ps, ms, (aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5], (aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
+		p = strlen(rtb);
+		pa++;
 		}
 	}
-for(i = 0; i < (22 - pc); i++) rtb[p++] = '\n';
+for(i = 0; i < (22 - pa); i++) rtb[p++] = '\n';
 sprintf(&rtb[p], "  M MAC-CLIENT   ESSID\n"
 	"-----------------------------------------------------------\n");
 p = strlen(rtb);
@@ -1907,6 +1906,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		(aplist + i)->status |= AP_PROBERESPONSE;
 		}
 	tagwalk_channel_essid_rsn(&(aplist + i)->ie, proberesponselen, proberesponse->ie);
+	if((aplist + i)->ie.channel == 0) (aplist + i)->ie.channel = (scanlist + scanlistindex)->channel;
 	if(((aplist + i)->ie.flags & APIE_ESSID) == APIE_ESSID) (aplist + i)->status |= AP_ESSID;
 	return;
 	}
@@ -1920,6 +1920,7 @@ memcpy((aplist + i)->macap, macfrx->addr3, ETH_ALEN);
 memcpy((aplist + i)->macclient, &macbc, ETH_ALEN);
 (aplist + i)->status |= AP_PROBERESPONSE;
 tagwalk_channel_essid_rsn(&(aplist + i)->ie, proberesponselen, proberesponse->ie);
+if((aplist + i)->ie.channel == 0) (aplist + i)->ie.channel = (scanlist + scanlistindex)->channel;
 if((aplist + i)->ie.channel != (scanlist + scanlistindex)->channel) return;
 if(((aplist + i)->ie.flags & APIE_ESSID) == APIE_ESSID) (aplist + i)->status |= AP_ESSID;
 if((aplist + i)->ie.channel == (scanlist + scanlistindex)->channel)
@@ -1965,6 +1966,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		}
 	if((aplist + i)->status >= AP_EAPOL_M3) return;
 	tagwalk_channel_essid_rsn(&(aplist + i)->ie, beaconlen, beacon->ie);
+	if((aplist + i)->ie.channel == 0) (aplist + i)->ie.channel = (scanlist + scanlistindex)->channel;
 	if((aplist + i)->ie.channel != (scanlist + scanlistindex)->channel) return;
 	if((aplist + i)->tsakt - (aplist + i)->tshold1 > TIMEBEACONNEW)
 		{
@@ -2020,6 +2022,7 @@ memcpy((aplist + i)->macap, macfrx->addr3, ETH_ALEN);
 memcpy((aplist + i)->macclient, &macbc, ETH_ALEN);
 (aplist + i)->status |= AP_BEACON;
 tagwalk_channel_essid_rsn(&(aplist + i)->ie, beaconlen, beacon->ie);
+if((aplist + i)->ie.channel == 0) (aplist + i)->ie.channel = (scanlist + scanlistindex)->channel;
 if((aplist + i)->ie.channel != (scanlist + scanlistindex)->channel) return;
 if(((aplist + i)->ie.flags & APIE_ESSID) == APIE_ESSID) (aplist + i)->status |= AP_ESSID;
 if((aplist + i)->ie.channel == (scanlist +scanlistindex)->channel)
