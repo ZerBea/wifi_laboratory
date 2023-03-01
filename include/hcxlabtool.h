@@ -82,6 +82,7 @@
 #define M1_RETRY_SLEEP		100;
 
 #define PCAPNG_SNAPLEN		0xffff
+#define RTD_LEN			9128
 
 #define NLTX_SIZE		0xfff
 #define NLRX_SIZE		0xffff

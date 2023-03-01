@@ -303,6 +303,7 @@ static u8 macclientrg[ETH_ALEN] = { 0 };
 static u8 anoncerg[32] = { 0 };
 static u8 snoncerg[32] = { 0 };
 static char weakcandidate[PSK_MAX];
+static char timestring[16];
 
 static authseqakt_t authseqakt = { 0 };
 
@@ -313,7 +314,7 @@ static u8 epbown[PCAPNG_SNAPLEN * 2] = { 0 };
 static u8 epb[PCAPNG_SNAPLEN * 2] = { 0 };
 
 #ifdef STATUSOUT
-static char rtb[9128] = { 0 };
+static char rtb[RTD_LEN] = { 0 };
 #endif
 /*===========================================================================*/
 /*===========================================================================*/
@@ -429,9 +430,9 @@ return;
 #ifdef STATUSOUT
 static inline void show_realtime()
 {
-size_t i;
-size_t p;
-size_t pc;
+static size_t i;
+static size_t p;
+static size_t pc;
 static char *pmdef = " ";
 static char *pmok = "+";
 static char *ps;
@@ -751,11 +752,9 @@ static bool open_pcapng()
 {
 static int c;
 static struct stat statinfo;
-static char timestring[16];
 static char pcapngname[PATH_MAX];
 
 c = 0;
-strftime(timestring, PATH_MAX, "%Y%m%d%H%M%S", localtime(&tvakt.tv_sec));
 snprintf(pcapngname, PATH_MAX, "%s-%s.pcapng", timestring, ifaktname);
 while(stat(pcapngname, &statinfo) == 0)
 	{
@@ -2126,6 +2125,7 @@ else if(macfrx->type == IEEE80211_FTYPE_DATA)
 return;
 }
 /*===========================================================================*/
+/*===========================================================================*/
 /* MAIN SCAN LOOP */
 static bool nl_scanloop()
 {
@@ -2151,9 +2151,6 @@ epi++;
 
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
-
-printf("scanloop\n");
-
 while(!wanteventflag)
 	{
 	epret = epoll_pwait(fd_epoll, events, epi, -1, NULL);
@@ -3100,6 +3097,7 @@ while((!wanteventflag) || (c != 0))
 return true;
 }
 /*===========================================================================*/
+/* GPSD SOCKET */
 /*===========================================================================*/
 /* CONTROL SOCKETS */
 static void close_sockets()
@@ -3215,6 +3213,7 @@ nanosleep(&waitfordevice, NULL);
 gettimeofday(&tvakt, NULL);
 tsakt = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
 tshold = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
+strftime(timestring, PATH_MAX, "%Y%m%d%H%M%S", localtime(&tvakt.tv_sec));
 
 seed += tvakt.tv_usec & 0x7fffffff;
 srand(seed);
