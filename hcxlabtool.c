@@ -439,8 +439,8 @@ static char *ps;
 static char *ms;
 
 system("clear");
-sprintf(&rtb[0], "  FREQ    CH PM MAC-AP       ESSID (STATUS)                     %6u MHz\n"
-	"--------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency);
+sprintf(&rtb[0], " PM MAC-AP       ESSID (STATUS)            %6u MHz [%3d]\n"
+	"-----------------------------------------------------------\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
 p = strlen(rtb);
 pc = 0;
 for(i = 0; i < 20; i++)
@@ -453,15 +453,15 @@ for(i = 0; i < 20; i++)
 			else ps = pmdef;
 			if(((aplist +i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) ms = pmok;
 			else ms = pmdef;
-			sprintf(&rtb[p], "%6d [%3d] %s%s %02x%02x%02x%02x%02x%02x %.*s\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel, ps, ms, (aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5], (aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
+			sprintf(&rtb[p], " %s%s %02x%02x%02x%02x%02x%02x %.*s\n", ps, ms, (aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5], (aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
 			p = strlen(rtb);
 			pc++;
 			}
 		}
 	}
 for(i = 0; i < (22 - pc); i++) rtb[p++] = '\n';
-sprintf(&rtb[p], " M MAC-CLIENT   ESSID\n"
-	"-----------------------------------------------------------------------\n");
+sprintf(&rtb[p], "  M MAC-CLIENT   ESSID\n"
+	"-----------------------------------------------------------\n");
 p = strlen(rtb);
 for(i = 0; i < 20; i++)
 	{
