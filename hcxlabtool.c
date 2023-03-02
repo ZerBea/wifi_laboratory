@@ -2113,8 +2113,6 @@ if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 	if(packetlen == - 1) errorcount++;
 	return;
 	}
-
-
 if(memcmp(&nmeabuffer[1], gpgga, 6) != 0) return;
 i = 0;
 nmeaptr = nmeabuffer + 7;
@@ -2332,17 +2330,19 @@ return;
 }
 /*===========================================================================*/
 /* NETLINK */
-static struct nlattr *nla_next(const struct nlattr *nla, size_t *remaining)
+static struct nlattr *nla_next(const struct nlattr *nla, int *remaining)
 {
-size_t totlen = NLA_ALIGN(nla->nla_len);
+int totlen = NLA_ALIGN(nla->nla_len);
 
 *remaining -= totlen;
-return (struct nlattr*) ((u8*)nla +totlen);
+return (struct nlattr*)((u8*)nla + totlen);
 }
 /*---------------------------------------------------------------------------*/
-static size_t nla_ok(const struct nlattr *nla, size_t remaining)
+static int nla_ok(const struct nlattr *nla, int remaining)
 {
-return remaining >= (int) sizeof(*nla) && nla->nla_len >= sizeof(*nla) && nla->nla_len <= remaining;
+size_t r = remaining;
+
+return r >= sizeof(*nla) && nla->nla_len >= sizeof(*nla) && nla->nla_len <= r;
 }
 /*---------------------------------------------------------------------------*/
 static int nla_datalen(const struct nlattr *nla)
@@ -2359,7 +2359,7 @@ static void nl_get_supported_bands(frequencylist_t *freql, struct nlattr* nla)
 {
 static ssize_t i;
 static struct nlattr *index, *pos, *index2, *pos2;
-static size_t nestremlen, nestremlen1, nestremlen2, nestremlen3;
+static int nestremlen, nestremlen1, nestremlen2, nestremlen3;
 
 i = (freql + i)->i;
 for(index = (struct nlattr*) nla_data(nla), nestremlen = nla_datalen(nla); nla_ok(index, nestremlen); index = nla_next(index, &(nestremlen)))
@@ -2393,7 +2393,7 @@ return;
 static u8 nl_get_supported_iftypes(struct nlattr* nla)
 {
 static struct nlattr *pos = NULL;
-static size_t nestremlen;
+static int nestremlen;
 
 for(pos = (struct nlattr*) nla_data(nla), nestremlen = nla_datalen(nla); nla_ok(pos, nestremlen); pos = nla_next(pos, &(nestremlen)))
 	{
@@ -2407,7 +2407,7 @@ static bool nl_get_interfacelist()
 static ssize_t i;
 static size_t ii;
 static ssize_t msglen;
-static size_t nlremlen = 0;
+static int nlremlen = 0;
 static u32 ifindex;
 static u32 wiphy;
 static struct nlmsghdr *nlh;
@@ -2451,17 +2451,20 @@ while(1)
 		glh = (struct genlmsghdr*)NLMSG_DATA(nlh);
 		if(glh->cmd != NL80211_CMD_NEW_INTERFACE) continue;
 		nla = (struct nlattr*)(NLMSG_DATA(nlh) + sizeof(struct genlmsghdr));
-		nlremlen = 0;
-		for(nla = nla, nlremlen = NLMSG_PAYLOAD(nlh, 0); nla_ok(nla, nlremlen); nla = nla_next(nla, &(nlremlen)))
+		nlremlen =  NLMSG_PAYLOAD(nlh, 0) -4;
+		while(nla_ok(nla, nlremlen))
 			{
 			if(nla->nla_type == NL80211_ATTR_IFINDEX) ifindex = *((u32*)nla_data(nla));
 			if(nla->nla_type == NL80211_ATTR_IFNAME) strncpy(ifname, nla_data(nla), IF_NAMESIZE -1);
-			if(nla->nla_type == NL80211_ATTR_WIPHY) wiphy = *((u32*)nla_data(nla));
+			if(nla->nla_type == NL80211_ATTR_WIPHY)
+				{
+				wiphy = *((u32*)nla_data(nla));
+				}
 			if(nla->nla_type == NL80211_ATTR_MAC)
 				{
 				if(nla->nla_len == 10) memcpy(vimac, nla_data(nla), ETH_ALEN);
 				}
-
+			nla = nla_next(nla, &nlremlen);
 			}
 		for(ii = 0; ii < INTERFACELIST_MAX; ii++)
 			{
@@ -2482,7 +2485,7 @@ static bool nl_get_interfacestatus()
 {
 static ssize_t i;
 static ssize_t msglen;
-static size_t nlremlen = 0;
+static int nlremlen = 0;
 static struct nlmsghdr *nlh;
 static struct genlmsghdr *glh;
 static struct nlattr *nla;
@@ -2526,13 +2529,14 @@ while(1)
 		glh = (struct genlmsghdr*)NLMSG_DATA(nlh);
 		if(glh->cmd != NL80211_CMD_NEW_INTERFACE) continue;
 		nla = (struct nlattr*)(NLMSG_DATA(nlh) + sizeof(struct genlmsghdr));
-		nlremlen = 0;
-		for(nla = nla, nlremlen = NLMSG_PAYLOAD(nlh, 0); nla_ok(nla, nlremlen); nla = nla_next(nla, &(nlremlen)))
+		nlremlen =  NLMSG_PAYLOAD(nlh, 0) -4;
+		while(nla_ok(nla, nlremlen))
 			{
 			if(nla->nla_type == NL80211_ATTR_IFTYPE)
 				{
 				if(*((u32*)nla_data(nla)) == NL80211_IFTYPE_MONITOR) ifaktstatus |= IF_STAT_MONITOR;
 				}
+			nla = nla_next(nla, &nlremlen);
 			}
 		}
 	}
@@ -2544,7 +2548,7 @@ static bool nl_get_interfacecapabilities()
 static ssize_t i;
 static ssize_t ii;
 static ssize_t msglen;
-static size_t nlremlen;
+static int nlremlen;
 static size_t dnlen;
 static struct nlmsghdr *nlh;
 static struct genlmsghdr *glh;
@@ -2592,12 +2596,14 @@ while(1)
 		glh = (struct genlmsghdr*)NLMSG_DATA(nlh);
 		if(glh->cmd != NL80211_CMD_NEW_WIPHY) continue;
 		nla = (struct nlattr*)(NLMSG_DATA(nlh) + sizeof(struct genlmsghdr));
-		for(nla = nla, nlremlen = NLMSG_PAYLOAD(nlh, 0); nla_ok(nla, nlremlen); nla = nla_next(nla, &(nlremlen)))
+		nlremlen =  NLMSG_PAYLOAD(nlh, 0) -4;
+		while(nla_ok(nla, nlremlen))
 			{
 			if(nla->nla_type == NL80211_ATTR_WIPHY) 
 				{
 				(ifpresentlist + ii)->wiphy = *((u32*)nla_data(nla));
 				snprintf(driverfmt, 64, "/sys/class/ieee80211/phy%d/device/driver", (ifpresentlist + ii)->wiphy);
+				memset(&driverlink, 0, 128);
 				if((dnlen = readlink(driverfmt, driverlink, 64)) > 0)
 					{
 					drivername = basename(driverlink);
@@ -2610,6 +2616,7 @@ while(1)
 				(ifpresentlist + ii)->type |= IF_HAS_NETLINK;
 				}
 			if(nla->nla_type == NL80211_ATTR_WIPHY_BANDS) nl_get_supported_bands((ifpresentlist + ii)->frequencylist, nla);
+			nla = nla_next(nla, &nlremlen);
 			}
 		}
 	if(ii < INTERFACELIST_MAX) ii++;
@@ -2843,7 +2850,7 @@ static struct nlmsghdr *nlh;
 static struct ifinfomsg *ifih;
 static struct nlmsgerr *nle;
 static struct rtattr *rta;
-static size_t rtaremlen;
+static int rtaremlen;
 static u8 hwmac[ETH_ALEN];
 
 i = 0;
@@ -2886,12 +2893,13 @@ while(1)
 		if((ifih->ifi_flags & IFF_UP) == IFF_UP) ifaktstatus |= IF_STAT_UP;
 		rta = (struct rtattr*)(NLMSG_DATA(nlh) + sizeof(struct ifinfomsg));
 		rtaremlen = NLMSG_PAYLOAD(nlh, 0) - sizeof(struct ifinfomsg);
-		for(rta = rta; RTA_OK(rta, rtaremlen); rta = RTA_NEXT(rta, rtaremlen))
+		while(RTA_OK(rta, rtaremlen))
 			{
 			if(rta->rta_type == IFLA_PERM_ADDRESS)
 				{
 				if(rta->rta_len == 10) memcpy(hwmac, rta_data(rta), ETH_ALEN);
 				}
+			rta = RTA_NEXT(rta, rtaremlen);
 			}
 		for(i = 0; i < INTERFACELIST_MAX; i++)
 			{
@@ -2911,7 +2919,7 @@ static struct nlmsghdr *nlh;
 static struct genlmsghdr *glh;
 static struct nlattr *nla;
 static struct nlmsgerr *nle;
-static size_t nlremlen = 0;
+static int nlremlen = 0;
 
 i = 0;
 nlfamily = 0;
@@ -2953,9 +2961,11 @@ while(1)
 		glh = (struct genlmsghdr*)NLMSG_DATA(nlh);
 		nla = (struct nlattr*)(NLMSG_DATA(nlh) + sizeof(struct genlmsghdr));
 		nlremlen = 0;
-		for(nla = nla, nlremlen = NLMSG_PAYLOAD(nlh, 0) + sizeof(struct genlmsghdr); nla_ok(nla, nlremlen); nla = nla_next(nla, &(nlremlen)))
+		nlremlen =  NLMSG_PAYLOAD(nlh, 0) -4;
+		while(nla_ok(nla, nlremlen))
 			{
 			if(nla->nla_type == CTRL_ATTR_FAMILY_ID) nlfamily = *((u32*)nla_data(nla));
+			nla = nla_next(nla, &nlremlen);
 			}
 		}
 	}
