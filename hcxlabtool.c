@@ -317,7 +317,7 @@ static u8 nlrxbuffer[NLRX_SIZE] = { 0 };
 
 static u8 epbown[PCAPNG_SNAPLEN * 2] = { 0 };
 static u8 epb[PCAPNG_SNAPLEN * 2] = { 0 };
-static char nmeabuffer[NMEA_MAX] = { 0 };
+static char nmeabuffer[NMEA_SIZE] = { 0 };
 
 #ifdef STATUSOUT
 static char rtb[RTD_LEN] = { 0 };
@@ -2103,15 +2103,15 @@ return;
 /*===========================================================================*/
 static inline void process_nmea0183()
 {
-static const char *gpgga = "$GPGGA";
+static const char *gpgga = "GPGGA,";
 
-if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_MAX)) < NMEA_MIN)
+if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 	{
 	if(packetlen == - 1) errorcount++;
 	return;
 	}
 
-if(memcmp(&nmeabuffer, gpgga, 6) != 0) return;
+if(memcmp(&nmeabuffer[1], gpgga, 6) != 0) return;
 
 return;
 }
