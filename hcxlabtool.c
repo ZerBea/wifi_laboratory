@@ -26,6 +26,7 @@
 #include <sys/time.h>
 #include <sys/timerfd.h>
 #include <sys/utsname.h>
+#include <termios.h>
 
 #include "include/types.h"
 #include "include/hcxlabtool.h"
@@ -71,6 +72,8 @@ static int fd_socket_rx = 0;
 static int fd_socket_tx = 0;
 static int fd_timer1 = 0;
 static int fd_pcapng = 0;
+static int fd_nmea0183 = 0;
+static int fd_nmea0183data = 0;
 static struct sock_fprog bpf = { 0 };
 
 static int ifaktindex = 0;
@@ -143,6 +146,8 @@ static u16 keyinfo = 0;
 static u8 kdv = 0;
 
 static enhanced_packet_block_t *epbhdr = NULL;
+
+static ssize_t nmealen = 0;
 
 static ieee80211_mac_t *macftx = NULL;
 static u8 *packetoutptr = NULL;
@@ -312,6 +317,7 @@ static u8 nlrxbuffer[NLRX_SIZE] = { 0 };
 
 static u8 epbown[PCAPNG_SNAPLEN * 2] = { 0 };
 static u8 epb[PCAPNG_SNAPLEN * 2] = { 0 };
+static char nmeabuffer[NMEA_MAX] = { 0 };
 
 #ifdef STATUSOUT
 static char rtb[RTD_LEN] = { 0 };
@@ -771,6 +777,39 @@ return true;
 /*===========================================================================*/
 /* TX 802.11 */
 /*===========================================================================*/
+static inline void send_80211_associationrequest_org(size_t i)
+{
+ssize_t ii;
+
+ii = RTHTX_SIZE;
+macftx = (ieee80211_mac_t*)(packetoutptr + ii);
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_ASSOC_REQ;
+packetoutptr[ii + 1] = 0;
+macftx->duration = 0x013a;
+memcpy(macftx->addr1, macfrx->addr2, ETH_ALEN);
+memcpy(macftx->addr2, (aplist + i)->macclient, ETH_ALEN);
+memcpy(macftx->addr3, macfrx->addr3, ETH_ALEN);
+macftx->sequence = seqcounter2++ << 4;
+if(seqcounter1 > 4095) seqcounter2 = 1;
+ii += MAC_SIZE_NORM;
+memcpy(&packetoutptr[ii], &associationrequestcapa, ASSOCIATIONREQUESTCAPA_SIZE);
+ii += ASSOCIATIONREQUESTCAPA_SIZE;
+packetoutptr[ii ++] = 0;
+packetoutptr[ii ++] = (aplist + i)->ie.essidlen;
+memcpy(&packetoutptr[ii], (aplist + i)->ie.essid, (aplist + i)->ie.essidlen);
+ii += (aplist + i)->ie.essidlen;
+memcpy(&packetoutptr[ii], &associationrequestdata, ASSOCIATIONREQUEST_SIZE);
+if(((aplist + i)->ie.flags & APGS_CCMP) == APGS_CCMP) packetoutptr[ii +0x17] = RSN_CS_CCMP;
+else if(((aplist + i)->ie.flags & APGS_TKIP) == APGS_TKIP) packetoutptr[ii +0x17] = RSN_CS_TKIP;
+if(((aplist + i)->ie.flags & APCS_CCMP) == APCS_CCMP) packetoutptr[ii +0x1d] = RSN_CS_CCMP;
+else if(((aplist + i)->ie.flags & APCS_TKIP) == APCS_TKIP) packetoutptr[ii +0x1d] = RSN_CS_TKIP;
+ii += ASSOCIATIONREQUEST_SIZE;
+if((write(fd_socket_tx, packetoutptr, ii)) == ii) return;
+errorcount++;
+return;
+}
+/*---------------------------------------------------------------------------*/
 static inline void send_80211_associationrequest(size_t i)
 {
 ssize_t ii;
@@ -1894,6 +1933,8 @@ static size_t i;
 static ieee80211_beacon_proberesponse_t *proberesponse;
 static u16 proberesponselen;
 
+return;
+
 proberesponse = (ieee80211_beacon_proberesponse_t*)payloadptr;
 if((proberesponselen = payloadlen - IEEE80211_PROBERESPONSE_SIZE) < IEEE80211_IETAG_SIZE) return;
 for(i = 0; i < APLIST_MAX - 1; i++)
@@ -2009,7 +2050,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		{
 		if(((aplist + i)->count % 8) == 2)
 			{
-			if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_associationrequest(i);
+			if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_associationrequest_org(i);
 			}
 		if(((aplist + i)->count % 8) == 0)
 			{
@@ -2050,7 +2091,7 @@ if((aplist + i)->ie.channel == (scanlist +scanlistindex)->channel)
 		}
 	if(reassociationflag == true)
 		{
-		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
+		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_associationrequest_org(i);
 		}
 	}
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
@@ -2059,6 +2100,21 @@ writeepb();
 return;
 }
 /*===========================================================================*/
+/*===========================================================================*/
+static inline void process_nmea0183()
+{
+static const char *gpgga = "$GPGGA";
+
+if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_MAX)) < NMEA_MIN)
+	{
+	if(packetlen == - 1) errorcount++;
+	return;
+	}
+
+if(memcmp(&nmeabuffer, gpgga, 6) != 0) return;
+
+return;
+}
 /*===========================================================================*/
 static inline void process_packet()
 {
@@ -2158,6 +2214,13 @@ ev.events = EPOLLIN;
 if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_timer1, &ev) < 0) return false;
 epi++;
 
+if(fd_nmea0183 > 0)
+	{
+	ev.data.fd = fd_nmea0183;
+	ev.events = EPOLLIN;
+	if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_nmea0183, &ev) < 0) return false;
+	epi++;
+	}
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
 while(!wanteventflag)
@@ -2216,6 +2279,7 @@ while(!wanteventflag)
 				}
 			send_80211_beacon();
 			}
+		else if(events[i].data.fd == fd_nmea0183) process_nmea0183();
 		}
 	}
 return true;
@@ -3108,7 +3172,46 @@ while((!wanteventflag) || (c != 0))
 return true;
 }
 /*===========================================================================*/
-/* GPSD SOCKET */
+/* NMEA0183 device */
+static bool open_nmea0183_device(char *nmea0183name)
+{
+static int c;
+static struct termios tty;
+static struct stat statinfo;
+static char nmea0183dataname[PATH_MAX];
+
+if((fd_nmea0183 = open(nmea0183name, O_RDONLY | O_NONBLOCK)) < 0) return false;
+if(tcgetattr(fd_nmea0183, &tty) < 0) return false;
+tty.c_cflag &= ~PARENB; // Clear parity bit, disabling parity (most common)
+tty.c_cflag &= ~CSTOPB; // Clear stop field, only one stop bit used in communication (most common)
+tty.c_cflag &= ~CSIZE; // Clear all bits that set the data size 
+tty.c_cflag |= CS8; // 8 bits per byte (most common)
+tty.c_cflag &= ~CRTSCTS; // Disable RTS/CTS hardware flow control (most common)
+tty.c_cflag |= CREAD | CLOCAL; // Turn on READ & ignore ctrl lines (CLOCAL = 1)
+tty.c_lflag &= ~ICANON;
+tty.c_lflag &= ~ECHO; // Disable echo
+tty.c_lflag &= ~ECHOE; // Disable erasure
+tty.c_lflag &= ~ECHONL; // Disable new-line echo
+tty.c_lflag &= ~ISIG; // Disable interpretation of INTR, QUIT and SUSP
+tty.c_iflag &= ~(IXON | IXOFF | IXANY); // Turn off s/w flow ctrl
+tty.c_iflag &= ~(IGNBRK|BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL); // Disable any special handling of received bytes
+tty.c_oflag &= ~OPOST; // Prevent special interpretation of output bytes (e.g. newline chars)
+tty.c_oflag &= ~ONLCR; // Prevent conversion of newline to carriage return/line feed
+tty.c_cc[VTIME] = 10;    // Wait for up to 1s (10 deciseconds), returning as soon as any data is received.
+tty.c_cc[VMIN] = 0;
+cfsetispeed(&tty, B9600);
+cfsetospeed(&tty, B9600);
+if (tcsetattr(fd_nmea0183, TCSANOW, &tty) < 0) return false;
+c = 0;
+snprintf(nmea0183dataname, PATH_MAX, "%s-%s.gps", timestring, "nmea0183");
+while(stat(nmea0183dataname, &statinfo) == 0)
+	{
+	snprintf(nmea0183dataname, PATH_MAX, "%s-%s-%02d.gps", timestring, "nmea0183", c);
+	c++;
+	}
+if((fd_nmea0183data = open(nmea0183dataname, O_WRONLY | O_CREAT, 0777)) < 0) return false;
+return true;
+}
 /*===========================================================================*/
 /* CONTROL SOCKETS */
 static void close_sockets()
@@ -3294,6 +3397,8 @@ static void close_fds()
 {
 if(fd_timer1 != 0) close(fd_timer1);
 if(fd_pcapng != 0) close(fd_pcapng);
+if(fd_nmea0183 != 0) close(fd_nmea0183);
+if(fd_nmea0183data != 0) close(fd_nmea0183data);
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -3632,6 +3737,7 @@ static char *bpfname = NULL;
 static char *essidlistname = NULL;
 static char *userchannellistname = NULL;
 static char *userfrequencylistname = NULL;
+static char *nmea0183name = NULL;
 static const char *rebootstring = "reboot";
 static const char *poweroffstring = "poweroff";
 static const char *short_options = "i:c:f:m:I:t:FLhv";
@@ -3647,6 +3753,7 @@ static const struct option long_options[] =
 	{"attemptapmax",		required_argument,	NULL,	HCX_ATTEMPT_AP_MAX},
 	{"tot",				required_argument,	NULL,	HCX_TOT},
 	{"essidlist",			required_argument,	NULL,	HCX_ESSIDLIST},
+	{"nmea0183",			required_argument,	NULL,	HCX_NMEA0183},
 	{"errormax",			required_argument,	NULL,	HCX_ERROR_MAX},
 	{"watchdogmax",			required_argument,	NULL,	HCX_WATCHDOG_MAX},
 	{"onsigterm",			required_argument,	NULL,	HCX_ON_SIGTERM},
@@ -3842,6 +3949,10 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		interfacelistflag = true;
 		break;
 
+		case HCX_NMEA0183:
+		nmea0183name = optarg;
+		break;
+
 		case HCX_HELP:
 		usage(basename(argv[0]));
 		break;
@@ -3888,6 +3999,13 @@ if(init_lists() == false)
 	goto byebye;
 	}
 init_values();
+if(nmea0183name != NULL)
+	{if(open_nmea0183_device(nmea0183name) == false)
+		{
+		errorcount++;
+		fprintf(stderr, "failed to open NMEA0183 device\n");
+		}
+	}
 /*---------------------------------------------------------------------------*/
 if(open_control_sockets() == false)
 	{
