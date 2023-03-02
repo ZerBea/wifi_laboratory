@@ -148,6 +148,7 @@ static u8 kdv = 0;
 static enhanced_packet_block_t *epbhdr = NULL;
 
 static ssize_t nmealen = 0;
+static char *nmeavalptr[6] = { 0 };
 
 static ieee80211_mac_t *macftx = NULL;
 static u8 *packetoutptr = NULL;
@@ -2103,6 +2104,8 @@ return;
 /*===========================================================================*/
 static inline void process_nmea0183()
 {
+size_t i;
+static char *nmeaptr;
 static const char *gpgga = "GPGGA,";
 
 if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
@@ -2111,8 +2114,22 @@ if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 	return;
 	}
 
-if(memcmp(&nmeabuffer[1], gpgga, 6) != 0) return;
 
+if(memcmp(&nmeabuffer[1], gpgga, 6) != 0) return;
+i = 0;
+nmeaptr = nmeabuffer + 7;
+while(nmealen)
+	{
+	if(i > 5) break;
+	if(*nmeaptr == '\n') break;
+	if(*nmeaptr == ',')
+		{
+		(*nmeaptr = 0);
+		nmeavalptr[i++] = nmeaptr +1;
+		}
+	nmeaptr++;
+	nmealen--;
+	}
 return;
 }
 /*===========================================================================*/
