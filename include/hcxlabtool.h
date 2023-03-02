@@ -47,7 +47,7 @@
 #define ERROR_MAX		100
 #define WATCHDOG_MAX		600
 #define ATTEMPTCLIENT_MAX	10
-#define ATTEMPTAP_MAX		10
+#define ATTEMPTAP_MAX		30
 
 #define IFTYPENL		0b00000001
 #define IFTYPEWE		0b00000010
@@ -132,7 +132,6 @@ typedef struct __attribute__((__packed__))
 {
  u64	tsakt;
  u64	tshold1;
- u64	tsbeacon;
  u64	tsauth;
  u8	count;
  u8	macap[6];

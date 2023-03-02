@@ -1913,7 +1913,6 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 memset((aplist + i), 0, APLIST_SIZE);
 (aplist + i)->tsakt = tsakt;
 (aplist + i)->tshold1 = tsakt;
-(aplist + i)->tsbeacon = tsakt;
 (aplist + i)->tsauth = tsfirst;
 (aplist + i)->count = attemptapmax;
 memcpy((aplist + i)->macap, macfrx->addr3, ETH_ALEN);
@@ -1973,13 +1972,11 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		(aplist + i)->count = attemptapmax;
 		memcpy((aplist + i)->macclient, &macbc, ETH_ALEN);
 		(aplist + i)->tshold1 = tsakt;
-		(aplist + i)->tsbeacon = tsakt;
 		}
 	if((aplist + i)->count == 0) return;
-	if((aplist + i)->tsakt - (aplist + i)->tsbeacon > TIMEBEACONWAIT)
+	if(associationflag == true)
 		{
-		(aplist + i)->count--;
-		if(associationflag == true)
+		if(((aplist + i)->count % 8) == 6)
 			{
 			if(((aplist + i)->status & AP_EAPOL_M1) == 0)
 				{
@@ -1989,7 +1986,10 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 					}
 				}
 			}
-		if(deauthenticationflag == true)
+		}
+	if(deauthenticationflag == true)
+		{
+		if(((aplist + i)->count % 8) == 4)
 			{
 			if(((aplist + i)->ie.flags & AP_MFP) == 0)
 				{
@@ -2004,18 +2004,24 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 					}
 				}
 			}
-		if(reassociationflag == true)
+		}
+	if(reassociationflag == true)
+		{
+		if(((aplist + i)->count % 8) == 2)
+			{
+			if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_associationrequest(i);
+			}
+		if(((aplist + i)->count % 8) == 0)
 			{
 			if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
 			}
-		(aplist + i)->tsbeacon = tsakt;
 		}
+	(aplist + i)->count--;
 	return;
 	}
 memset((aplist + i), 0, APLIST_SIZE);
 (aplist + i)->tsakt = tsakt;
 (aplist + i)->tshold1 = tsakt;
-(aplist + i)->tsbeacon = tsfirst;
 (aplist + i)->tsauth = tsfirst;
 (aplist + i)->count = attemptapmax;
 memcpy((aplist + i)->macap, macfrx->addr3, ETH_ALEN);
@@ -3565,8 +3571,8 @@ fprintf(stdout, "long options:\n"
 	"                                 default: %d seconds\n"
 	"--attemptclientmax=<digit>     : set maximum of attempts to request an EAPOL M2\n"
 	"                                 default: %d attempts\n"
-	"--attemptapmax=<digit>         : set maximum of attempts to request a PMKID or to get a 4-way handshake\n"
-	"                                 default: %d attempts\n"
+	"--attemptapmax=<digit>         : set maximum of received BEACONs to request a PMKID or to get a 4-way handshake\n"
+	"                                 default: stop after %d received BEACONs\n"
 	"--tot=<digit>                  : enable timeout timer in minutes\n"
 	"--onsigterm=<action>           : action when the program has been terminated (poweroff, reboot)\n"
 	"                                  poweroff: power off system\n"
