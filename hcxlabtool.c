@@ -446,33 +446,30 @@ static char *ps;
 static char *ms;
 
 system("clear");
-sprintf(&rtb[0], " PM MAC-AP       ESSID (STATUS)            %6u MHz [%3d]\n"
-	"-----------------------------------------------------------\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
+sprintf(&rtb[0], "  CHA  PM    MAC-AP    ESSID (last seen on top)         SCAN-FREQUENCY: %6u\n"
+	"------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency);
 p = strlen(rtb);
 i = 0;
 pa = 0;
 for(i = 0; i < 20 ; i++)
 	{
 	if((aplist + i)->tsakt == 0) break;
-	if((aplist + i)->ie.channel == (scanlist + scanlistindex)->channel)
-		{
-		if(((aplist +i)->status & AP_PMKID) == AP_PMKID) ps = pmok;
-		else ps = pmdef;
-		if(((aplist +i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) ms = pmok;
-		else ms = pmdef;
-		sprintf(&rtb[p], " %s%s %02x%02x%02x%02x%02x%02x %.*s\n", ps, ms, (aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5], (aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
-		p = strlen(rtb);
-		pa++;
-		}
+	if(((aplist +i)->status & AP_PMKID) == AP_PMKID) ps = pmok;
+	else ps = pmdef;
+	if(((aplist +i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) ms = pmok;
+	else ms = pmdef;
+	sprintf(&rtb[p], " [%3d] %s%s %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->ie.channel, ps, ms, (aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5], (aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
+	p = strlen(rtb);
+	pa++;
 	}
 for(i = 0; i < (22 - pa); i++) rtb[p++] = '\n';
-sprintf(&rtb[p], "  M MAC-CLIENT   ESSID\n"
-	"-----------------------------------------------------------\n");
+sprintf(&rtb[p], "  M  MAC-CLIENT  ESSID (last CHALLENGE)\n"
+	"------------------------------------------------------------------------------\n");
 p = strlen(rtb);
 for(i = 0; i < 20; i++)
 	{
 	if(((clientlist + i)->status & CLIENT_EAPOL_M2) != CLIENT_EAPOL_M2) continue;
-	sprintf(&rtb[p], " + %02x%02x%02x%02x%02x%02x %.*s\n", (clientlist + i)->macclient[0], (clientlist + i)->macclient[1], (clientlist + i)->macclient[2], (clientlist + i)->macclient[3], (clientlist + i)->macclient[4], (clientlist + i)->macclient[5], (clientlist + i)->ie.essidlen, (clientlist + i)->ie.essid);
+	sprintf(&rtb[p], "  + %02x%02x%02x%02x%02x%02x %.*s\n", (clientlist + i)->macclient[0], (clientlist + i)->macclient[1], (clientlist + i)->macclient[2], (clientlist + i)->macclient[3], (clientlist + i)->macclient[4], (clientlist + i)->macclient[5], (clientlist + i)->ie.essidlen, (clientlist + i)->ie.essid);
 	p = strlen(rtb);
 	}
 rtb[p] = 0;
@@ -2361,7 +2358,7 @@ static ssize_t i;
 static struct nlattr *index, *pos, *index2, *pos2;
 static int nestremlen, nestremlen1, nestremlen2, nestremlen3;
 
-i = (freql + i)->i;
+i = freql->i;
 for(index = (struct nlattr*) nla_data(nla), nestremlen = nla_datalen(nla); nla_ok(index, nestremlen); index = nla_next(index, &(nestremlen)))
 	{
 	for(pos = (struct nlattr*) nla_data(index), nestremlen1 = nla_datalen(index); nla_ok(pos, nestremlen1); pos = nla_next(pos, &(nestremlen1)))
@@ -2381,7 +2378,7 @@ for(index = (struct nlattr*) nla_data(nla), nestremlen = nla_datalen(nla); nla_o
 					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_DISABLED) (freql + i)->status = IF_STAT_FREQ_DISABLED;
 					}
 				i++;
-				(freql + i)->i = i;
+				freql->i = i;
 				if(i > FREQUENCYLIST_MAX -1) return;
 				}
 			}
@@ -2392,12 +2389,12 @@ return;
 /*---------------------------------------------------------------------------*/
 static u8 nl_get_supported_iftypes(struct nlattr* nla)
 {
-static struct nlattr *pos = NULL;
-static int nestremlen;
-
-for(pos = (struct nlattr*) nla_data(nla), nestremlen = nla_datalen(nla); nla_ok(pos, nestremlen); pos = nla_next(pos, &(nestremlen)))
+struct nlattr *pos = (struct nlattr*)nla_data(nla);
+int nestremlen = nla_datalen(nla);
+while(nla_ok(pos, nestremlen))
 	{
 	if(pos->nla_type == NL80211_IFTYPE_MONITOR) return IF_HAS_MONITOR;
+	pos = nla_next(pos, &nestremlen);
 	}
 return 0;
 }
