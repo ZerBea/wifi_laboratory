@@ -357,7 +357,7 @@ for(i = 0; i < ifpresentlistcounter; i++)
 		else fprintf(stdout, "%6d [%3d] disabled", (iffreql + i)->frequency, (iffreql + i)->channel);
 		}
 	fprintf(stdout, "\n");
-	fprintf(stdout, "\n\nscan frequencies: frequency [channel] tx-power\n");
+	fprintf(stdout, "\n\nscan frequencies: frequency [channel]\n");
 	for(i = 0; i < FREQUENCYLIST_MAX; i++)
 		{
 		if((scanlist + i)->frequency == 0) break;
@@ -2352,13 +2352,13 @@ static void *nla_data(const struct nlattr *nla)
 return (u8*)nla + NLA_HDRLEN;
 }
 /*---------------------------------------------------------------------------*/
-static void nl_get_supported_bands(frequencylist_t *freql, struct nlattr* nla)
+static void nl_get_supported_bands(interface_t *ipl, struct nlattr* nla)
 {
-static ssize_t i;
+static frequencylist_t *freql;
 static struct nlattr *index, *pos, *index2, *pos2;
 static int nestremlen, nestremlen1, nestremlen2, nestremlen3;
 
-i = freql->i;
+freql = ipl->frequencylist;
 for(index = (struct nlattr*) nla_data(nla), nestremlen = nla_datalen(nla); nla_ok(index, nestremlen); index = nla_next(index, &(nestremlen)))
 	{
 	for(pos = (struct nlattr*) nla_data(index), nestremlen1 = nla_datalen(index); nla_ok(pos, nestremlen1); pos = nla_next(pos, &(nestremlen1)))
@@ -2371,15 +2371,14 @@ for(index = (struct nlattr*) nla_data(nla), nestremlen = nla_datalen(nla); nla_o
 					{
 					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_FREQ)
 						{
-						(freql + i)->frequency = *((u32*)nla_data(pos2));
-						(freql + i)->channel = frequency_to_channel((freql + i)->frequency);
+						(freql + ipl->i)->frequency = *((u32*)nla_data(pos2));
+						(freql + ipl->i)->channel = frequency_to_channel((freql + ipl->i)->frequency);
 						}
-					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_MAX_TX_POWER) (freql + i)->pwr = *((u32*)nla_data(pos2));
-					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_DISABLED) (freql + i)->status = IF_STAT_FREQ_DISABLED;
+					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_MAX_TX_POWER) (freql + ipl->i)->pwr = *((u32*)nla_data(pos2));
+					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_DISABLED) (freql + ipl->i)->status = IF_STAT_FREQ_DISABLED;
 					}
-				i++;
-				freql->i = i;
-				if(i > FREQUENCYLIST_MAX -1) return;
+				ipl->i++;
+				if(ipl->i > FREQUENCYLIST_MAX -1) return;
 				}
 			}
 		}
@@ -2612,7 +2611,7 @@ while(1)
 				(ifpresentlist + ii)->type |= nl_get_supported_iftypes(nla);
 				(ifpresentlist + ii)->type |= IF_HAS_NETLINK;
 				}
-			if(nla->nla_type == NL80211_ATTR_WIPHY_BANDS) nl_get_supported_bands((ifpresentlist + ii)->frequencylist, nla);
+			if(nla->nla_type == NL80211_ATTR_WIPHY_BANDS) nl_get_supported_bands((ifpresentlist + ii), nla);
 			nla = nla_next(nla, &nlremlen);
 			}
 		}

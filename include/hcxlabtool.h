@@ -233,7 +233,6 @@ typedef struct __attribute__((__packed__))
  u32	frequency;
  u32	channel;
  u32	pwr;
- size_t	i;
 #define IF_STAT_FREQ_DISABLED	0b00000001
  u8	status;
 }frequencylist_t;
@@ -258,6 +257,7 @@ typedef struct __attribute__((__packed__))
  u8	vimac[6];
  char	name[IFNAMSIZ];
  char	driver[DRIVERNAME_MAX];
+ size_t	i;
  frequencylist_t *frequencylist;
 }interface_t;
 #define INTERFACELIST_SIZE (sizeof(interface_t))
