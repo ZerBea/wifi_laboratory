@@ -2354,35 +2354,29 @@ return (u8*)nla + NLA_HDRLEN;
 /*---------------------------------------------------------------------------*/
 static void nl_get_supported_bands(interface_t *ipl, struct nlattr* nla)
 {
+static int nlanremlen;
+static struct nlattr *nlai, *nlan;
 static frequencylist_t *freql;
-static struct nlattr *index, *pos, *index2, *pos2;
-static int nestremlen, nestremlen1, nestremlen2, nestremlen3;
 
+nlai = (struct nlattr*)nla_data(nla);
+nlan = (struct nlattr*)nla_data(nlai);
+nlai = (struct nlattr*)nla_data(nlan);
+nlanremlen = nlai->nla_len - 4;
+nlan = (struct nlattr*)nla_data(nlai);
 freql = ipl->frequencylist;
-for(index = (struct nlattr*) nla_data(nla), nestremlen = nla_datalen(nla); nla_ok(index, nestremlen); index = nla_next(index, &(nestremlen)))
+if(ipl->i > FREQUENCYLIST_MAX -1) return;
+while(nla_ok(nlan, nlanremlen))
 	{
-	for(pos = (struct nlattr*) nla_data(index), nestremlen1 = nla_datalen(index); nla_ok(pos, nestremlen1); pos = nla_next(pos, &(nestremlen1)))
+	if(nlan->nla_type == NL80211_FREQUENCY_ATTR_FREQ)
 		{
-		if(pos->nla_type == NL80211_BAND_ATTR_FREQS)
-			{
-			for(index2 = (struct nlattr*) nla_data(pos), nestremlen2 = nla_datalen(pos); nla_ok(index2, nestremlen2); index2 = nla_next(index2, &(nestremlen2)))
-				{
-				for(pos2 = (struct nlattr*) nla_data(index2), nestremlen3 = nla_datalen(index2); nla_ok(pos2, nestremlen3); pos2 = nla_next(pos2, &(nestremlen3)))
-					{
-					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_FREQ)
-						{
-						(freql + ipl->i)->frequency = *((u32*)nla_data(pos2));
-						(freql + ipl->i)->channel = frequency_to_channel((freql + ipl->i)->frequency);
-						}
-					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_MAX_TX_POWER) (freql + ipl->i)->pwr = *((u32*)nla_data(pos2));
-					if(pos2->nla_type == NL80211_FREQUENCY_ATTR_DISABLED) (freql + ipl->i)->status = IF_STAT_FREQ_DISABLED;
-					}
-				ipl->i++;
-				if(ipl->i > FREQUENCYLIST_MAX -1) return;
-				}
-			}
+		(freql + ipl->i)->frequency = *((u32*)nla_data(nlan));
+		(freql + ipl->i)->channel = frequency_to_channel((freql + ipl->i)->frequency);
 		}
+	if(nlan->nla_type == NL80211_FREQUENCY_ATTR_MAX_TX_POWER) (freql + ipl->i)->pwr = *((u32*)nla_data(nlan));
+	if(nlan->nla_type == NL80211_FREQUENCY_ATTR_DISABLED) (freql + ipl->i)->status = IF_STAT_FREQ_DISABLED;
+	nlan = nla_next(nlan, &nlanremlen);
 	}
+if((freql + ipl->i)->frequency != 0) ipl->i++;
 return;
 }
 /*---------------------------------------------------------------------------*/
