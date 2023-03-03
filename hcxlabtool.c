@@ -3018,6 +3018,21 @@ if(ifaktindex == 0)
 			}
 		}
 	}
+else
+	{
+	for(i = 0; i < ifpresentlistcounter; i++)
+		{
+		if((ifpresentlist + i )->index == ifaktindex)
+			{
+			if(((ifpresentlist + i)->type & IF_HAS_NLMON) == 0) return false;
+			memcpy(&ifakthwmac, (ifpresentlist + i )->hwmac, ETH_ALEN);
+			ifaktfrequencylist = (ifpresentlist + i)->frequencylist;
+			printf("sss %d %s \n", ifaktindex, ifaktname);
+			break;
+			}
+		}
+	}
+if(ifaktfrequencylist == NULL) return false;
 if(rt_set_interface(0) == false) return false;
 if(nl_set_monitormode() == false) return false;
 if(rt_set_interface(IFF_UP) == false) return false;
