@@ -2360,11 +2360,20 @@ static frequencylist_t *freql;
 
 nlai = (struct nlattr*)nla_data(nla);
 nlan = (struct nlattr*)nla_data(nlai);
+if(nlan->nla_type != NL80211_BAND_ATTR_FREQS) return;
 nlai = (struct nlattr*)nla_data(nlan);
-nlanremlen = nlai->nla_len - 4;
+nlanremlen = nlai->nla_len - sizeof(struct nlattr);
 nlan = (struct nlattr*)nla_data(nlai);
+
+//printf("%d %u %u %u\n",  nlanremlen, nlai->nla_type, nlai->nla_len, *((u32*)nli_data(nlan)));
+
+//printf("xxx %d %u %u\n",  nlanremlen, nlai->nla_type, nlai->nla_len);
+
 freql = ipl->frequencylist;
 if(ipl->i > FREQUENCYLIST_MAX -1) return;
+(freql + ipl->i)->frequency = 0;
+(freql + ipl->i)->pwr = 0;
+(freql + ipl->i)->status = 0;
 while(nla_ok(nlan, nlanremlen))
 	{
 	if(nlan->nla_type == NL80211_FREQUENCY_ATTR_FREQ)
@@ -2377,6 +2386,7 @@ while(nla_ok(nlan, nlanremlen))
 	nlan = nla_next(nlan, &nlanremlen);
 	}
 if((freql + ipl->i)->frequency != 0) ipl->i++;
+
 return;
 }
 /*---------------------------------------------------------------------------*/
