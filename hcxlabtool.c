@@ -156,7 +156,6 @@ static u16 seqcounter1 = 1; /* deauthentication / disassociation */
 static u16 seqcounter2 = 1; /* proberequest authentication association */
 static u16 seqcounter3 = 1; /* probereresponse authentication response 3 */
 static u16 seqcounter4 = 1; /* beacon */
-
 /*---------------------------------------------------------------------------*/
 const uint8_t beacondata[] =
 {
@@ -178,7 +177,7 @@ const uint8_t beacondata[] =
 0x00, 0x00,
 };
 #define BEACONDATA_SIZE sizeof(beacondata)
-
+/*---------------------------------------------------------------------------*/
 const uint8_t proberesponsedata[] =
 {
 /* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6(B), 9, 12(B), 18, [Mbit/sec] */
@@ -197,7 +196,7 @@ const uint8_t proberesponsedata[] =
 0x00, 0x00,
 };
 #define PROBERESPONSEDATA_SIZE sizeof(proberesponsedata)
-
+/*---------------------------------------------------------------------------*/
 static const uint8_t proberequest_undirected_data[] =
 {
 /* Tag: Wildcard */
@@ -208,20 +207,19 @@ static const uint8_t proberequest_undirected_data[] =
 0x32, 0x04, 0xb0, 0x48, 0x60, 0x6c
 };
 #define PROBEREQUEST_UNDIRECTED_SIZE sizeof(proberequest_undirected_data)
-
+/*---------------------------------------------------------------------------*/
 static const uint8_t authenticationrequestdata[] =
 {
 0x00, 0x00, 0x01, 0x00, 0x00, 0x00
 };
 #define AUTHENTICATIONREQUEST_SIZE sizeof(authenticationrequestdata)
-
+/*---------------------------------------------------------------------------*/
 static const uint8_t authenticationresponsedata[] =
 {
 0x00, 0x00, 0x02, 0x00, 0x00, 0x00
 };
 #define AUTHENTICATIONRESPONSE_SIZE sizeof(authenticationresponsedata)
-
-
+/*---------------------------------------------------------------------------*/
 static const uint8_t reassociationrequestdata[] =
 {
 /* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6(B), 9, 12(B), 18, [Mbit/sec] */
@@ -242,14 +240,13 @@ static const uint8_t reassociationrequestdata[] =
 0x3b, 0x04, 0x51, 0x51, 0x53, 0x54
 };
 #define REASSOCIATIONREQUEST_SIZE sizeof(reassociationrequestdata)
-
-
+/*---------------------------------------------------------------------------*/
 static const uint8_t associationrequestcapa[] =
 {
 0x31, 0x04, 0x05, 0x00
 };
 #define ASSOCIATIONREQUESTCAPA_SIZE sizeof(associationrequestcapa)
-
+/*---------------------------------------------------------------------------*/
 static const uint8_t associationrequestdata[] =
 {
 /* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6(B), 9, 12(B), 18, [Mbit/sec] */
@@ -270,7 +267,7 @@ static const uint8_t associationrequestdata[] =
 0x3b, 0x04, 0x51, 0x51, 0x53, 0x54
 };
 #define ASSOCIATIONREQUEST_SIZE sizeof(associationrequestdata)
-
+/*---------------------------------------------------------------------------*/
 static const uint8_t associationresponsedata[] =
 {
 /* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6(B), 9, 12(B), 18, [Mbit/sec] */
@@ -303,7 +300,7 @@ static uint8_t eapolm1data[] =
 0x00, 0x00
 };
 #define EAPOLM1DATA_SIZE sizeof(eapolm1data)
-
+/*---------------------------------------------------------------------------*/
 static u8 macaprg[ETH_ALEN] = { 0 };
 static u8 macclientrg[ETH_ALEN] = { 0 };
 static u8 anoncerg[32] = { 0 };
