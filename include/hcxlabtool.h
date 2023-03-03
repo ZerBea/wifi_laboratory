@@ -86,7 +86,7 @@
 
 
 #define NMEA_SIZE		9128
-#define NMEA_MAX		82
+#define NMEAPOS_MAX		56
 #define NMEA_MIN		46
 
 #define NLTX_SIZE		0xfff

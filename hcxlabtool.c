@@ -20,6 +20,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/epoll.h>
+#include <sys/file.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -148,7 +149,6 @@ static u8 kdv = 0;
 static enhanced_packet_block_t *epbhdr = NULL;
 
 static ssize_t nmealen = 0;
-static char *nmeavalptr[6] = { 0 };
 
 static ieee80211_mac_t *macftx = NULL;
 static u8 *packetoutptr = NULL;
@@ -316,6 +316,8 @@ static u8 nlrxbuffer[NLRX_SIZE] = { 0 };
 static u8 epbown[PCAPNG_SNAPLEN * 2] = { 0 };
 static u8 epb[PCAPNG_SNAPLEN * 2] = { 0 };
 static char nmeabuffer[NMEA_SIZE] = { 0 };
+
+static char nmeadata[NMEAPOS_MAX] = { 0 };
 
 #ifdef STATUSOUT
 static char rtb[RTD_LEN] = { 0 };
@@ -2098,7 +2100,9 @@ return;
 /*===========================================================================*/
 static inline void process_nmea0183()
 {
-size_t i;
+static size_t i;
+static size_t c;
+static size_t l;
 static char *nmeaptr;
 static const char *gpgga = "GPGGA,";
 
@@ -2107,21 +2111,26 @@ if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 	if(packetlen == - 1) errorcount++;
 	return;
 	}
-if(memcmp(&nmeabuffer[1], gpgga, 6) != 0) return;
+nmeabuffer[nmealen] = 0;
+if((nmeaptr = strstr(nmeabuffer, gpgga)) == NULL) return;
+nmeaptr += 6;
 i = 0;
-nmeaptr = nmeabuffer + 7;
-while(nmealen)
+c = 0;
+l = 70;
+while(i < l)
 	{
-	if(i > 5) break;
-	if(*nmeaptr == '\n') break;
-	if(*nmeaptr == ',')
+	if(nmeaptr[c] == 0) return;
+	if(nmeaptr[c] == '\n') return;
+	if(nmeaptr[c] == ',') i++;
+	if(i == 6)
 		{
-		(*nmeaptr = 0);
-		nmeavalptr[i++] = nmeaptr +1;
+		(nmeaptr[c] = 0);
+		break;
 		}
-	nmeaptr++;
-	nmealen--;
+	c++;
+	l--;
 	}
+if((c > 22) && (c < NMEAPOS_MAX)) memcpy(&nmeadata, nmeaptr, c);
 return;
 }
 /*===========================================================================*/
@@ -3220,6 +3229,7 @@ static struct stat statinfo;
 static char nmea0183dataname[PATH_MAX];
 
 if((fd_nmea0183 = open(nmea0183name, O_RDONLY | O_NONBLOCK)) < 0) return false;
+if(flock(fd_nmea0183, LOCK_EX) < 0) return false;
 if(tcgetattr(fd_nmea0183, &tty) < 0) return false;
 tty.c_cflag &= ~PARENB; // Clear parity bit, disabling parity (most common)
 tty.c_cflag &= ~CSTOPB; // Clear stop field, only one stop bit used in communication (most common)
