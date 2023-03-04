@@ -104,7 +104,7 @@ static u32 ouiclientrg = 0;
 static u32 nicclientrg = 0;
 static u64 replaycountrg = 0;
 
-static struct timeval tvakt = { 0 };
+static struct timespec tvakt = { 0 };
 static u64 tsakt = 0;
 static u64 tsfirst = 0;
 static u64 tshold = 0;
@@ -705,7 +705,7 @@ idbhdr->reserved = 0;
 idbhdr->snaplen = PCAPNG_SNAPLEN;
 idblen += addoption(idb +idblen, IF_NAME, strnlen(ifaktname, IF_NAMESIZE), ifaktname);
 idblen += addoption(idb +idblen, IF_MACADDR, 6, (char*)ifakthwmac);
-tr[0] = TSRESOL_USEC;
+tr[0] = TSRESOL_NSEC;
 idblen += addoption(idb +idblen, IF_TSRESOL, 1, tr);
 idblen += addoption(idb +idblen, SHB_EOC, 0, NULL);
 totallength = (total_length_t*)(idb +idblen);
@@ -2163,8 +2163,8 @@ else
 	payloadptr = ieee82011ptr +MAC_SIZE_NORM;
 	payloadlen = ieee82011len -MAC_SIZE_NORM;
 	}
-gettimeofday(&tvakt, NULL);
-tsakt = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
+clock_gettime(CLOCK_REALTIME, &tvakt);
+tsakt = ((u64)tvakt.tv_sec * 1000000000ULL) + tvakt.tv_nsec;
 packetcount++;
 if(macfrx->type == IEEE80211_FTYPE_MGMT)
 	{
@@ -2264,8 +2264,8 @@ while(!wanteventflag)
 			#ifdef STATUSOUT
 			show_realtime();
 			#endif
-			gettimeofday(&tvakt, NULL);
-			tsakt = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
+			clock_gettime(CLOCK_REALTIME, &tvakt);
+			tsakt = ((u64)tvakt.tv_sec * 1000000000ULL) + tvakt.tv_nsec;
 			if((tsakt - tshold) > timehold)
 				{
 				scanlistindex++;
@@ -3370,15 +3370,15 @@ static const char *macaprgfirst = "internet";
 
 waitfordevice.tv_sec = 1;
 waitfordevice.tv_nsec = 0;
-gettimeofday(&tvakt, NULL);
-tsfirst = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
+clock_gettime(CLOCK_REALTIME, &tvakt);
+tsfirst = ((u64)tvakt.tv_sec * 1000000000ULL) + tvakt.tv_nsec;
 nanosleep(&waitfordevice, NULL);
-gettimeofday(&tvakt, NULL);
-tsakt = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
-tshold = ((u64)tvakt.tv_sec * 1000000L) + tvakt.tv_usec;
+clock_gettime(CLOCK_REALTIME, &tvakt);
+tsakt = ((u64)tvakt.tv_sec * 1000000000ULL) + tvakt.tv_nsec;
+tshold = ((u64)tvakt.tv_sec * 1000000000ULL) + tvakt.tv_nsec;
 strftime(timestring, PATH_MAX, "%Y%m%d%H%M%S", localtime(&tvakt.tv_sec));
 
-seed += tvakt.tv_usec & 0x7fffffff;
+seed += tvakt.tv_nsec & 0x7ffffffffff;
 srand(seed);
 
 ouiaprg = (vendoraprg[rand() %((VENDORAPRG_SIZE / sizeof(int)))]) &0xffffff;
@@ -3698,7 +3698,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"-h             : show this help\n"
 	"-v             : show version\n"
 	"\n",
-	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, TIMEHOLD / 1000000);
+	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, TIMEHOLD / 1000000000ULL);
 fprintf(stdout, "long options:\n"
 	"--bpf=<file>                   : input kernel space Berkeley Packet Filter (BPF) code\n"
 	"                                  steps to create a BPF (it only has to be done once):\n"
@@ -3893,7 +3893,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 			fprintf(stderr, "hold time must be > 2 secondsn");
 			exit(EXIT_FAILURE);
 			}
-		timehold *= 1000000;
+		timehold *= 1000000000ULL;
 		break;
 
 		case HCX_TOT:
