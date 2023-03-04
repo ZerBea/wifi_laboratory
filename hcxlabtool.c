@@ -462,7 +462,7 @@ for(i = 0; i < 20 ; i++)
 	pa++;
 	}
 for(i = 0; i < (22 - pa); i++) rtb[p++] = '\n';
-sprintf(&rtb[p], "  M  MAC-CLIENT  ESSID (last CHALLENGE)\n"
+sprintf(&rtb[p], "  M  MAC-CLIENT  ESSID (last CHALLENGE on top)\n"
 	"------------------------------------------------------------------------------\n");
 p = strlen(rtb);
 for(i = 0; i < 20; i++)
