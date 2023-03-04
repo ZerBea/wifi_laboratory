@@ -39,9 +39,9 @@ typedef struct __attribute__((__packed__))
 #define OPTIONCODE_WEAKCANDIDATE	0xf2a0
 #define OPTIONCODE_NMEA			0xf2a1
 
- u16		option_code;	/* option code - depending of block (0 - end of opts, 1 - comment are in common) */
- u16		option_length;	/* option length - length of option in bytes (will be padded to 32bit) */
- char		option_data[1];
+ u16	option_code;	/* option code - depending of block (0 - end of opts, 1 - comment are in common) */
+ u16	option_length;	/* option length - length of option in bytes (will be padded to 32bit) */
+ char	option_data[1];
 }option_header_t;
 #define	OH_SIZE offsetof(option_header_t, option_data)
 /*===========================================================================*/
