@@ -2124,7 +2124,7 @@ if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 nmeabuffer[nmealen] = 0;
 if((nmeaptr = strstr(nmeabuffer, gpgga)) == NULL) return;
 c = 0;
-while((c < NMEA_MSG_MAX) && (nmeaptr[c] != '\n'))
+while(c < NMEA_MSG_MAX)
 	{
 	if(nmeaptr[c] == 0) return;
 	if(nmeaptr[c] == '\r') break;
