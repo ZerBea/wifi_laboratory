@@ -3,9 +3,9 @@ hcxlabtool
 
 This is a highly experimental penetration testing tool!
 
-Full NL80211 / RTNETLINK support instead of WIRELESS EXTENSIONS.
+Full use of NL80211 and RTNETLINK instead of WIRELESS EXTENSIONS.
 
-It is not made for newbies and it comes without warnings and limited status display.
+Main purpose is to understand 802.11 protocol and to detect its weak points.
 
 Feature requests will be ignored and code will often change! 
 
@@ -13,12 +13,11 @@ Feature requests will be ignored and code will often change!
 Brief description
 --------------
 
+It is not made for newbies and it comes without warnings and limited status display.
+
 It is made to detect vulnerabilities in your NETWORK mercilessly!
 
 It is also designed to run headless (remove -DSTATUSOUT from Makefile) on a modified (GPIO push button and LED) Raspberry Pi.
-
-Main purpose is to understand 802.11 protocol and to detect its weak points.
-
 
 
 Requirements
