@@ -2112,11 +2112,9 @@ return;
 /*===========================================================================*/
 static inline void process_nmea0183()
 {
-static size_t i;
 static size_t c;
-static size_t l;
 static char *nmeaptr;
-static const char *gpgga = "GPGGA,";
+static const char *gpgga = "$GPGGA,";
 
 if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 	{
@@ -2125,24 +2123,15 @@ if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 	}
 nmeabuffer[nmealen] = 0;
 if((nmeaptr = strstr(nmeabuffer, gpgga)) == NULL) return;
-nmeaptr += 6;
-i = 0;
 c = 0;
-l = 70;
-while(i < l)
+while((c < NMEA_MSG_MAX) && (nmeaptr[c] != '\n'))
 	{
 	if(nmeaptr[c] == 0) return;
-	if(nmeaptr[c] == '\n') return;
-	if(nmeaptr[c] == ',') i++;
-	if(i == 6)
-		{
-		(nmeaptr[c] = 0);
-		break;
-		}
+	if(nmeaptr[c] == '\r') break;
+	if(nmeaptr[c] == '\n') break;
 	c++;
-	l--;
 	}
-if((c > 22) && (c < HCXPOS_MAX)) memcpy(&hcxpos.hcxpos, nmeaptr, c);
+if(c > 22) memcpy(&hcxpos.hcxpos, nmeaptr, c);
 return;
 }
 /*===========================================================================*/
