@@ -1950,6 +1950,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(((aplist + i)->status & AP_PROBERESPONSE) == 0)
 		{
 		writeepb();
+		if(fd_nmea0183 > 0) writehcxpos(i);
 		(aplist + i)->status |= AP_PROBERESPONSE;
 		}
 	tagwalk_channel_essid_rsn(&(aplist + i)->ie, proberesponselen, proberesponse->ie);
@@ -1987,9 +1988,10 @@ if((aplist + i)->ie.channel == (scanlist + scanlistindex)->channel)
 		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
 		}
 	}
+writeepb();
+if(fd_nmea0183 > 0) writehcxpos(i);
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 tshold = tsakt;
-writeepb();
 return;
 }
 /*---------------------------------------------------------------------------*/
