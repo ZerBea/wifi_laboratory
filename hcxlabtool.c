@@ -52,6 +52,7 @@ return;
 }
 */
 /*===========================================================================*/
+/* global var */
 static bool activebeaconflag = true;
 static bool deauthenticationflag = true;
 static bool proberequestflag = true;
