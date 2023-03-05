@@ -82,11 +82,6 @@
 #define PCAPNG_SNAPLEN		0xffff
 #define RTD_LEN			9128
 
-
-#define NMEA_SIZE		9128
-#define NMEAPOS_MAX		56
-#define NMEA_MIN		46
-
 #define NLTX_SIZE		0xfff
 #define NLRX_SIZE		0xffff
 

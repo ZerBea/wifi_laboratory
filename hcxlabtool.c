@@ -75,7 +75,7 @@ static int fd_socket_tx = 0;
 static int fd_timer1 = 0;
 static int fd_pcapng = 0;
 static int fd_nmea0183 = 0;
-static int fd_nmea0183data = 0;
+static int fd_hcxpos = 0;
 static struct sock_fprog bpf = { 0 };
 
 static int ifaktindex = 0;
@@ -318,7 +318,7 @@ static u8 epbown[PCAPNG_SNAPLEN * 2] = { 0 };
 static u8 epb[PCAPNG_SNAPLEN * 2] = { 0 };
 static char nmeabuffer[NMEA_SIZE] = { 0 };
 
-static char nmeadata[NMEAPOS_MAX] = { 0 };
+static hcxpos_t hcxpos = { 0 };
 
 #ifdef STATUSOUT
 static char rtb[RTD_LEN] = { 0 };
@@ -522,6 +522,14 @@ else if(frequency >= 58320 && frequency <= 70200) return (frequency - 56160) / 2
 else return 0;
 }
 /*===========================================================================*/
+static void writehcxpos(size_t i)
+{
+memcpy(&hcxpos.mac, (aplist +i)->macap, ETH_ALEN);
+hcxpos.essidlen = (aplist +i)->ie.essidlen;
+memcpy(&hcxpos.essid, (aplist +i)->ie.essid, (aplist +i)->ie.essidlen);
+if(write(fd_hcxpos, &hcxpos, HCXPOS_SIZE) != HCXPOS_SIZE) errorcount++;
+return;
+}
 /*===========================================================================*/
 static u16 addoption(u8 *posopt, u16 optioncode, u16 optionlen, char *option)
 {
@@ -2092,9 +2100,10 @@ if((aplist + i)->ie.channel == (scanlist +scanlistindex)->channel)
 		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_associationrequest_org(i);
 		}
 	}
+writeepb();
+if(fd_nmea0183 > 0) writehcxpos(i);
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 tshold = tsakt;
-writeepb();
 return;
 }
 /*===========================================================================*/
@@ -2131,7 +2140,7 @@ while(i < l)
 	c++;
 	l--;
 	}
-if((c > 22) && (c < NMEAPOS_MAX)) memcpy(&nmeadata, nmeaptr, c);
+if((c > 22) && (c < HCXPOS_MAX)) memcpy(&hcxpos.hcxpos, nmeaptr, c);
 return;
 }
 /*===========================================================================*/
@@ -3227,7 +3236,7 @@ static bool open_nmea0183_device(char *nmea0183name)
 static int c;
 static struct termios tty;
 static struct stat statinfo;
-static char nmea0183dataname[PATH_MAX];
+static char hcxposname[PATH_MAX];
 
 if((fd_nmea0183 = open(nmea0183name, O_RDONLY | O_NONBLOCK)) < 0) return false;
 if(flock(fd_nmea0183, LOCK_EX) < 0) return false;
@@ -3253,13 +3262,13 @@ cfsetispeed(&tty, B9600);
 cfsetospeed(&tty, B9600);
 if (tcsetattr(fd_nmea0183, TCSANOW, &tty) < 0) return false;
 c = 0;
-snprintf(nmea0183dataname, PATH_MAX, "%s-%s.hcxpos", timestring, "nmeagga");
-while(stat(nmea0183dataname, &statinfo) == 0)
+snprintf(hcxposname, PATH_MAX, "%s-%s.hcxpos", timestring, "gps");
+while(stat(hcxposname, &statinfo) == 0)
 	{
-	snprintf(nmea0183dataname, PATH_MAX, "%s-%s-%02d.gps", timestring, "nmeagga", c);
+	snprintf(hcxposname, PATH_MAX, "%s-%s-%02d.gps", timestring, "gps", c);
 	c++;
 	}
-if((fd_nmea0183data = open(nmea0183dataname, O_WRONLY | O_CREAT, 0777)) < 0) return false;
+if((fd_hcxpos = open(hcxposname, O_WRONLY | O_CREAT, 0777)) < 0) return false;
 return true;
 }
 /*===========================================================================*/
@@ -3448,7 +3457,7 @@ static void close_fds()
 if(fd_timer1 != 0) close(fd_timer1);
 if(fd_pcapng != 0) close(fd_pcapng);
 if(fd_nmea0183 != 0) close(fd_nmea0183);
-if(fd_nmea0183data != 0) close(fd_nmea0183data);
+if(fd_hcxpos != 0) close(fd_hcxpos);
 return;
 }
 /*---------------------------------------------------------------------------*/
