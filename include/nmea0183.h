@@ -9,5 +9,5 @@ typedef struct __attribute__((__packed__))
  u8	essid[ESSID_MAX];
  char	hcxpos[NMEA_MSG_MAX];
 }hcxpos_t;
-#define HCXPOS_SIZE (sizeof(hcxpos_t))
+#define HCXPOS_SIZE (long int)(sizeof(hcxpos_t))
 /*---------------------------------------------------------------------------*/
