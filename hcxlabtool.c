@@ -36,6 +36,7 @@
 #include "include/radiotap.h"
 #include "include/ieee80211.h"
 #include "include/pcapng.h"
+#include "include/nmea0183.h"
 /*===========================================================================*/
 /*
 static void debugprint();
