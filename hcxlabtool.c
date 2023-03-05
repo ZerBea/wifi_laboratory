@@ -3252,10 +3252,10 @@ cfsetispeed(&tty, B9600);
 cfsetospeed(&tty, B9600);
 if (tcsetattr(fd_nmea0183, TCSANOW, &tty) < 0) return false;
 c = 0;
-snprintf(nmea0183dataname, PATH_MAX, "%s-%s.gps", timestring, "nmea0183");
+snprintf(nmea0183dataname, PATH_MAX, "%s-%s.hcxpos", timestring, "nmeagga");
 while(stat(nmea0183dataname, &statinfo) == 0)
 	{
-	snprintf(nmea0183dataname, PATH_MAX, "%s-%s-%02d.gps", timestring, "nmea0183", c);
+	snprintf(nmea0183dataname, PATH_MAX, "%s-%s-%02d.gps", timestring, "nmeagga", c);
 	c++;
 	}
 if((fd_nmea0183data = open(nmea0183dataname, O_WRONLY | O_CREAT, 0777)) < 0) return false;
@@ -3802,7 +3802,7 @@ static const struct option long_options[] =
 	{"attemptapmax",		required_argument,	NULL,	HCX_ATTEMPT_AP_MAX},
 	{"tot",				required_argument,	NULL,	HCX_TOT},
 	{"essidlist",			required_argument,	NULL,	HCX_ESSIDLIST},
-	{"nmea0183",			required_argument,	NULL,	HCX_NMEA0183},
+	{"nmeagga",			required_argument,	NULL,	HCX_NMEA0183},
 	{"errormax",			required_argument,	NULL,	HCX_ERROR_MAX},
 	{"watchdogmax",			required_argument,	NULL,	HCX_WATCHDOG_MAX},
 	{"onsigterm",			required_argument,	NULL,	HCX_ON_SIGTERM},
