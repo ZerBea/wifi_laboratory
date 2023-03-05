@@ -1,5 +1,6 @@
 #define _GNU_SOURCE
 #include <ctype.h>
+#include <stdbool.h>
 #include <dirent.h>
 #include <fcntl.h>
 #include <ftw.h>
@@ -22,22 +23,43 @@
 /*===========================================================================*/
 /* global var */
 
+static hcxpos_t *hcxposlist = NULL;
 static hcxpos_t hcxpos = { 0 };
-
 /*===========================================================================*/
-static void process_pos(char *hcxposname)
+static void process_record(hcxpos_t *rec)
 {
+
+printf("%.*s\n", rec->essidlen, rec->essid);
+
+return;
+}
+/*---------------------------------------------------------------------------*/
+static void process_hcxpos(char *hcxposname)
+{
+static off_t i;
 static int fd_hcxpos = 0;
+static struct stat stinfo;
 
+if(stat(hcxposname, &stinfo) == -1) return;
 if((fd_hcxpos = open(hcxposname, O_RDONLY)) == -1) return;
-while(1)
+if((hcxposlist = (hcxpos_t*)calloc(1,stinfo.st_size)) != NULL)
 	{
-	if(read(fd_hcxpos, &hcxpos, HCXPOS_SIZE) != HCXPOS_SIZE) break;
-
-	printf("%.*s\n", hcxpos.essidlen, hcxpos.essid);
-
+	if(read(fd_hcxpos, hcxposlist, stinfo.st_size) == stinfo.st_size)
+		{
+		for(i = 0; i < (stinfo.st_size / HCXPOS_SIZE); i++) process_record(hcxposlist + i);
+		}
 	}
-close(fd_hcxpos);
+else
+	{
+	while(1)
+		{
+		if(read(fd_hcxpos, &hcxpos, HCXPOS_SIZE) != HCXPOS_SIZE) break;
+		process_record(&hcxpos);
+		}
+	}
+
+if(hcxposlist != NULL) free(hcxposlist);
+if(fd_hcxpos != 0) close(fd_hcxpos);
 return;
 }
 /*===========================================================================*/
@@ -114,7 +136,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		}
 	}
 setbuf(stdout, NULL);
-if(hcxposname != NULL) process_pos(hcxposname);
+if(hcxposname != NULL) process_hcxpos(hcxposname);
 fprintf(stdout, "\nbye-bye\n");
 return EXIT_SUCCESS;
 }
