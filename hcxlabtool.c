@@ -526,34 +526,50 @@ else return 0;
 /*===========================================================================*/
 static void writegpwpl(size_t i)
 {
-ssize_t p1;
-size_t p2;
-size_t c;
+static ssize_t p1;
+static ssize_t p2;
+static size_t c;
+static u8 cs;
 static char lookuptable[] = { '0', '1', '2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
+
+if(gprmclen == 0) return;
+
+if(write(fd_hcxpos, gprmc, gprmclen) != gprmclen) errorcount++;
+
 
 p1 = 0;
 p2 = 6;
 c = 0;
+cs = 0x5c;
 while((p1 < gprmclen) && (c < 7))
 	{
 	if(gprmc[p1] == ',') c++;
-	if(c > 2) gpwpl[p2++] = gprmc[p1];
+	if(c > 2)
+		{
+		gpwpl[p2] = gprmc[p1];
+		cs ^= gpwpl[p2++];
+		}
 	p1++;
 	}
-
 for (p1 = 0; p1 < ETH_ALEN; ++p1)
 	{
-	gpwpl[p2++] = lookuptable[((aplist + i)->macap[p1] & 0xf0) >> 4];
-	gpwpl[p2++] = lookuptable[(aplist + i)->macap[p1] & 0xf];
+	gpwpl[p2] = lookuptable[((aplist + i)->macap[p1] & 0xf0) >> 4];
+	cs ^= gpwpl[p2++];
+	gpwpl[p2] = lookuptable[(aplist + i)->macap[p1] & 0xf];
+	cs ^= gpwpl[p2++];
 	}
-gpwpl[p2++] = 0;
-
+gpwpl[p2++] = '*';
+gpwpl[p2++] = lookuptable[(cs & 0xf0) >> 4];
+gpwpl[p2++] = lookuptable[cs & 0x0f];
+gpwpl[p2++] = 0x0d;
+gpwpl[p2++] = 0x0a;
+if(write(fd_hcxpos, gpwpl, p2) != p2) errorcount++;
+gpwpl[p2++] = 0x00;
 
 //$GPWPL,5128.62,N,00027.58,W,EGLL*59
 //$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130998,011.3,E*62
 
 
-if(write(fd_hcxpos, gprmc, gprmclen) != gprmclen) errorcount++;
 return;
 }
 /*===========================================================================*/
@@ -3282,10 +3298,10 @@ cfsetispeed(&tty, B9600);
 cfsetospeed(&tty, B9600);
 if (tcsetattr(fd_nmea0183, TCSANOW, &tty) < 0) return false;
 c = 0;
-snprintf(hcxposname, PATH_MAX, "%s-%s.hcxpos", timestring, "gps");
+snprintf(hcxposname, PATH_MAX, "%s.nmea", timestring);
 while(stat(hcxposname, &statinfo) == 0)
 	{
-	snprintf(hcxposname, PATH_MAX, "%s-%s-%02d.gps", timestring, "gps", c);
+	snprintf(hcxposname, PATH_MAX, "%s-%02d.nmea", timestring, c);
 	c++;
 	}
 if((fd_hcxpos = open(hcxposname, O_WRONLY | O_CREAT, 0777)) < 0) return false;
@@ -3780,6 +3796,11 @@ fprintf(stdout, "long options:\n"
 	"                                  default: 0 (GPIO not in use)\n"
 	"--gpio_statusled=<digit>       : Raspberry Pi GPIO number of status LED (2...27)\n"
 	"                                  default: 0 (GPIO not in use)\n"
+	"--nmea_dev=<NMEA device>       : open NMEA device (/dev/ttyACM0, /dev/tty/USB0, ...)\n"
+	"                                  output: NMEA 0183 stnadard messages $GPGGL & $GPWPL (waypoint = MAC AP)\n"
+	"                                  use gpsbabel to convert to other formats:\n"
+	"                                   gpsbabel -w -t -i nmea -f in_file.nmea -o gpx -F out_file_gpx\n"
+	"                                   gpsbabel -w -t -i nmea -f in_file.nmea -o kml -F out_file.kml\n"
 	"--help                         : show this help\n"
 	"--version                      : show version\n"
 	"\n"
@@ -3834,7 +3855,7 @@ static const struct option long_options[] =
 	{"attemptapmax",		required_argument,	NULL,	HCX_ATTEMPT_AP_MAX},
 	{"tot",				required_argument,	NULL,	HCX_TOT},
 	{"essidlist",			required_argument,	NULL,	HCX_ESSIDLIST},
-	{"nmeagga",			required_argument,	NULL,	HCX_NMEA0183},
+	{"nmea_dev",			required_argument,	NULL,	HCX_NMEA0183},
 	{"errormax",			required_argument,	NULL,	HCX_ERROR_MAX},
 	{"watchdogmax",			required_argument,	NULL,	HCX_WATCHDOG_MAX},
 	{"onsigterm",			required_argument,	NULL,	HCX_ON_SIGTERM},
