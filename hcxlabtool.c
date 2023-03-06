@@ -2125,14 +2125,18 @@ if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 nmeabuffer[nmealen] = 0;
 if((nmeaptr = strstr(nmeabuffer, gpgga)) == NULL) return;
 c = 0;
-while(c < NMEA_MSG_MAX)
+while(c < (NMEA_MSG_MAX -2))
 	{
-	if(nmeaptr[c] == 0) return;
-	if(nmeaptr[c] == '\r') break;
-	if(nmeaptr[c] == '\n') break;
+	if(nmeaptr[c] == '*')
+		{
+		if(c > 22)
+			{
+			memcpy(&hcxpos.hcxpos, nmeaptr, c + 3);
+			return;
+			}
+		}
 	c++;
 	}
-if(c > 22) memcpy(&hcxpos.hcxpos, nmeaptr, c);
 return;
 }
 /*===========================================================================*/
