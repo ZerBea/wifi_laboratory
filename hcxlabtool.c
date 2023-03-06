@@ -74,8 +74,10 @@ static int fd_socket_rx = 0;
 static int fd_socket_tx = 0;
 static int fd_timer1 = 0;
 static int fd_pcapng = 0;
+#ifdef NMEAOUT
 static int fd_nmea0183 = 0;
 static int fd_hcxpos = 0;
+#endif
 static struct sock_fprog bpf = { 0 };
 
 static int ifaktindex = 0;
@@ -148,10 +150,10 @@ static u16 keyinfo = 0;
 static u8 kdv = 0;
 
 static enhanced_packet_block_t *epbhdr = NULL;
-
+#ifdef NMEAOUT
 static ssize_t nmealen = 0;
 static ssize_t gprmclen = 0;
-
+#endif
 static ieee80211_mac_t *macftx = NULL;
 static u8 *packetoutptr = NULL;
 static u16 seqcounter1 = 1; /* deauthentication / disassociation */
@@ -317,10 +319,12 @@ static u8 nlrxbuffer[NLRX_SIZE] = { 0 };
 
 static u8 epbown[PCAPNG_SNAPLEN * 2] = { 0 };
 static u8 epb[PCAPNG_SNAPLEN * 2] = { 0 };
-static char nmeabuffer[NMEA_SIZE] = { 0 };
 
+#ifdef NMEAOUT
+static char nmeabuffer[NMEA_SIZE] = { 0 };
 static char gpwpl[NMEA_MSG_MAX] = { 0 };
 static char gprmc[NMEA_MSG_MAX] = { 0 };
+#endif
 
 #ifdef STATUSOUT
 static char rtb[RTD_LEN] = { 0 };
@@ -524,6 +528,7 @@ else if(frequency >= 58320 && frequency <= 70200) return (frequency - 56160) / 2
 else return 0;
 }
 /*===========================================================================*/
+#ifdef NMEAOUT
 static void writegpwpl(size_t i)
 {
 static ssize_t p1;
@@ -533,10 +538,7 @@ static u8 cs;
 static char lookuptable[] = { '0', '1', '2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
 
 if(gprmclen == 0) return;
-
 if(write(fd_hcxpos, gprmc, gprmclen) != gprmclen) errorcount++;
-
-
 p1 = 0;
 p2 = 6;
 c = 0;
@@ -565,13 +567,9 @@ gpwpl[p2++] = 0x0d;
 gpwpl[p2++] = 0x0a;
 if(write(fd_hcxpos, gpwpl, p2) != p2) errorcount++;
 gpwpl[p2++] = 0x00;
-
-//$GPWPL,5128.62,N,00027.58,W,EGLL*59
-//$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130998,011.3,E*62
-
-
 return;
 }
+#endif
 /*===========================================================================*/
 static u16 addoption(u8 *posopt, u16 optioncode, u16 optionlen, char *option)
 {
@@ -1992,7 +1990,9 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(((aplist + i)->status & AP_PROBERESPONSE) == 0)
 		{
 		writeepb();
+		#ifdef NMEAOUT
 		if(fd_nmea0183 > 0) writegpwpl(i);
+		#endif
 		(aplist + i)->status |= AP_PROBERESPONSE;
 		}
 	tagwalk_channel_essid_rsn(&(aplist + i)->ie, proberesponselen, proberesponse->ie);
@@ -2031,7 +2031,9 @@ if((aplist + i)->ie.channel == (scanlist + scanlistindex)->channel)
 		}
 	}
 writeepb();
+#ifdef NMEAOUT
 if(fd_nmea0183 > 0) writegpwpl(i);
+#endif
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 tshold = tsakt;
 return;
@@ -2052,6 +2054,9 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(((aplist + i)->status & AP_BEACON) == 0)
 		{
 		writeepb();
+		#ifdef NMEAOUT
+		if(fd_nmea0183 > 0) writegpwpl(i);
+		#endif
 		(aplist + i)->status |= AP_BEACON;
 		}
 	if((aplist + i)->status >= AP_EAPOL_M3) return;
@@ -2145,13 +2150,16 @@ if((aplist + i)->ie.channel == (scanlist +scanlistindex)->channel)
 		}
 	}
 writeepb();
+#ifdef NMEAOUT
 if(fd_nmea0183 > 0) writegpwpl(i);
+#endif
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 tshold = tsakt;
 return;
 }
 /*===========================================================================*/
 /*===========================================================================*/
+#ifdef NMEAOUT
 static inline void process_nmea0183()
 {
 static char *nmeaptr;
@@ -2179,6 +2187,7 @@ if((nmeaptr = strstr(nmeabuffer, gprmcid)) != NULL)
 	}
 return;
 }
+#endif
 /*===========================================================================*/
 static inline void process_packet()
 {
@@ -2278,6 +2287,7 @@ ev.events = EPOLLIN;
 if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_timer1, &ev) < 0) return false;
 epi++;
 
+#ifdef NMEAOUT
 if(fd_nmea0183 > 0)
 	{
 	ev.data.fd = fd_nmea0183;
@@ -2285,6 +2295,8 @@ if(fd_nmea0183 > 0)
 	if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_nmea0183, &ev) < 0) return false;
 	epi++;
 	}
+#endif
+
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
 while(!wanteventflag)
@@ -2343,7 +2355,9 @@ while(!wanteventflag)
 				}
 			send_80211_beacon();
 			}
+		#ifdef NMEAOUT
 		else if(events[i].data.fd == fd_nmea0183) process_nmea0183();
+		#endif
 		}
 	}
 return true;
@@ -3267,6 +3281,7 @@ return true;
 }
 /*===========================================================================*/
 /* NMEA0183 device */
+#ifdef NMEAOUT
 static bool open_nmea0183_device(char *nmea0183name)
 {
 static int c;
@@ -3307,6 +3322,7 @@ while(stat(hcxposname, &statinfo) == 0)
 if((fd_hcxpos = open(hcxposname, O_WRONLY | O_CREAT, 0777)) < 0) return false;
 return true;
 }
+#endif
 /*===========================================================================*/
 /* CONTROL SOCKETS */
 static void close_sockets()
@@ -3413,7 +3429,9 @@ static void init_values()
 static size_t i;
 static struct timespec waitfordevice;
 static const char *macaprgfirst = "internet";
+#ifdef NMEAOUT
 static const char gpwplid[] = "$GPWPL";
+#endif
 
 waitfordevice.tv_sec = 1;
 waitfordevice.tv_nsec = 0;
@@ -3466,7 +3484,9 @@ packetptr = &epb[EPB_SIZE];
 packetoutptr = &epbown[EPB_SIZE];
 memcpy(packetoutptr, &rthtxdata, RTHTX_SIZE);
 macftx = (ieee80211_mac_t*)(packetoutptr + RTHTX_SIZE);
+#ifdef NMEAOUT
 memcpy(&gpwpl, &gpwplid, 6);
+#endif
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -3494,8 +3514,10 @@ static void close_fds()
 {
 if(fd_timer1 != 0) close(fd_timer1);
 if(fd_pcapng != 0) close(fd_pcapng);
+#ifdef NMEAOUT
 if(fd_nmea0183 != 0) close(fd_nmea0183);
 if(fd_hcxpos != 0) close(fd_hcxpos);
+#endif
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -3796,11 +3818,13 @@ fprintf(stdout, "long options:\n"
 	"                                  default: 0 (GPIO not in use)\n"
 	"--gpio_statusled=<digit>       : Raspberry Pi GPIO number of status LED (2...27)\n"
 	"                                  default: 0 (GPIO not in use)\n"
+	#ifdef NMEAOUT
 	"--nmea_dev=<NMEA device>       : open NMEA device (/dev/ttyACM0, /dev/tty/USB0, ...)\n"
 	"                                  output: NMEA 0183 stnadard messages $GPRMC & $GPWPL (waypoint = MAC AP)\n"
 	"                                  use gpsbabel to convert to other formats:\n"
 	"                                   gpsbabel -w -t -i nmea -f in_file.nmea -o gpx -F out_file_gpx\n"
 	"                                   gpsbabel -w -t -i nmea -f in_file.nmea -o kml -F out_file.kml\n"
+	#endif
 	"--help                         : show this help\n"
 	"--version                      : show version\n"
 	"\n"
@@ -3839,7 +3863,9 @@ static char *bpfname = NULL;
 static char *essidlistname = NULL;
 static char *userchannellistname = NULL;
 static char *userfrequencylistname = NULL;
+#ifdef NMEAOUT
 static char *nmea0183name = NULL;
+#endif
 static const char *rebootstring = "reboot";
 static const char *poweroffstring = "poweroff";
 static const char *short_options = "i:c:f:m:I:t:FLhv";
@@ -3855,7 +3881,9 @@ static const struct option long_options[] =
 	{"attemptapmax",		required_argument,	NULL,	HCX_ATTEMPT_AP_MAX},
 	{"tot",				required_argument,	NULL,	HCX_TOT},
 	{"essidlist",			required_argument,	NULL,	HCX_ESSIDLIST},
+	#ifdef NMEAOUT
 	{"nmea_dev",			required_argument,	NULL,	HCX_NMEA0183},
+	#endif
 	{"errormax",			required_argument,	NULL,	HCX_ERROR_MAX},
 	{"watchdogmax",			required_argument,	NULL,	HCX_WATCHDOG_MAX},
 	{"onsigterm",			required_argument,	NULL,	HCX_ON_SIGTERM},
@@ -4051,9 +4079,11 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		interfacelistflag = true;
 		break;
 
+		#ifdef NMEAOUT
 		case HCX_NMEA0183:
 		nmea0183name = optarg;
 		break;
+		#endif
 
 		case HCX_HELP:
 		usage(basename(argv[0]));
@@ -4101,6 +4131,7 @@ if(init_lists() == false)
 	goto byebye;
 	}
 init_values();
+#ifdef NMEAOUT
 if(nmea0183name != NULL)
 	{if(open_nmea0183_device(nmea0183name) == false)
 		{
@@ -4108,6 +4139,7 @@ if(nmea0183name != NULL)
 		fprintf(stderr, "failed to open NMEA0183 device\n");
 		}
 	}
+#endif
 /*---------------------------------------------------------------------------*/
 if(open_control_sockets() == false)
 	{
