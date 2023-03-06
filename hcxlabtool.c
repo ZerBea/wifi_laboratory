@@ -36,7 +36,6 @@
 #include "include/radiotap.h"
 #include "include/ieee80211.h"
 #include "include/pcapng.h"
-#include "include/nmea0183.h"
 /*===========================================================================*/
 /*
 static void debugprint();
@@ -151,6 +150,7 @@ static u8 kdv = 0;
 static enhanced_packet_block_t *epbhdr = NULL;
 
 static ssize_t nmealen = 0;
+static ssize_t gprmclen = 0;
 
 static ieee80211_mac_t *macftx = NULL;
 static u8 *packetoutptr = NULL;
@@ -319,7 +319,8 @@ static u8 epbown[PCAPNG_SNAPLEN * 2] = { 0 };
 static u8 epb[PCAPNG_SNAPLEN * 2] = { 0 };
 static char nmeabuffer[NMEA_SIZE] = { 0 };
 
-static hcxpos_t hcxpos = { 0 };
+static char gpwpl[NMEA_MSG_MAX] = { 0 };
+static char gprmc[NMEA_MSG_MAX] = { 0 };
 
 #ifdef STATUSOUT
 static char rtb[RTD_LEN] = { 0 };
@@ -523,12 +524,36 @@ else if(frequency >= 58320 && frequency <= 70200) return (frequency - 56160) / 2
 else return 0;
 }
 /*===========================================================================*/
-static void writehcxpos(size_t i)
+static void writegpwpl(size_t i)
 {
-memcpy(&hcxpos.mac, (aplist +i)->macap, ETH_ALEN);
-hcxpos.essidlen = (aplist +i)->ie.essidlen;
-memcpy(&hcxpos.essid, (aplist +i)->ie.essid, (aplist +i)->ie.essidlen);
-if(write(fd_hcxpos, &hcxpos, HCXPOS_SIZE) != HCXPOS_SIZE) errorcount++;
+ssize_t p1;
+size_t p2;
+size_t c;
+static char lookuptable[] = { '0', '1', '2','3','4','5','6','7','8','9','a','b','c','d','e','f' };
+
+p1 = 0;
+p2 = 6;
+c = 0;
+while((p1 < gprmclen) && (c < 7))
+	{
+	if(gprmc[p1] == ',') c++;
+	if(c > 2) gpwpl[p2++] = gprmc[p1];
+	p1++;
+	}
+
+for (p1 = 0; p1 < ETH_ALEN; ++p1)
+	{
+	gpwpl[p2++] = lookuptable[((aplist + i)->macap[p1] & 0xf0) >> 4];
+	gpwpl[p2++] = lookuptable[(aplist + i)->macap[p1] & 0xf];
+	}
+gpwpl[p2++] = 0;
+
+
+//$GPWPL,5128.62,N,00027.58,W,EGLL*59
+//$GPRMC,081836,A,3751.65,S,14507.36,E,000.0,360.0,130998,011.3,E*62
+
+
+if(write(fd_hcxpos, gprmc, gprmclen) != gprmclen) errorcount++;
 return;
 }
 /*===========================================================================*/
@@ -1951,7 +1976,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(((aplist + i)->status & AP_PROBERESPONSE) == 0)
 		{
 		writeepb();
-		if(fd_nmea0183 > 0) writehcxpos(i);
+		if(fd_nmea0183 > 0) writegpwpl(i);
 		(aplist + i)->status |= AP_PROBERESPONSE;
 		}
 	tagwalk_channel_essid_rsn(&(aplist + i)->ie, proberesponselen, proberesponse->ie);
@@ -1990,7 +2015,7 @@ if((aplist + i)->ie.channel == (scanlist + scanlistindex)->channel)
 		}
 	}
 writeepb();
-if(fd_nmea0183 > 0) writehcxpos(i);
+if(fd_nmea0183 > 0) writegpwpl(i);
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 tshold = tsakt;
 return;
@@ -2104,7 +2129,7 @@ if((aplist + i)->ie.channel == (scanlist +scanlistindex)->channel)
 		}
 	}
 writeepb();
-if(fd_nmea0183 > 0) writehcxpos(i);
+if(fd_nmea0183 > 0) writegpwpl(i);
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 tshold = tsakt;
 return;
@@ -2113,10 +2138,8 @@ return;
 /*===========================================================================*/
 static inline void process_nmea0183()
 {
-static size_t c;
 static char *nmeaptr;
-static const char *gprmc = "$GPRMC,";
-static const char *gpgga = "$GPGGA,";
+static const char *gprmcid = "$GPRMC,";
 
 if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 	{
@@ -2124,39 +2147,20 @@ if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 	return;
 	}
 nmeabuffer[nmealen] = 0;
-if((nmeaptr = strstr(nmeabuffer, gprmc)) != NULL)
+if((nmeaptr = strstr(nmeabuffer, gprmcid)) != NULL)
 	{
-	c = 0;
-	while(c < (NMEA_MSG_MAX -2))
+	gprmclen = 0;
+	while(gprmclen < (NMEA_MSG_MAX -2))
 		{
-		if(nmeaptr[c] == '*')
+		if(nmeaptr[gprmclen] == '*')
 			{
-			if(c > 22)
-				{
-				memcpy(&hcxpos.gprmc, nmeaptr, c + 3);
-				return;
-				}
+			gprmclen += 5;
+			memcpy(&gprmc, nmeaptr, gprmclen);
+			return;
 			}
-		c++;
+		gprmclen++;
 		}
 	}
-if((nmeaptr = strstr(nmeabuffer, gpgga)) != NULL)
-	{
-	c = 0;
-	while(c < (NMEA_MSG_MAX -2))
-		{
-		if(nmeaptr[c] == '*')
-			{
-			if(c > 22)
-				{
-				memcpy(&hcxpos.gpgga, nmeaptr, c + 3);
-				return;
-				}
-			}
-		c++;
-		}
-	}
-
 return;
 }
 /*===========================================================================*/
@@ -3393,6 +3397,7 @@ static void init_values()
 static size_t i;
 static struct timespec waitfordevice;
 static const char *macaprgfirst = "internet";
+static const char gpwplid[] = "$GPWPL";
 
 waitfordevice.tv_sec = 1;
 waitfordevice.tv_nsec = 0;
@@ -3445,6 +3450,7 @@ packetptr = &epb[EPB_SIZE];
 packetoutptr = &epbown[EPB_SIZE];
 memcpy(packetoutptr, &rthtxdata, RTHTX_SIZE);
 macftx = (ieee80211_mac_t*)(packetoutptr + RTHTX_SIZE);
+memcpy(&gpwpl, &gpwplid, 6);
 return;
 }
 /*---------------------------------------------------------------------------*/
