@@ -2115,6 +2115,7 @@ static inline void process_nmea0183()
 {
 static size_t c;
 static char *nmeaptr;
+static const char *gprmc = "$GPRMC,";
 static const char *gpgga = "$GPGGA,";
 
 if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
@@ -2123,20 +2124,39 @@ if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 	return;
 	}
 nmeabuffer[nmealen] = 0;
-if((nmeaptr = strstr(nmeabuffer, gpgga)) == NULL) return;
-c = 0;
-while(c < (NMEA_MSG_MAX -2))
+if((nmeaptr = strstr(nmeabuffer, gprmc)) != NULL)
 	{
-	if(nmeaptr[c] == '*')
+	c = 0;
+	while(c < (NMEA_MSG_MAX -2))
 		{
-		if(c > 22)
+		if(nmeaptr[c] == '*')
 			{
-			memcpy(&hcxpos.gpgga, nmeaptr, c + 3);
-			return;
+			if(c > 22)
+				{
+				memcpy(&hcxpos.gprmc, nmeaptr, c + 3);
+				return;
+				}
 			}
+		c++;
 		}
-	c++;
 	}
+if((nmeaptr = strstr(nmeabuffer, gpgga)) != NULL)
+	{
+	c = 0;
+	while(c < (NMEA_MSG_MAX -2))
+		{
+		if(nmeaptr[c] == '*')
+			{
+			if(c > 22)
+				{
+				memcpy(&hcxpos.gpgga, nmeaptr, c + 3);
+				return;
+				}
+			}
+		c++;
+		}
+	}
+
 return;
 }
 /*===========================================================================*/
