@@ -3,6 +3,7 @@
 #define VERSIONYEAR		"2023"
 #define VERSIONNAME		"hcxpostool"
 /*---------------------------------------------------------------------------*/
+#define HCX_GPWPL		1
 #define HCX_POSNAME		'i'
 #define HCX_HELP		'h'
 #define HCX_VERSION		'v'

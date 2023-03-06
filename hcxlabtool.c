@@ -2131,7 +2131,7 @@ while(c < (NMEA_MSG_MAX -2))
 		{
 		if(c > 22)
 			{
-			memcpy(&hcxpos.hcxpos, nmeaptr, c + 3);
+			memcpy(&hcxpos.gpgga, nmeaptr, c + 3);
 			return;
 			}
 		}
