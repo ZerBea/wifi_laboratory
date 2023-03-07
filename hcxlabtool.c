@@ -473,12 +473,12 @@ for(i = 0; i < 20 ; i++)
 	pa++;
 	}
 for(i = 0; i < (22 - pa); i++) rtb[p++] = '\n';
-sprintf(&rtb[p], "  M  MAC-CLIENT  ESSID (last CHALLENGE on top)\n"
+sprintf(&rtb[p], "  M  MAC-CLIENT  ESSID (last seen on top)\n"
 	"------------------------------------------------------------------------------\n");
 p = strlen(rtb);
 for(i = 0; i < 20; i++)
 	{
-	if(((clientlist + i)->status & CLIENT_EAPOL_M2) != CLIENT_EAPOL_M2) continue;
+	if((clientlist + i)->tsakt == 0) break;
 	sprintf(&rtb[p], "  + %02x%02x%02x%02x%02x%02x %.*s\n", (clientlist + i)->macclient[0], (clientlist + i)->macclient[1], (clientlist + i)->macclient[2], (clientlist + i)->macclient[3], (clientlist + i)->macclient[4], (clientlist + i)->macclient[5], (clientlist + i)->ie.essidlen, (clientlist + i)->ie.essid);
 	p = strlen(rtb);
 	}
