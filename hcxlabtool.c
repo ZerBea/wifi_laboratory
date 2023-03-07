@@ -476,7 +476,7 @@ for(i = 0; i < 20 ; i++)
 	pa++;
 	}
 for(i = 0; i < (22 - pa); i++) rtb[p++] = '\n';
-sprintf(&rtb[p], "  M2R    MAC_AP     MAC-CLIENT  ESSID (last seen on top)\n"
+sprintf(&rtb[p], "  M2R    MAC-AP     MAC-CLIENT  ESSID (last seen on top)\n"
 	"---------------------------------------------------------------------------------\n");
 p = strlen(rtb);
 for(i = 0; i < 20; i++)
