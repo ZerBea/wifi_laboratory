@@ -125,6 +125,10 @@ static size_t packetcount = 0;
 
 static size_t beaconindex = 0;
 static size_t proberesponseindex = 0;
+
+static size_t beacontxmax = BEACONTX_MAX;
+static size_t proberesponsetxmax = PROBERESPONSETX_MAX;
+
 static u64 beacontimestamp = 1;
 
 static u16 rthlen = 0;
@@ -1083,7 +1087,7 @@ static ssize_t ii;
 static ieee80211_beacon_proberesponse_t *beacontx;
 
 beaconindex++;
-if(beaconindex >= APRGLIST_MAX - 1) beaconindex = 0;
+if(beaconindex >= beacontxmax) beaconindex = 0;
 if((aprglist + beaconindex)->essidlen == 0) beaconindex = 0;
 ii = RTHTX_SIZE;
 macftx = (ieee80211_mac_t*)(packetoutptr + ii);
@@ -1941,7 +1945,7 @@ if((proberequestlen = payloadlen - IEEE80211_PROBERESPONSE_SIZE)  < IEEE80211_IE
 get_tag(TAG_SSID, &essid, proberequestlen, proberequest->ie);
 if(essid.len == 0)
 	{
-	if(proberesponseindex >= APRGLIST_MAX -1) proberesponseindex = 0;
+	if(proberesponseindex >= proberesponsetxmax) proberesponseindex = 0;
 	if((aprglist + proberesponseindex)->essidlen == 0)  proberesponseindex = 0;
 	send_80211_probereresponse(macfrx->addr2, (aprglist + proberesponseindex)->macaprg, (aprglist + proberesponseindex)->essidlen, (aprglist + proberesponseindex)->essid);
 	proberesponseindex++;
@@ -3790,6 +3794,10 @@ fprintf(stdout, "long options:\n"
 	"--disable_proberequest         : do not transmit PROBEREQUEST frames\n"
 	"--disable_association          : do not AUTHENTICATE/ASSOCIATE\n"
 	"--disable_reassociation        : do not REASSOCIATE a CLIENT\n"
+	"--beacontx=<digit>             : transmit BEACON of first n entries of ESSID list\n"
+	"                                 default: %d\n"
+	"--proberesponsetx=<digit>      : transmit PROBERESPONSEs of first n entries of ESSID list\n"
+	"                                 default: %d\n"
 	"--essidlist=<file>             : initialize ESSID list with this ESSIDs\n"
 	"--errormax=<digit>             : set maximum allowed ERRORs\n"
 	"                                 default: %d ERRORs\n"
@@ -3836,7 +3844,7 @@ fprintf(stdout, "long options:\n"
 	"To store entire traffic, run <tshark -i <interface> -w allframes.pcapng> in parallel\n"
 	"\n",
 	eigenname, eigenname,
-	ERROR_MAX, WATCHDOG_MAX, ATTEMPTCLIENT_MAX, ATTEMPTAP_MAX);
+	BEACONTX_MAX, PROBERESPONSETX_MAX, ERROR_MAX, WATCHDOG_MAX, ATTEMPTCLIENT_MAX, ATTEMPTAP_MAX);
 exit(EXIT_SUCCESS);
 }
 /*---------------------------------------------------------------------------*/
@@ -3879,6 +3887,8 @@ static const struct option long_options[] =
 	{"disable_proberequest",	no_argument,		NULL,	HCX_DISABLE_PROBEREQUEST},
 	{"disable_association",		no_argument,		NULL,	HCX_DISABLE_ASSOCIATION},
 	{"disable_reassociation",	no_argument,		NULL,	HCX_DISABLE_REASSOCIATION},
+	{"beacontx",			required_argument,	NULL,	HCX_BEACONTX_MAX},
+	{"proberesponsetx",		required_argument,	NULL,	HCX_PROBERESPONSETX_MAX},
 	{"attemptclientmax",		required_argument,	NULL,	HCX_ATTEMPT_CLIENT_MAX},
 	{"attemptapmax",		required_argument,	NULL,	HCX_ATTEMPT_AP_MAX},
 	{"tot",				required_argument,	NULL,	HCX_TOT},
@@ -3952,6 +3962,24 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 
 		case HCX_DISABLE_REASSOCIATION:
 		reassociationflag = false;
+		break;
+
+		case HCX_BEACONTX_MAX:
+		beacontxmax = strtoul(optarg, NULL, 10);
+		if((beacontxmax == 0) || (beacontxmax > (APRGLIST_MAX - 1)))
+			{
+			fprintf(stderr, "must be greater than > 0 and < than %d \n", APRGLIST_MAX - 1);
+			exit(EXIT_FAILURE);
+			}
+		break;
+
+		case HCX_PROBERESPONSETX_MAX:
+		proberesponsetxmax = strtoul(optarg, NULL, 10);
+		if((proberesponsetxmax == 0) || (proberesponsetxmax > (APRGLIST_MAX - 1)))
+			{
+			fprintf(stderr, "must be greater than > 0 and < than %d \n", APRGLIST_MAX - 1);
+			exit(EXIT_FAILURE);
+			}
 		break;
 
 		case HCX_ATTEMPT_CLIENT_MAX:
