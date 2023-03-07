@@ -479,7 +479,9 @@ p = strlen(rtb);
 for(i = 0; i < 20; i++)
 	{
 	if((clientlist + i)->tsakt == 0) break;
-	sprintf(&rtb[p], "  + %02x%02x%02x%02x%02x%02x %.*s\n", (clientlist + i)->macclient[0], (clientlist + i)->macclient[1], (clientlist + i)->macclient[2], (clientlist + i)->macclient[3], (clientlist + i)->macclient[4], (clientlist + i)->macclient[5], (clientlist + i)->ie.essidlen, (clientlist + i)->ie.essid);
+	if(((clientlist + i)->status & CLIENT_EAPOL_M2) == CLIENT_EAPOL_M2) ms = pmok;
+	else ms = pmdef;
+	sprintf(&rtb[p], "  %s %02x%02x%02x%02x%02x%02x %.*s\n", ms, (clientlist + i)->macclient[0], (clientlist + i)->macclient[1], (clientlist + i)->macclient[2], (clientlist + i)->macclient[3], (clientlist + i)->macclient[4], (clientlist + i)->macclient[5], (clientlist + i)->ie.essidlen, (clientlist + i)->ie.essid);
 	p = strlen(rtb);
 	}
 rtb[p] = 0;
