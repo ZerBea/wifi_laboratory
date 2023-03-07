@@ -468,7 +468,7 @@ for(i = 0; i < 20 ; i++)
 	else ps = pmdef;
 	if(((aplist +i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) ms = pmok;
 	else ms = pmdef;
-	sprintf(&rtb[p], " [%3d] %s   %s %02x%02x%02x%02x%02x%02x %.*s\n",
+	sprintf(&rtb[p], " [%3d] %s  %s  %02x%02x%02x%02x%02x%02x %.*s\n",
 			(aplist + i)->ie.channel, ps, ms,
 			(aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5],
 			(aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
