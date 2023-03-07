@@ -1783,9 +1783,9 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	if(memcmp(macfrx->addr1, (clientlist + i)->macap, ETH_ALEN) != 0) continue;
 	(clientlist + i)->tsakt = tsakt;
 	if((clientlist + i)->count == 0) return;
+	tagwalk_channel_essid_rsn(&(clientlist + i)->ie, associationrequestlen, associationrequest->ie);
 	if((tsakt - (clientlist + i)->tsassoc) > TIMEASSOCWAIT)
 		{
-		tagwalk_channel_essid_rsn(&(clientlist + i)->ie, associationrequestlen, associationrequest->ie);
 		if(((clientlist + i)->ie.flags & APRSNAKM_PSK) != 0)
 			{
 			send_80211_associationresponse();
