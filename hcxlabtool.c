@@ -456,8 +456,8 @@ static char *ps;
 static char *ms;
 
 system("clear");
-sprintf(&rtb[0], "  CHA  PM    MAC-AP    ESSID (last seen on top)         SCAN-FREQUENCY: %6u\n"
-	"------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency);
+sprintf(&rtb[0], "  CHA  P M3A    MAC-AP    ESSID (last seen on top)         SCAN-FREQUENCY: %6u\n"
+	"---------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency);
 p = strlen(rtb);
 i = 0;
 pa = 0;
@@ -468,7 +468,7 @@ for(i = 0; i < 20 ; i++)
 	else ps = pmdef;
 	if(((aplist +i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) ms = pmok;
 	else ms = pmdef;
-	sprintf(&rtb[p], " [%3d] %s%s %02x%02x%02x%02x%02x%02x %.*s\n",
+	sprintf(&rtb[p], " [%3d] %s   %s %02x%02x%02x%02x%02x%02x %.*s\n",
 			(aplist + i)->ie.channel, ps, ms,
 			(aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5],
 			(aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
@@ -476,15 +476,15 @@ for(i = 0; i < 20 ; i++)
 	pa++;
 	}
 for(i = 0; i < (22 - pa); i++) rtb[p++] = '\n';
-sprintf(&rtb[p], "  M    MAC_AP     MAC-CLIENT  ESSID (last seen on top)\n"
-	"------------------------------------------------------------------------------\n");
+sprintf(&rtb[p], "  M2R    MAC_AP     MAC-CLIENT  ESSID (last seen on top)\n"
+	"---------------------------------------------------------------------------------\n");
 p = strlen(rtb);
 for(i = 0; i < 20; i++)
 	{
 	if((clientlist + i)->tsakt == 0) break;
 	if(((clientlist + i)->status & CLIENT_EAPOL_M2) == CLIENT_EAPOL_M2) ms = pmok;
 	else ms = pmdef;
-	sprintf(&rtb[p], "  %s %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n",
+	sprintf(&rtb[p], "   %s  %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n",
 			ms,
 			(clientlist + i)->macap[0], (clientlist + i)->macap[1], (clientlist + i)->macap[2], (clientlist + i)->macap[3], (clientlist + i)->macap[4], (clientlist + i)->macap[5],
 			(clientlist + i)->macclient[0], (clientlist + i)->macclient[1], (clientlist + i)->macclient[2], (clientlist + i)->macclient[3], (clientlist + i)->macclient[4], (clientlist + i)->macclient[5],
