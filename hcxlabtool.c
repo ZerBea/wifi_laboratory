@@ -328,6 +328,7 @@ static u8 epb[PCAPNG_SNAPLEN * 2] = { 0 };
 static char nmeabuffer[NMEA_SIZE] = { 0 };
 static char gpwpl[NMEA_MSG_MAX] = { 0 };
 static char gprmc[NMEA_MSG_MAX] = { 0 };
+static char gptxt[NMEA_MSG_MAX] = { 0 };
 #endif
 
 #ifdef STATUSOUT
@@ -580,6 +581,24 @@ gpwpl[p2++] = 0x0d;
 gpwpl[p2++] = 0x0a;
 if(write(fd_hcxpos, gpwpl, p2) != p2) errorcount++;
 gpwpl[p2++] = 0x00;
+if(((aplist + i)->ie.essidlen == 0) || ((aplist + i)->ie.essidlen > ESSID_MAX)) return;
+
+p2 = 16;
+cs = 0x4e;
+for(p1 = 0; p1 < (aplist + i)->ie.essidlen; p1 ++)
+	{
+	gptxt[p2] = lookuptable[((aplist + i)->ie.essid[p1] & 0xf0) >> 4];
+	cs ^= gptxt[p2++];
+	gptxt[p2] = lookuptable[(aplist + i)->ie.essid[p1] & 0xf];
+	cs ^= gptxt[p2++];
+	}
+gptxt[p2++] = '*';
+gptxt[p2++] = lookuptable[(cs & 0xf0) >> 4];
+gptxt[p2++] = lookuptable[cs & 0x0f];
+gptxt[p2++] = 0x0d;
+gptxt[p2++] = 0x0a;
+if(write(fd_hcxpos, gptxt, p2) != p2) errorcount++;
+gptxt[p2++] = 0x00;
 return;
 }
 #endif
@@ -3444,6 +3463,7 @@ static struct timespec waitfordevice;
 static const char *macaprgfirst = "internet";
 #ifdef NMEAOUT
 static const char gpwplid[] = "$GPWPL";
+static const char gptxtid[] = "$GPTXT,01,01,01,";
 #endif
 
 waitfordevice.tv_sec = 1;
@@ -3499,6 +3519,7 @@ memcpy(packetoutptr, &rthtxdata, RTHTX_SIZE);
 macftx = (ieee80211_mac_t*)(packetoutptr + RTHTX_SIZE);
 #ifdef NMEAOUT
 memcpy(&gpwpl, &gpwplid, 6);
+memcpy(&gptxt, &gptxtid, 16);
 #endif
 return;
 }
@@ -3837,10 +3858,14 @@ fprintf(stdout, "long options:\n"
 	"                                  default: 0 (GPIO not in use)\n"
 	#ifdef NMEAOUT
 	"--nmea_dev=<NMEA device>       : open NMEA device (/dev/ttyACM0, /dev/tty/USB0, ...)\n"
-	"                                  output: NMEA 0183 stnadard messages $GPRMC & $GPWPL (waypoint = MAC AP)\n"
+	"                                  output: NMEA 0183 standard messages:\n"
+	"                                          $GPRMC: Position, velocity, time and date\n"
+	"                                          $GPWPL: Position and MAC AP\n"
+	"                                          $GPTXT: ESSID in HEX ASCII\n"
 	"                                  use gpsbabel to convert to other formats:\n"
 	"                                   gpsbabel -w -t -i nmea -f in_file.nmea -o gpx -F out_file_gpx\n"
 	"                                   gpsbabel -w -t -i nmea -f in_file.nmea -o kml -F out_file.kml\n"
+	"                                  get more information: https://en.wikipedia.org/wiki/NMEA_0183\n"
 	#endif
 	"--help                         : show this help\n"
 	"--version                      : show version\n"
