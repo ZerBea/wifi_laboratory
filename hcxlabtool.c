@@ -901,6 +901,7 @@ ii = RTHTX_SIZE;
 macftx = (ieee80211_mac_t*)(packetoutptr + ii);
 macftx->type = IEEE80211_FTYPE_DATA;
 macftx->subtype = IEEE80211_STYPE_DATA;
+packetoutptr[ii + 1] = 0;
 macftx->from_ds = 1;
 macftx->duration = 0x0431;
 memcpy(macftx->addr1, macfrx->addr2, ETH_ALEN);
