@@ -3099,7 +3099,6 @@ else
 			if(((ifpresentlist + i)->type & IF_HAS_NLMON) == 0) return false;
 			memcpy(&ifakthwmac, (ifpresentlist + i )->hwmac, ETH_ALEN);
 			ifaktfrequencylist = (ifpresentlist + i)->frequencylist;
-			printf("sss %d %s \n", ifaktindex, ifaktname);
 			break;
 			}
 		}
