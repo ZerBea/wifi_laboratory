@@ -2228,7 +2228,7 @@ if((packetlen = read(fd_socket_rx, packetptr, PCAPNG_SNAPLEN)) < RTHRX_SIZE)
 	return;
 	}
 rth = (rth_t*)packetptr;
-if((rth->it_present & IEEE80211_RADIOTAP_DBM_ANTSIGNAL) == 0) return;
+if((le32toh(rth->it_present) & IEEE80211_RADIOTAP_DBM_ANTSIGNAL) == 0) return;
 rthlen = le16toh(rth->it_len);
 if(rthlen > packetlen)
 	{
