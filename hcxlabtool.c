@@ -1541,7 +1541,6 @@ if((authseqakt.status & AP_EAPOL_M2) == AP_EAPOL_M2)
 								{
 								tshold = tsakt;
 								authseqakt.status = 0;
-								if(((aplist + i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) return;
 								(aplist + i)->status |= AP_EAPOL_M3;
 								return;
 								}
@@ -1555,7 +1554,6 @@ if((authseqakt.status & AP_EAPOL_M2) == AP_EAPOL_M2)
 authseqakt.status = 0;
 return;
 }
-
 /*---------------------------------------------------------------------------*/
 static inline void process80211eapol_m2rg()
 {
