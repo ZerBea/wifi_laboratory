@@ -2701,6 +2701,8 @@ static struct nlmsgerr *nle;
 
 i = 0;
 if(((scanlist + scanlistindex)->frequency) == 0) scanlistindex = 0;
+if(((scanlist + scanlistindex)->frequency) <= 2484) packetoutptr[9] = RATE1M;
+else packetoutptr[9]= RATE6M;
 nlh = (struct nlmsghdr*)nltxbuffer;
 nlh->nlmsg_type = nlfamily; 
 nlh->nlmsg_flags =  NLM_F_REQUEST | NLM_F_ACK;

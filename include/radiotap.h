@@ -52,6 +52,8 @@ typedef struct  __attribute__((__packed__))
 }rth_t;
 #define	RTHRX_SIZE (ssize_t)(sizeof(rth_t))
 /*---------------------------------------------------------------------------*/
+#define RATE1M		0x02
+#define RATE6M		0x0c
 static u8 rthtxdata[] =
 {
 0x00, 0x00, /* radiotap version and padding */
