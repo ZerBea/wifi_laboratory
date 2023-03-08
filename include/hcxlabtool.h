@@ -88,6 +88,8 @@
 #define PCAPNG_SNAPLEN		0xffff
 #define RTD_LEN			9128
 
+#define WLTXBUFFER		256
+
 #define NMEA_SIZE		9128
 #define NMEA_MSG_MAX		128
 #define NMEA_MIN		10

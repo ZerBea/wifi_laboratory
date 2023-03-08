@@ -52,16 +52,20 @@ typedef struct  __attribute__((__packed__))
 }rth_t;
 #define	RTHRX_SIZE (ssize_t)(sizeof(rth_t))
 /*---------------------------------------------------------------------------*/
-#define RATE1M		0x02
-#define RATE6M		0x0c
 static u8 rthtxdata[] =
 {
 0x00, 0x00, /* radiotap version and padding */
-0x0c, 0x00, /* radiotap header length */
-0x06, 0x80, 0x00, 0x00, /* bitmap */
-0x00, /* all cleared */
-0x02, /* rate */
-0x18, 0x00 /* tx flags */
+0x08, 0x00, /* radiotap header length */
+0x00, 0x00, 0x00, 0x00, /* bitmap */
 };
 #define RTHTX_SIZE sizeof(rthtxdata)
+/*---------------------------------------------------------------------------*/
+static u8 rthtxnoackdata[] =
+{
+0x00, 0x00, /* radiotap version and padding */
+0x0a, 0x00, /* radiotap header length */
+0x00, 0x80, 0x00, 0x00, /* bitmap */
+0x18, 0x00 /* tx flags */
+};
+#define RTHTXNOACK_SIZE sizeof(rthtxnoackdata)
 /*===========================================================================*/
