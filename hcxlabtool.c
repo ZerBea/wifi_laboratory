@@ -1084,6 +1084,24 @@ errorcount++;
 return;
 }
 /*---------------------------------------------------------------------------*/
+static inline void send_80211_authenticationrequestnoack()
+{
+macftx = (ieee80211_mac_t*)&wltxnoackbuffer[RTHTXNOACK_SIZE];
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_AUTH;
+wltxnoackbuffer[RTHTX_SIZE + 1] = 0;
+macftx->duration = 0x013a;
+memcpy(macftx->addr1, macfrx->addr2, ETH_ALEN);
+memcpy(macftx->addr2, macclientrg, ETH_ALEN);
+memcpy(macftx->addr3, macfrx->addr3, ETH_ALEN);
+macftx->sequence = seqcounter2++ << 4;
+if(seqcounter1 > 4095) seqcounter2 = 1;
+memcpy(&wltxnoackbuffer[RTHTXNOACK_SIZE + MAC_SIZE_NORM], authenticationrequestdata, AUTHENTICATIONREQUEST_SIZE);
+if((write(fd_socket_tx, &wltxnoackbuffer, RTHTXNOACK_SIZE + MAC_SIZE_NORM + AUTHENTICATIONREQUEST_SIZE)) == RTHTXNOACK_SIZE + MAC_SIZE_NORM + AUTHENTICATIONREQUEST_SIZE) return;
+errorcount++;
+return;
+}
+/*---------------------------------------------------------------------------*/
 static inline void send_80211_authenticationrequest()
 {
 macftx = (ieee80211_mac_t*)&wltxbuffer[RTHTX_SIZE];
@@ -2135,7 +2153,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 				{
 				if(((aplist + i)->status & AP_ESSID) == AP_ESSID)
 					{
-					if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_authenticationrequest();
+					if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_authenticationrequestnoack();
 					}
 				}
 			}
@@ -2254,6 +2272,7 @@ if((packetlen = read(fd_socket_rx, packetptr, PCAPNG_SNAPLEN)) < RTHRX_SIZE)
 	return;
 	}
 rth = (rth_t*)packetptr;
+#ifndef __LITTLE_ENDIAN__
 if((rth->it_present & IEEE80211_RADIOTAP_DBM_ANTSIGNAL) == 0) return;
 if(rth->it_len > packetlen)
 	{
@@ -2262,6 +2281,16 @@ if(rth->it_len > packetlen)
 	}
 ieee82011ptr = packetptr + rth->it_len;
 ieee82011len = packetlen - rth->it_len;
+#else
+if((le32toh(rth->it_present) & IEEE80211_RADIOTAP_DBM_ANTSIGNAL) == 0) return;
+if(le16toh(rth->it_len) > packetlen)
+	{
+	errorcount++;
+	return;
+	}
+ieee82011ptr = packetptr + le16toh(rth->it_len);
+ieee82011len = packetlen - le16toh(rth->it_len);
+#endif
 if(ieee82011len <= MAC_SIZE_RTS) return;
 macfrx = (ieee80211_mac_t*)ieee82011ptr;
 if((macfrx->from_ds == 1) && (macfrx->to_ds == 1))
