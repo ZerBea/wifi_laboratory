@@ -397,7 +397,8 @@ for(i = 0; i < ifpresentlistcounter; i++)
 	if(((ifpresentlist + i)->type & IF_HAS_NLWEXT) == IF_HAS_NLWEXT) po = "NETLINK & WIRELESS EXTENSIONS";
 	else if(((ifpresentlist + i)->type & IF_HAS_NETLINK) == IF_HAS_NETLINK) po = "NETLINK";
 	else if(((ifpresentlist + i)->type & IF_HAS_WEXT) == IF_HAS_WEXT) po = "WIRELESS EXTENSIONS";
-	if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
+	if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "*";
+	else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
 	fprintf(stdout, "%3d %3d %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %s %-*s %s (%s)\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
 		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
 		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
@@ -431,7 +432,8 @@ for(i = 0; i < ifpresentlistcounter; i++)
 	if(((ifpresentlist + i)->type & IF_HAS_NLWEXT) == IF_HAS_NLWEXT) po = "NETLINK & WIRELESS EXTENSIONS";
 	else if(((ifpresentlist + i)->type & IF_HAS_NETLINK) == IF_HAS_NETLINK) po = "NETLINK";
 	else if(((ifpresentlist + i)->type & IF_HAS_WEXT) == IF_HAS_WEXT) po = "WIRELESS EXTENSIONS";
-	if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
+	if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "*";
+	else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
 	fprintf(stdout, "%3d %3d %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %s %-*s %s (%s)\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
 		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
 		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
@@ -439,6 +441,7 @@ for(i = 0; i < ifpresentlistcounter; i++)
 	}
 
 fprintf(stdout, "\n"
+		"* active monitor mode available\n"
 		"+ monitor mode available\n"
 		"- no monitor mode available\n"
 		"\n");
@@ -2713,6 +2716,10 @@ while(1)
 				(ifpresentlist + ii)->type |= IF_HAS_NETLINK;
 				}
 			if(nla->nla_type == NL80211_ATTR_WIPHY_BANDS) nl_get_supported_bands((ifpresentlist + ii), nla);
+			if(nla->nla_type == NL80211_ATTR_FEATURE_FLAGS)
+				{
+				if((*((u32*)nla_data(nla)) & NL80211_FEATURE_ACTIVE_MONITOR) == NL80211_FEATURE_ACTIVE_MONITOR) (ifpresentlist + ii)->type |= IF_HAS_MONITOR_ACTIVE;
+				}
 			nla = nla_next(nla, &nlremlen);
 			}
 		}
@@ -2762,7 +2769,7 @@ nla->nla_type = NL80211_ATTR_CHANNEL_WIDTH;
 i += 8;
 nla = (struct nlattr*)(nltxbuffer + i);
 nla->nla_len = 8;
-nla->nla_type =  NL80211_ATTR_WIPHY_CHANNEL_TYPE ;
+nla->nla_type = NL80211_ATTR_WIPHY_CHANNEL_TYPE;
 *(u32*)nla_data(nla) = NL80211_CHAN_NO_HT;
 i += 8;
 nla = (struct nlattr*)(nltxbuffer + i);
