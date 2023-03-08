@@ -951,6 +951,7 @@ return;
 static inline void send_80211_eapolm1()
 {
 static ssize_t ii;
+
 ii = RTHTX_SIZE;
 macftx = (ieee80211_mac_t*)&wltxbuffer[ii];
 macftx->type = IEEE80211_FTYPE_DATA;
@@ -1571,6 +1572,7 @@ for(i = 0; i < APLIST_MAX -1; i++)
 				}
 			}
 		memcpy((aplist + i)->macclient, macfrx->addr2, ETH_ALEN);
+		qsort(aplist, APLIST_MAX, APLIST_SIZE, sort_aplist_by_tsakt);
 		return;
 		}
 	}
