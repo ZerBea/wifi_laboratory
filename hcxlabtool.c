@@ -310,7 +310,7 @@ static uint8_t eapolm1data[] =
 #define EAPOLM1DATA_SIZE sizeof(eapolm1data)
 /*---------------------------------------------------------------------------*/
 static u8 macaprg[ETH_ALEN] = { 0 };
-static u8 macclientrg[ETH_ALEN] = { 0 };
+static u8 macclientrg[ETH_ALEN +2] = { 0 };
 static u8 anoncerg[32] = { 0 };
 static u8 snoncerg[32] = { 0 };
 static char weakcandidate[PSK_MAX];
@@ -2858,6 +2858,58 @@ static void *rta_data(const struct rtattr *rta)
 return (u8*)rta +4;
 }
 /*---------------------------------------------------------------------------*/
+static bool rt_set_interfacemac()
+{
+static ssize_t i;
+static ssize_t msglen;
+static struct nlmsghdr *nlh;
+static struct ifinfomsg *ifih;
+static struct rtattr *rta;
+static struct nlmsgerr *nle;
+
+i = 0;
+nlh = (struct nlmsghdr*)nltxbuffer;
+nlh->nlmsg_type = RTM_NEWLINK;
+nlh->nlmsg_flags =  NLM_F_REQUEST | NLM_F_ACK;
+nlh->nlmsg_seq = nlseqcounter++;
+nlh->nlmsg_pid = hcxpid;
+i += sizeof(struct nlmsghdr);
+ifih = (struct ifinfomsg*)(nltxbuffer+ i);
+ifih->ifi_family = 0;
+ifih->ifi_type = 0;
+ifih->ifi_index = ifaktindex;
+ifih->ifi_flags = 0;
+ifih->ifi_change = 0;
+i += sizeof(struct ifinfomsg);
+rta = (struct rtattr*)(nltxbuffer+ i);
+rta->rta_len = 10;
+rta->rta_type = IFLA_ADDRESS;
+memcpy(&nltxbuffer[i + 4], &macclientrg, ETH_ALEN +2); 
+i += 12;
+nlh->nlmsg_len = i;
+if((write(fd_socket_rt, nltxbuffer, i)) != i) return false;
+while(1)
+	{
+	msglen = read(fd_socket_rt, &nlrxbuffer, NLRX_SIZE);
+	if(msglen == -1) break;
+	if(msglen == 0) break;
+	for(nlh = (struct nlmsghdr*)nlrxbuffer; NLMSG_OK(nlh, msglen); nlh = NLMSG_NEXT (nlh, msglen))
+		{
+		if(nlh->nlmsg_type == NLMSG_DONE) return false;
+		if(nlh->nlmsg_type == NLMSG_ERROR)
+			{
+			nle = (struct nlmsgerr*)(nlrxbuffer + sizeof(struct nlmsghdr));
+			if(nle->error == 0) return true;
+			errorcount++;
+			return false;
+			}
+		}
+	}
+return false;
+}
+/*---------------------------------------------------------------------------*/
+//sudo ip link set dev <your device here> address <your new mac address>
+
 static bool rt_set_interface(u32 condition)
 {
 static ssize_t i;
@@ -3139,6 +3191,7 @@ else
 	}
 if(ifaktfrequencylist == NULL) return false;
 if(rt_set_interface(0) == false) return false;
+if(rt_set_interfacemac() == false) return false;
 if(nl_set_monitormode() == false) return false;
 if(rt_set_interface(IFF_UP) == false) return false;
 if(nl_get_interfacestatus() == false) return false;
@@ -3503,6 +3556,8 @@ nicaprg++;
 
 ouiclientrg = (vendorclientrg[rand() %((VENDORCLIENTRG_SIZE / sizeof(int)))]) &0xffffff;
 nicclientrg = rand() & 0xffffff;
+macclientrg[7] = 0;
+macclientrg[6] = 0;
 macclientrg[5] = nicclientrg & 0xff;
 macclientrg[4] = (nicclientrg >> 8) & 0xff;
 macclientrg[3] = (nicclientrg >> 16) & 0xff;
