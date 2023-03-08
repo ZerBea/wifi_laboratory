@@ -308,6 +308,27 @@ static uint8_t eapolm1data[] =
 0x00, 0x00
 };
 #define EAPOLM1DATA_SIZE sizeof(eapolm1data)
+
+/*---------------------------------------------------------------------------*/
+/* interface bit rate */
+static uint8_t legacy241mbdata[] =
+{
+0x10, 0x00,
+0x5a, 0x80,
+0x0c, 0x00,
+0x01, 0x80,
+0x05, 0x00, 0x01, 0x00, 0x02, 0x00, 0x00, 0x00
+};
+#define LEGACYXXXMB_SIZE sizeof(legacy241mbdata)
+/*---------------------------------------------------------------------------*/
+static uint8_t legacy56mbdata[] =
+{
+0x10, 0x00,
+0x5a, 0x80,
+0x0c, 0x00,
+0x01, 0x80,
+0x05, 0x00, 0x01, 0x00, 0x0c, 0x00, 0x00, 0x00
+};
 /*---------------------------------------------------------------------------*/
 static u8 macaprg[ETH_ALEN] = { 0 };
 static u8 macclientrg[ETH_ALEN +2] = { 0 };
@@ -2740,8 +2761,6 @@ static struct nlmsgerr *nle;
 
 i = 0;
 if(((scanlist + scanlistindex)->frequency) == 0) scanlistindex = 0;
-if(((scanlist + scanlistindex)->frequency) <= 2484) packetoutptr[9] = RATE1M;
-else packetoutptr[9]= RATE6M;
 nlh = (struct nlmsghdr*)nltxbuffer;
 nlh->nlmsg_type = nlfamily; 
 nlh->nlmsg_flags =  NLM_F_REQUEST | NLM_F_ACK;
@@ -2778,6 +2797,9 @@ nla->nla_len = 8;
 nla->nla_type = NL80211_ATTR_CENTER_FREQ1;
 *(u32*)nla_data(nla) = (scanlist + scanlistindex)->frequency;
 i += 8;
+if(((scanlist + scanlistindex)->frequency) <= 2484) memcpy(&nltxbuffer[i], legacy241mbdata, LEGACYXXXMB_SIZE);
+else memcpy(&nltxbuffer[i], legacy56mbdata, LEGACYXXXMB_SIZE);
+i += LEGACYXXXMB_SIZE;
 nlh->nlmsg_len = i;
 if((write(fd_socket_nl, nltxbuffer, i)) != i) return false;
 while(1)
