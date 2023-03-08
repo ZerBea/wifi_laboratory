@@ -133,7 +133,6 @@ static size_t proberesponsetxmax = PROBERESPONSETX_MAX;
 
 static u64 beacontimestamp = 1;
 
-static u16 rthlen = 0;
 static rth_t *rth = NULL;
 static ssize_t packetlen = 0;
 static u8 *packetptr = NULL;
@@ -1673,7 +1672,6 @@ authseqakt.kdv1 = kdv;
 authseqakt.replaycountm1 = be64toh(wpakey->replaycount);
 memcpy(&authseqakt.noncem1, &wpakey->nonce[28], 4);
 authseqakt.status = AP_EAPOL_M1;
-
 if(ntohs(wpakey->wpadatalen) == IEEE80211_PMKID_SIZE)
 	{
 	pmkid = (ieee80211_pmkid_t*)(eapolplptr + IEEE80211_WPAKEY_SIZE);
@@ -1702,6 +1700,7 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline void process80211eapol()
 {
+
 eapolplptr = eapauthplptr + IEEE80211_EAPAUTH_SIZE;
 eapolpllen = eapauthpllen - IEEE80211_EAPAUTH_SIZE;
 if((eapolpllen + IEEE80211_EAPAUTH_SIZE + IEEE80211_LLC_SIZE) > payloadlen) return;
@@ -2255,15 +2254,14 @@ if((packetlen = read(fd_socket_rx, packetptr, PCAPNG_SNAPLEN)) < RTHRX_SIZE)
 	return;
 	}
 rth = (rth_t*)packetptr;
-if((le32toh(rth->it_present) & IEEE80211_RADIOTAP_DBM_ANTSIGNAL) == 0) return;
-rthlen = le16toh(rth->it_len);
-if(rthlen > packetlen)
+if((rth->it_present & IEEE80211_RADIOTAP_DBM_ANTSIGNAL) == 0) return;
+if(rth->it_len > packetlen)
 	{
 	errorcount++;
 	return;
 	}
-ieee82011ptr = packetptr +rthlen;
-ieee82011len = packetlen -rthlen;
+ieee82011ptr = packetptr + rth->it_len;
+ieee82011len = packetlen - rth->it_len;
 if(ieee82011len <= MAC_SIZE_RTS) return;
 macfrx = (ieee80211_mac_t*)ieee82011ptr;
 if((macfrx->from_ds == 1) && (macfrx->to_ds == 1))
@@ -2488,11 +2486,6 @@ if(nlan->nla_type != NL80211_BAND_ATTR_FREQS) return;
 nlai = (struct nlattr*)nla_data(nlan);
 nlanremlen = nlai->nla_len - sizeof(struct nlattr);
 nlan = (struct nlattr*)nla_data(nlai);
-
-//printf("%d %u %u %u\n",  nlanremlen, nlai->nla_type, nlai->nla_len, *((u32*)nli_data(nlan)));
-
-//printf("xxx %d %u %u\n",  nlanremlen, nlai->nla_type, nlai->nla_len);
-
 freql = ipl->frequencylist;
 if(ipl->i > FREQUENCYLIST_MAX -1) return;
 (freql + ipl->i)->frequency = 0;
@@ -2860,7 +2853,9 @@ if((ifakttype & IFTYPEMONACT) == IFTYPEMONACT)
 	nla = (struct nlattr*)(nltxbuffer + i);
 	nla->nla_len = 8;
 	nla->nla_type = NL80211_ATTR_MNTR_FLAGS;
-	*(u32*)nla_data(nla) = NL80211_MNTR_FLAG_ACTIVE;
+	nla =  (struct nlattr*)nla_data(nla);
+	nla->nla_len = 4;
+	nla->nla_type = NL80211_MNTR_FLAG_ACTIVE;
 	i += 8;
 	}
 nlh->nlmsg_len = i;
@@ -3229,7 +3224,6 @@ if(nl_set_monitormode() == false) return false;
 if(rt_set_interface(IFF_UP) == false) return false;
 if(nl_get_interfacestatus() == false) return false;
 if(rt_get_interfacestatus() == false) return false;
-
 scanlistindex = 0;
 if(interfacefrequencyflag == true)
 	{
