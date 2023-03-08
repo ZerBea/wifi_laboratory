@@ -2909,8 +2909,6 @@ while(1)
 return false;
 }
 /*---------------------------------------------------------------------------*/
-//sudo ip link set dev <your device here> address <your new mac address>
-
 static bool rt_set_interface(u32 condition)
 {
 static ssize_t i;
