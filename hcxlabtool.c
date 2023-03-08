@@ -712,7 +712,6 @@ if(seqcounter1 > 4095) seqcounter3 = 1;
 ii += MAC_SIZE_NORM;
 memcpy(&epbown[ii], &eapolm1data, EAPOLM1DATA_SIZE);
 ii += EAPOLM1DATA_SIZE;
-
 epbhdr = (enhanced_packet_block_t*)epbown;
 epblen = EPB_SIZE;
 epbhdr->block_type = EPBID;
@@ -732,7 +731,7 @@ epblen += TOTAL_SIZE;
 epbhdr->total_length = epblen;
 totallength->total_length = epblen;
 if(write(fd_pcapng, &epbown, epblen) != epblen) errorcount++;
-return;	
+return;
 }
 /*===========================================================================*/
 static inline void writeepb()
