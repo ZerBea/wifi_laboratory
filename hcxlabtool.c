@@ -3846,6 +3846,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"short options:\n"
 	"-i <INTERFACE> : name of INTERFACE to be used\n"
 	"                  default: first suitable INTERFACE\n"
+	"                  warning: %s changes the virtual MAC address of the INTERFACE\n"
 	"-I <INTERFACE> : show detailed information about INTERFACE\n"
 	"-c <digit>     : set channel (1a,2a,36b...)\n"
 	"                  important notice: channel numbers are not unique\n"
@@ -3865,7 +3866,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"-h             : show this help\n"
 	"-v             : show version\n"
 	"\n",
-	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, TIMEHOLD / 1000000000ULL);
+	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, eigenname, TIMEHOLD / 1000000000ULL);
 fprintf(stdout, "long options:\n"
 	"--bpf=<file>                   : input kernel space Berkeley Packet Filter (BPF) code\n"
 	"                                  steps to create a BPF (it only has to be done once):\n"
