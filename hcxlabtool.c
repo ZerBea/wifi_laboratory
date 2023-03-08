@@ -1597,7 +1597,6 @@ if((authseqakt.status & AP_EAPOL_M2) == AP_EAPOL_M2)
 							{
 							if(memcmp((aplist + i)->macap, authseqakt.macap, ETH_ALEN) == 0)
 								{
-								tshold = tsakt;
 								authseqakt.status = 0;
 								(aplist + i)->status |= AP_EAPOL_M3;
 								return;
@@ -1653,7 +1652,6 @@ if((authseqakt.status & AP_EAPOL_M1) == AP_EAPOL_M1)
 				{
 				if((tsakt - tshold) < EAPOLM2TIMEOUT) authseqakt.status |= AP_EAPOL_M2;
 				else authseqakt.status = 0;
-				tshold = tsakt;
 				return;
 				}
 			}
@@ -1668,7 +1666,6 @@ static inline void process80211eapol_m1()
 static size_t i;
 
 memset(&authseqakt, 0, AUTHSEQAKT_SIZE);
-tshold = tsakt;
 memcpy(&authseqakt.macap, macfrx->addr2, ETH_ALEN);
 authseqakt.kdv1 = kdv;
 authseqakt.replaycountm1 = be64toh(wpakey->replaycount);
@@ -1960,7 +1957,6 @@ static ieee80211_proberequest_t *proberequest;
 static u16 proberequestlen; 
 static essid_t essid;
 
-tshold = tsakt;
 proberequest = (ieee80211_proberequest_t*)payloadptr;
 if((proberequestlen = payloadlen - IEEE80211_PROBERESPONSE_SIZE)  < IEEE80211_IETAG_SIZE) return;
 get_tag(TAG_SSID, &essid, proberequestlen, proberequest->ie);
@@ -1996,7 +1992,6 @@ static ieee80211_proberequest_t *proberequest;
 static u16 proberequestlen; 
 static essid_t essid;
 
-tshold = tsakt;
 proberequest = (ieee80211_proberequest_t*)payloadptr;
 if((proberequestlen = payloadlen - IEEE80211_PROBERESPONSE_SIZE)  < IEEE80211_IETAG_SIZE) return;
 get_tag(TAG_SSID, &essid, proberequestlen, proberequest->ie);
@@ -2040,8 +2035,6 @@ static size_t i;
 static ieee80211_beacon_proberesponse_t *proberesponse;
 static u16 proberesponselen;
 
-return;
-
 proberesponse = (ieee80211_beacon_proberesponse_t*)payloadptr;
 if((proberesponselen = payloadlen - IEEE80211_PROBERESPONSE_SIZE) < IEEE80211_IETAG_SIZE) return;
 for(i = 0; i < APLIST_MAX - 1; i++)
@@ -2055,6 +2048,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		if(fd_nmea0183 > 0) writegpwpl(i);
 		#endif
 		(aplist + i)->status |= AP_PROBERESPONSE;
+		tshold = tsakt;
 		}
 	tagwalk_channel_essid_rsn(&(aplist + i)->ie, proberesponselen, proberesponse->ie);
 	if((aplist + i)->ie.channel == 0) (aplist + i)->ie.channel = (scanlist + scanlistindex)->channel;
@@ -2115,6 +2109,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(((aplist + i)->status & AP_BEACON) == 0)
 		{
 		writeepb();
+		tshold = tsakt;
 		#ifdef NMEAOUT
 		if(fd_nmea0183 > 0) writegpwpl(i);
 		#endif
