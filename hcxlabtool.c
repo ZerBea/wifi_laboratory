@@ -698,8 +698,8 @@ static u64 tsm1;
 static u16 padding;
 static total_length_t *totallength;
 
-ii = RTHTX_SIZE;
-macftx = (ieee80211_mac_t*)&wltxbuffer[ii];
+ii = RTHTX_SIZE + EPB_SIZE;
+macftx = (ieee80211_mac_t*)&epbown[ii];
 macftx->type = IEEE80211_FTYPE_DATA;
 macftx->subtype = IEEE80211_STYPE_DATA;
 macftx->from_ds = 1;
@@ -710,7 +710,7 @@ memcpy(macftx->addr3, macfrx->addr3, ETH_ALEN);
 macftx->sequence = seqcounter3++ << 4;
 if(seqcounter1 > 4095) seqcounter3 = 1;
 ii += MAC_SIZE_NORM;
-memcpy(&wltxbuffer[ii], &eapolm1data, EAPOLM1DATA_SIZE);
+memcpy(&epbown[ii], &eapolm1data, EAPOLM1DATA_SIZE);
 ii += EAPOLM1DATA_SIZE;
 
 epbhdr = (enhanced_packet_block_t*)epbown;
@@ -952,7 +952,6 @@ return;
 static inline void send_80211_eapolm1()
 {
 static ssize_t ii;
-
 ii = RTHTX_SIZE;
 macftx = (ieee80211_mac_t*)&wltxbuffer[ii];
 macftx->type = IEEE80211_FTYPE_DATA;
@@ -3616,6 +3615,7 @@ for(i = 0; i < 32; i++)
 packetptr = &epb[EPB_SIZE];
 memcpy(&wltxbuffer, &rthtxdata, RTHTX_SIZE);
 memcpy(&wltxnoackbuffer, &rthtxnoackdata, RTHTXNOACK_SIZE);
+memcpy(&epbown[EPB_SIZE], &rthtxdata, RTHTX_SIZE);
 #ifdef NMEAOUT
 memcpy(&gpwpl, &gpwplid, 6);
 memcpy(&gptxt, &gptxtid, 16);
