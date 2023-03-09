@@ -109,7 +109,7 @@ static u32 ouiclientrg = 0;
 static u32 nicclientrg = 0;
 static u64 replaycountrg = 0;
 
-static struct timespec tvakt = { 0 };
+static struct timespec tspecakt = { 0 };
 static u64 tsakt = 0;
 static u64 tsfirst = 0;
 static u64 tshold = 0;
@@ -717,7 +717,7 @@ epbhdr->block_type = EPBID;
 epbhdr->interface_id = 0;
 epbhdr->cap_len = ii;
 epbhdr->org_len = ii;
-tsm1 = tsakt - 2;
+tsm1 = tsakt - 1000;
 epbhdr->timestamp_high = tsm1 >> 32;
 epbhdr->timestamp_low = (u32)tsm1 & 0xffffffff;
 padding = (4 -(epbhdr->cap_len % 4)) % 4;
@@ -2303,8 +2303,8 @@ else
 	payloadptr = ieee82011ptr +MAC_SIZE_NORM;
 	payloadlen = ieee82011len -MAC_SIZE_NORM;
 	}
-clock_gettime(CLOCK_REALTIME, &tvakt);
-tsakt = ((u64)tvakt.tv_sec * 1000000000ULL) + tvakt.tv_nsec;
+clock_gettime(CLOCK_REALTIME, &tspecakt);
+tsakt = ((u64)tspecakt.tv_sec * 1000000000ULL) + tspecakt.tv_nsec;
 packetcount++;
 if(macfrx->type == IEEE80211_FTYPE_MGMT)
 	{
@@ -2407,8 +2407,8 @@ while(!wanteventflag)
 			#ifdef STATUSOUT
 			show_realtime();
 			#endif
-			clock_gettime(CLOCK_REALTIME, &tvakt);
-			tsakt = ((u64)tvakt.tv_sec * 1000000000ULL) + tvakt.tv_nsec;
+			clock_gettime(CLOCK_REALTIME, &tspecakt);
+			tsakt = ((u64)tspecakt.tv_sec * 1000000000ULL) + tspecakt.tv_nsec;
 			if((tsakt - tshold) > timehold)
 				{
 				scanlistindex++;
@@ -3584,15 +3584,15 @@ static const char gptxtid[] = "$GPTXT,01,01,01,";
 
 waitfordevice.tv_sec = 1;
 waitfordevice.tv_nsec = 0;
-clock_gettime(CLOCK_REALTIME, &tvakt);
-tsfirst = ((u64)tvakt.tv_sec * 1000000000ULL) + tvakt.tv_nsec;
+clock_gettime(CLOCK_REALTIME, &tspecakt);
+tsfirst = ((u64)tspecakt.tv_sec * 1000000000ULL) + tspecakt.tv_nsec;
 nanosleep(&waitfordevice, NULL);
-clock_gettime(CLOCK_REALTIME, &tvakt);
-tsakt = ((u64)tvakt.tv_sec * 1000000000ULL) + tvakt.tv_nsec;
-tshold = ((u64)tvakt.tv_sec * 1000000000ULL) + tvakt.tv_nsec;
-strftime(timestring, PATH_MAX, "%Y%m%d%H%M%S", localtime(&tvakt.tv_sec));
+clock_gettime(CLOCK_REALTIME, &tspecakt);
+tsakt = ((u64)tspecakt.tv_sec * 1000000000ULL) + tspecakt.tv_nsec;
+tshold = ((u64)tspecakt.tv_sec * 1000000000ULL) + tspecakt.tv_nsec;
+strftime(timestring, PATH_MAX, "%Y%m%d%H%M%S", localtime(&tspecakt.tv_sec));
 
-seed += tvakt.tv_nsec & 0x7ffffffffff;
+seed += tspecakt.tv_nsec & 0x7ffffffffff;
 srand(seed);
 
 ouiaprg = (vendoraprg[rand() %((VENDORAPRG_SIZE / sizeof(int)))]) &0xffffff;
