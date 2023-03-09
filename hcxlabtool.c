@@ -3595,7 +3595,7 @@ strftime(timestring, PATH_MAX, "%Y%m%d%H%M%S", localtime(&tspecakt.tv_sec));
 seed += tspecakt.tv_nsec & 0x7ffffffffff;
 srand(seed);
 
-ouiaprg = (vendoraprg[rand() %((VENDORAPRG_SIZE / sizeof(int)))]) &0xffffff;
+ouiaprg = (vendoraprg[rand() % ((VENDORAPRG_SIZE / sizeof(int)))]) &0xffffff;
 nicaprg = rand() & 0xffffff;
 macaprg[5] = nicaprg & 0xff;
 macaprg[4] = (nicaprg >> 8) & 0xff;
@@ -3610,7 +3610,7 @@ memcpy(aprglist->essid, macaprgfirst, strnlen(macaprgfirst, ESSID_MAX));
 memcpy(aprglist->macaprg, &macaprg, ETH_ALEN);
 nicaprg++;
 
-ouiclientrg = (vendorclientrg[rand() %((VENDORCLIENTRG_SIZE / sizeof(int)))]) &0xffffff;
+ouiclientrg = (vendorclientrg[rand() % ((VENDORCLIENTRG_SIZE / sizeof(int)))]) &0xffffff;
 nicclientrg = rand() & 0xffffff;
 macclientrg[7] = 0;
 macclientrg[6] = 0;
