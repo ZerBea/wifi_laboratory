@@ -717,7 +717,7 @@ epbhdr->block_type = EPBID;
 epbhdr->interface_id = 0;
 epbhdr->cap_len = ii;
 epbhdr->org_len = ii;
-tsm1 = tsakt - 1000;
+tsm1 = tsakt - 1;
 epbhdr->timestamp_high = tsm1 >> 32;
 epbhdr->timestamp_low = (u32)tsm1 & 0xffffffff;
 padding = (4 -(epbhdr->cap_len % 4)) % 4;
@@ -857,21 +857,27 @@ if(write(fd_pcapng, &cb, cblen) != cblen) return false;
 return true;
 }
 /*---------------------------------------------------------------------------*/
-static bool open_pcapng()
+static bool open_pcapng(char *pcapngoutname)
 {
 static int c;
 static struct stat statinfo;
+static char *pcapngfilename = NULL;
 static char pcapngname[PATH_MAX];
 
-c = 0;
-snprintf(pcapngname, PATH_MAX, "%s-%s.pcapng", timestring, ifaktname);
-while(stat(pcapngname, &statinfo) == 0)
+if(pcapngoutname == NULL)
 	{
-	snprintf(pcapngname, PATH_MAX, "%s-%s-%02d.pcapng", timestring, ifaktname, c);
-	c++;
+	c = 0;
+	snprintf(pcapngname, PATH_MAX, "%s-%s.pcapng", timestring, ifaktname);
+	while(stat(pcapngname, &statinfo) == 0)
+		{
+		snprintf(pcapngname, PATH_MAX, "%s-%s-%02d.pcapng", timestring, ifaktname, c);
+		c++;
+		}
+	pcapngfilename = pcapngname;
 	}
+else pcapngfilename = pcapngoutname;
 umask(0);
-if((fd_pcapng = open(pcapngname, O_WRONLY | O_CREAT, 0777)) < 0) return false;
+if((fd_pcapng = open(pcapngfilename, O_WRONLY | O_TRUNC | O_CREAT, 0777)) < 0) return false;
 if(writeshb() == false) return false;
 if(writeidb() == false) return false;
 if(writecb() == false) return false;
@@ -3902,7 +3908,9 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"-i <INTERFACE> : name of INTERFACE to be used\n"
 	"                  default: first suitable INTERFACE\n"
 	"                  warning: %s changes the virtual MAC address of the INTERFACE\n"
-	"-I <INTERFACE> : show detailed information about INTERFACE\n"
+	"-w <outfile>   : write packets to a pcapng-format file named <outfile>\n"
+	"                  default outfile name: yyyyddmmhhmmss-interfacename.pcapng\n"
+	"                  https://pcapng.com/\n"
 	"-c <digit>     : set channel (1a,2a,36b...)\n"
 	"                  default: 1a,6a,11a\n"
 	"                  important notice: channel numbers are not unique\n"
@@ -3919,6 +3927,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                 default %llu seconds\n"
 	"-m <INTERFACE> : set monitor mode and terminate\n"
 	"-L             : show INTERFACE list\n"
+	"-I <INTERFACE> : show detailed information about INTERFACE\n"
 	"-h             : show this help\n"
 	"-v             : show version\n"
 	"\n",
@@ -4025,12 +4034,13 @@ static char *bpfname = NULL;
 static char *essidlistname = NULL;
 static char *userchannellistname = NULL;
 static char *userfrequencylistname = NULL;
+static char *pcapngoutname = NULL;
 #ifdef NMEAOUT
 static char *nmea0183name = NULL;
 #endif
 static const char *rebootstring = "reboot";
 static const char *poweroffstring = "poweroff";
-static const char *short_options = "i:c:f:m:I:t:FLhv";
+static const char *short_options = "i:w:c:f:m:I:t:FLhv";
 static const struct option long_options[] =
 {
 	{"bpf",				required_argument,	NULL,	HCX_BPF},
@@ -4078,6 +4088,10 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 
 		case HCX_BPF:
 		bpfname = optarg;
+		break;
+
+		case HCX_PCAPNGNAME:
+		pcapngoutname = optarg;
 		break;
 
 		case HCX_SET_SCANLIST_FROM_INTERFACE:
@@ -4368,7 +4382,7 @@ if(set_interface(interfacefrequencyflag, userfrequencylistname, userchannellistn
 	goto byebye;
 	}
 if(essidlistname != NULL) read_essidlist(essidlistname);
-if(open_pcapng() == false)
+if(open_pcapng(pcapngoutname) == false)
 	{
 	errorcount++;
 	fprintf(stderr, "failed to open dump file\n");

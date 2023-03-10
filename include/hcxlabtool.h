@@ -27,6 +27,7 @@
 #define HCX_NMEA0183			22
 
 #define HCX_IFNAME			'i'
+#define HCX_PCAPNGNAME			'w'
 #define HCX_INTERFACE_INFO		'I'
 #define HCX_SET_MONITORMODE		'm'
 #define HCX_SET_SCANLIST_FROM_USER_CH	'c'
