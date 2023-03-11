@@ -25,6 +25,7 @@
 #define HCX_ON_ERROR			20
 #define HCX_ESSIDLIST			21
 #define HCX_NMEA0183			22
+#define HCX_NMEA0183_OUT		23
 
 #define HCX_IFNAME			'i'
 #define HCX_PCAPNGNAME			'w'

@@ -3434,14 +3434,34 @@ while((!wanteventflag) || (c != 0))
 return true;
 }
 /*===========================================================================*/
-/* NMEA0183 device */
+/* GPS */
 #ifdef NMEAOUT
-static bool open_nmea0183_device(char *nmea0183name)
+static bool open_nmea0183_file(char *hcxposoutname)
 {
 static int c;
-static struct termios tty;
 static struct stat statinfo;
+static char *hcxposfilename = NULL;
 static char hcxposname[PATH_MAX];
+
+if(hcxposoutname == NULL)
+	{
+	c = 0;
+	snprintf(hcxposname, PATH_MAX, "%s.nmea", timestring);
+	while(stat(hcxposname, &statinfo) == 0)
+		{
+		snprintf(hcxposname, PATH_MAX, "%s-%02d.nmea", timestring, c);
+		c++;
+		}
+	hcxposfilename = hcxposname;
+	}
+else hcxposfilename = hcxposoutname;
+if((fd_hcxpos = open(hcxposfilename, O_WRONLY | O_CREAT, 0777)) < 0) return false;
+return true;
+}
+/*---------------------------------------------------------------------------*/
+static bool open_nmea0183_device(char *nmea0183name, char *hcxposoutname)
+{
+static struct termios tty;
 
 if((fd_nmea0183 = open(nmea0183name, O_RDONLY | O_NONBLOCK)) < 0) return false;
 if(flock(fd_nmea0183, LOCK_EX) < 0) return false;
@@ -3466,14 +3486,7 @@ tty.c_cc[VMIN] = 0;
 cfsetispeed(&tty, B9600);
 cfsetospeed(&tty, B9600);
 if (tcsetattr(fd_nmea0183, TCSANOW, &tty) < 0) return false;
-c = 0;
-snprintf(hcxposname, PATH_MAX, "%s.nmea", timestring);
-while(stat(hcxposname, &statinfo) == 0)
-	{
-	snprintf(hcxposname, PATH_MAX, "%s-%02d.nmea", timestring, c);
-	c++;
-	}
-if((fd_hcxpos = open(hcxposname, O_WRONLY | O_CREAT, 0777)) < 0) return false;
+if(open_nmea0183_file(hcxposoutname) == false) return false;
 return true;
 }
 #endif
@@ -3987,13 +4000,15 @@ fprintf(stdout, "long options:\n"
 	"                                  default: 0 (GPIO not in use)\n"
 	#ifdef NMEAOUT
 	"--nmea_dev=<NMEA device>       : open NMEA device (/dev/ttyACM0, /dev/tty/USB0, ...)\n"
+	"                                  use gpsbabel to convert to other formats:\n"
+	"                                   gpsbabel -w -t -i nmea -f in_file.nmea -o gpx -F out_file_gpx\n"
+	"                                   gpsbabel -w -t -i nmea -f in_file.nmea -o kml -F out_file.kml\n"
+	"--nmea_out=<outfile    >       : write GPS information to a nmea-format file named <outfile>\n"
+	"                                  default outfile name: yyyyddmmhhmmss.nmea\n"
 	"                                  output: NMEA 0183 standard messages:\n"
 	"                                          $GPRMC: Position, velocity, time and date\n"
 	"                                          $GPWPL: Position and MAC AP\n"
 	"                                          $GPTXT: ESSID in HEX ASCII\n"
-	"                                  use gpsbabel to convert to other formats:\n"
-	"                                   gpsbabel -w -t -i nmea -f in_file.nmea -o gpx -F out_file_gpx\n"
-	"                                   gpsbabel -w -t -i nmea -f in_file.nmea -o kml -F out_file.kml\n"
 	"                                  get more information: https://en.wikipedia.org/wiki/NMEA_0183\n"
 	#endif
 	"--help                         : show this help\n"
@@ -4035,9 +4050,12 @@ static char *essidlistname = NULL;
 static char *userchannellistname = NULL;
 static char *userfrequencylistname = NULL;
 static char *pcapngoutname = NULL;
+
 #ifdef NMEAOUT
 static char *nmea0183name = NULL;
+static char *nmeaoutname = NULL;
 #endif
+
 static const char *rebootstring = "reboot";
 static const char *poweroffstring = "poweroff";
 static const char *short_options = "i:w:c:f:m:I:t:FLhv";
@@ -4057,6 +4075,7 @@ static const struct option long_options[] =
 	{"essidlist",			required_argument,	NULL,	HCX_ESSIDLIST},
 	#ifdef NMEAOUT
 	{"nmea_dev",			required_argument,	NULL,	HCX_NMEA0183},
+	{"nmea_out",			required_argument,	NULL,	HCX_NMEA0183_OUT},
 	#endif
 	{"errormax",			required_argument,	NULL,	HCX_ERROR_MAX},
 	{"watchdogmax",			required_argument,	NULL,	HCX_WATCHDOG_MAX},
@@ -4279,6 +4298,10 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		case HCX_NMEA0183:
 		nmea0183name = optarg;
 		break;
+
+		case HCX_NMEA0183_OUT:
+		nmeaoutname = optarg;
+		break;
 		#endif
 
 		case HCX_HELP:
@@ -4329,7 +4352,8 @@ if(init_lists() == false)
 init_values();
 #ifdef NMEAOUT
 if(nmea0183name != NULL)
-	{if(open_nmea0183_device(nmea0183name) == false)
+	{
+	if(open_nmea0183_device(nmea0183name, nmeaoutname) == false)
 		{
 		errorcount++;
 		fprintf(stderr, "failed to open NMEA0183 device\n");
