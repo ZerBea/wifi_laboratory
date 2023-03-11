@@ -4322,7 +4322,10 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 	}
 setbuf(stdout, NULL);
 hcxpid = getpid();
-fprintf(stdout, "\n\nrequesting interface capabilities\nthis may take some time...\n\n");
+fprintf(stdout, "\n\nThis is a highly experimental penetration testing tool!\n"
+		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n"
+		"Requesting interface capabilities. This may take some time.\n"
+		"Please be patient\n\n");
 if(set_signal_handler() == false)
 	{
 	errorcount++;
@@ -4432,10 +4435,8 @@ if(set_timer() == false)
 	goto byebye;
 	}
 /*---------------------------------------------------------------------------*/
-fprintf(stdout, "\e[?25l\nThis is a highly experimental penetration testing tool!\n"
-		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n");
 if(bpf.len == 0) fprintf(stderr, "BPF is unset. Make sure hcxlabtool is running in a 100%% controlled environment!\n");
-
+fprintf(stdout, "\e[?25l");
 if(nl_scanloop() == false)
 	{
 	errorcount++;
