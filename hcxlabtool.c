@@ -4322,6 +4322,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 	}
 setbuf(stdout, NULL);
 hcxpid = getpid();
+fprintf(stdout, "\n\nrequesting interface capabilities\nthis may take some time...\n\n");
 if(set_signal_handler() == false)
 	{
 	errorcount++;
