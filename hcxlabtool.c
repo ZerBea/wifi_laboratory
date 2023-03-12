@@ -616,8 +616,8 @@ if(write(fd_hcxpos, gpwpl, p2) != p2) errorcount++;
 gpwpl[p2++] = 0x00;
 if(((aplist + i)->ie.essidlen == 0) || ((aplist + i)->ie.essidlen > ESSID_MAX)) return;
 
-p2 = 16;
-cs = 0x4e;
+p2 = 7;
+cs = 0x63;
 for(p1 = 0; p1 < (aplist + i)->ie.essidlen; p1 ++)
 	{
 	gptxt[p2] = lookuptable[((aplist + i)->ie.essid[p1] & 0xf0) >> 4];
@@ -3619,7 +3619,7 @@ static struct timespec waitfordevice;
 static const char *macaprgfirst = "internet";
 #ifdef NMEAOUT
 static const char gpwplid[] = "$GPWPL";
-static const char gptxtid[] = "$GPTXT,01,01,01,";
+static const char gptxtid[] = "$GPTXT,";
 #endif
 
 waitfordevice.tv_sec = 1;
@@ -3677,7 +3677,7 @@ memcpy(&wltxnoackbuffer, &rthtxnoackdata, RTHTXNOACK_SIZE);
 memcpy(&epbown[EPB_SIZE], &rthtxdata, RTHTX_SIZE);
 #ifdef NMEAOUT
 memcpy(&gpwpl, &gpwplid, 6);
-memcpy(&gptxt, &gptxtid, 16);
+memcpy(&gptxt, &gptxtid, 7);
 #endif
 return;
 }
