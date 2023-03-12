@@ -111,6 +111,8 @@ NL80211 / RTNETLINK can be used without libnl dependency
 
 sharing the interface (e.g. iw phy phy1 interface add mon0 type monitor) is counterproductive
 
+TX power is (completely) meaningless - RX sensitivity and a good antenna is all
+
 
 Warning
 --------------
