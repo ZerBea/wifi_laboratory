@@ -158,6 +158,7 @@ static enhanced_packet_block_t *epbhdr = NULL;
 #ifdef NMEAOUT
 static ssize_t nmealen = 0;
 static ssize_t gprmclen = 0;
+static ssize_t gpggalen = 0;
 #endif
 static ieee80211_mac_t *macftx = NULL;
 static u16 seqcounter1 = 1; /* deauthentication / disassociation */
@@ -351,6 +352,7 @@ static u8 wltxnoackbuffer[WLTXBUFFER] = { 0 };
 static char nmeabuffer[NMEA_SIZE] = { 0 };
 static char gpwpl[NMEA_MSG_MAX] = { 0 };
 static char gprmc[NMEA_MSG_MAX] = { 0 };
+static char gpgga[NMEA_MSG_MAX] = { 0 };
 static char gptxt[NMEA_MSG_MAX] = { 0 };
 #endif
 
@@ -580,6 +582,10 @@ static char lookuptable[] = { '0', '1', '2','3','4','5','6','7','8','9','a','b',
 
 if(gprmclen == 0) return;
 if(write(fd_hcxpos, gprmc, gprmclen) != gprmclen) errorcount++;
+if(gpggalen != 0)
+	{
+	if(write(fd_hcxpos, gpgga, gpggalen) != gpggalen) errorcount++;
+	}
 p1 = 0;
 p2 = 6;
 c = 0;
@@ -2245,6 +2251,7 @@ static inline void process_nmea0183()
 {
 static char *nmeaptr;
 static const char *gprmcid = "$GPRMC,";
+static const char *gpggaid = "$GPGGA,";
 
 if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 	{
@@ -2261,9 +2268,23 @@ if((nmeaptr = strstr(nmeabuffer, gprmcid)) != NULL)
 			{
 			gprmclen += 5;
 			memcpy(&gprmc, nmeaptr, gprmclen);
-			return;
+			break;
 			}
 		gprmclen++;
+		}
+	}
+if((nmeaptr = strstr(nmeabuffer, gpggaid)) != NULL)
+	{
+	gpggalen = 0;
+	while(gpggalen < (NMEA_MSG_MAX -2))
+		{
+		if(nmeaptr[gpggalen] == '*')
+			{
+			gpggalen += 5;
+			memcpy(&gpgga, nmeaptr, gpggalen);
+			return;
+			}
+		gpggalen++;
 		}
 	}
 return;
@@ -4007,6 +4028,7 @@ fprintf(stdout, "long options:\n"
 	"                                  default outfile name: yyyyddmmhhmmss.nmea\n"
 	"                                  output: NMEA 0183 standard messages:\n"
 	"                                          $GPRMC: Position, velocity, time and date\n"
+	"                                          $GPGGA: Position, orthometric height, fix related data, time and date\n"
 	"                                          $GPWPL: Position and MAC AP\n"
 	"                                          $GPTXT: ESSID in HEX ASCII\n"
 	"                                  get more information: https://en.wikipedia.org/wiki/NMEA_0183\n"
