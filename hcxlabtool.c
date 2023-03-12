@@ -75,7 +75,7 @@ static int fd_socket_tx = 0;
 static int fd_timer1 = 0;
 static int fd_pcapng = 0;
 #ifdef NMEAOUT
-static int fd_nmea0183 = 0;
+static int fd_gps = 0;
 static int fd_hcxpos = 0;
 #endif
 static struct sock_fprog bpf = { 0 };
@@ -2076,7 +2076,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		{
 		writeepb();
 		#ifdef NMEAOUT
-		if(fd_nmea0183 > 0) writegpwpl(i);
+		if(fd_gps > 0) writegpwpl(i);
 		#endif
 		(aplist + i)->status |= AP_PROBERESPONSE;
 		tshold = tsakt;
@@ -2118,7 +2118,7 @@ if((aplist + i)->ie.channel == (scanlist + scanlistindex)->channel)
 	}
 writeepb();
 #ifdef NMEAOUT
-if(fd_nmea0183 > 0) writegpwpl(i);
+if(fd_gps > 0) writegpwpl(i);
 #endif
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 tshold = tsakt;
@@ -2142,7 +2142,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		writeepb();
 		tshold = tsakt;
 		#ifdef NMEAOUT
-		if(fd_nmea0183 > 0) writegpwpl(i);
+		if(fd_gps > 0) writegpwpl(i);
 		#endif
 		(aplist + i)->status |= AP_BEACON;
 		}
@@ -2238,7 +2238,7 @@ if((aplist + i)->ie.channel == (scanlist +scanlistindex)->channel)
 	}
 writeepb();
 #ifdef NMEAOUT
-if(fd_nmea0183 > 0) writegpwpl(i);
+if(fd_gps > 0) writegpwpl(i);
 #endif
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 tshold = tsakt;
@@ -2253,7 +2253,7 @@ static char *nmeaptr;
 static const char *gprmcid = "$GPRMC,";
 static const char *gpggaid = "$GPGGA,";
 
-if((nmealen = read(fd_nmea0183, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
+if((nmealen = read(fd_gps, nmeabuffer, NMEA_SIZE)) < NMEA_MIN)
 	{
 	if(packetlen == - 1) errorcount++;
 	return;
@@ -2400,11 +2400,11 @@ if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_timer1, &ev) < 0) return false;
 epi++;
 
 #ifdef NMEAOUT
-if(fd_nmea0183 > 0)
+if(fd_gps > 0)
 	{
-	ev.data.fd = fd_nmea0183;
+	ev.data.fd = fd_gps;
 	ev.events = EPOLLIN;
-	if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_nmea0183, &ev) < 0) return false;
+	if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_gps, &ev) < 0) return false;
 	epi++;
 	}
 #endif
@@ -2468,7 +2468,7 @@ while(!wanteventflag)
 			send_80211_beacon();
 			}
 		#ifdef NMEAOUT
-		else if(events[i].data.fd == fd_nmea0183) process_nmea0183();
+		else if(events[i].data.fd == fd_gps) process_nmea0183();
 		#endif
 		}
 	}
@@ -3480,13 +3480,31 @@ if((fd_hcxpos = open(hcxposfilename, O_WRONLY | O_CREAT, 0777)) < 0) return fals
 return true;
 }
 /*---------------------------------------------------------------------------*/
-static bool open_nmea0183_device(char *nmea0183name, char *hcxposoutname)
+static bool open_socket_gpsd(char *hcxposoutname)
+{
+static int socket_gps_flags;
+static struct sockaddr_in gpsd_addr;
+static const char *gpsd_enable_nmea = "?WATCH={\"enable\":true,\"json\":false,\"nmea\":true}";
+
+if((fd_gps = socket(AF_INET, SOCK_STREAM, 0)) < 0) return false;
+memset(&gpsd_addr, 0, sizeof(struct sockaddr_in));
+gpsd_addr.sin_family = AF_INET;
+gpsd_addr.sin_port = htons(2947);
+gpsd_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+if(connect(fd_gps, (struct sockaddr*) &gpsd_addr, sizeof(gpsd_addr)) < 0) return false;
+if(fcntl(fd_gps, F_SETFL, socket_gps_flags | O_NONBLOCK) < 0) return false;
+if(write(fd_gps, gpsd_enable_nmea, 47) != 47) return false;
+if(open_nmea0183_file(hcxposoutname) == false) return false;
+return true;
+}
+/*---------------------------------------------------------------------------*/
+static bool open_device_nmea0183(char *nmea0183name, char *hcxposoutname)
 {
 static struct termios tty;
 
-if((fd_nmea0183 = open(nmea0183name, O_RDONLY | O_NONBLOCK)) < 0) return false;
-if(flock(fd_nmea0183, LOCK_EX) < 0) return false;
-if(tcgetattr(fd_nmea0183, &tty) < 0) return false;
+if((fd_gps = open(nmea0183name, O_RDONLY | O_NONBLOCK)) < 0) return false;
+if(flock(fd_gps, LOCK_EX) < 0) return false;
+if(tcgetattr(fd_gps, &tty) < 0) return false;
 tty.c_cflag &= ~PARENB; // Clear parity bit, disabling parity (most common)
 tty.c_cflag &= ~CSTOPB; // Clear stop field, only one stop bit used in communication (most common)
 tty.c_cflag &= ~CSIZE; // Clear all bits that set the data size 
@@ -3506,7 +3524,7 @@ tty.c_cc[VTIME] = 10;    // Wait for up to 1s (10 deciseconds), returning as soo
 tty.c_cc[VMIN] = 0;
 cfsetispeed(&tty, B9600);
 cfsetospeed(&tty, B9600);
-if (tcsetattr(fd_nmea0183, TCSANOW, &tty) < 0) return false;
+if (tcsetattr(fd_gps, TCSANOW, &tty) < 0) return false;
 if(open_nmea0183_file(hcxposoutname) == false) return false;
 return true;
 }
@@ -3707,7 +3725,7 @@ static void close_fds()
 if(fd_timer1 != 0) close(fd_timer1);
 if(fd_pcapng != 0) close(fd_pcapng);
 #ifdef NMEAOUT
-if(fd_nmea0183 != 0) close(fd_nmea0183);
+if(fd_gps != 0) close(fd_gps);
 if(fd_hcxpos != 0) close(fd_hcxpos);
 #endif
 return;
@@ -4075,6 +4093,7 @@ static char *userfrequencylistname = NULL;
 static char *pcapngoutname = NULL;
 
 #ifdef NMEAOUT
+static bool gpsdflag = false;
 static char *nmea0183name = NULL;
 static char *nmeaoutname = NULL;
 #endif
@@ -4098,6 +4117,7 @@ static const struct option long_options[] =
 	{"essidlist",			required_argument,	NULL,	HCX_ESSIDLIST},
 	#ifdef NMEAOUT
 	{"nmea_dev",			required_argument,	NULL,	HCX_NMEA0183},
+	{"gpsd",			no_argument,		NULL,	HCX_GPSD},
 	{"nmea_out",			required_argument,	NULL,	HCX_NMEA0183_OUT},
 	#endif
 	{"errormax",			required_argument,	NULL,	HCX_ERROR_MAX},
@@ -4319,7 +4339,21 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 
 		#ifdef NMEAOUT
 		case HCX_NMEA0183:
+		if(gpsdflag == true)
+			{
+			fprintf(stderr, "not allowed in combination with gpsd\n");
+			exit(EXIT_FAILURE);
+			}
 		nmea0183name = optarg;
+		break;
+
+		case HCX_GPSD:
+		if(nmea0183name != NULL)
+			{
+			fprintf(stderr, "not allowed in combination nmea_dev\n");
+			exit(EXIT_FAILURE);
+			}
+		gpsdflag = true;
 		break;
 
 		case HCX_NMEA0183_OUT:
@@ -4380,10 +4414,18 @@ init_values();
 #ifdef NMEAOUT
 if(nmea0183name != NULL)
 	{
-	if(open_nmea0183_device(nmea0183name, nmeaoutname) == false)
+	if(open_device_nmea0183(nmea0183name, nmeaoutname) == false)
 		{
 		errorcount++;
 		fprintf(stderr, "failed to open NMEA0183 device\n");
+		}
+	}
+if(gpsdflag == true)
+	{
+	if(open_socket_gpsd(nmeaoutname) == false)
+		{
+		errorcount++;
+		fprintf(stderr, "failed to connect to GPSD\n");
 		}
 	}
 #endif
