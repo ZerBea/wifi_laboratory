@@ -4406,7 +4406,7 @@ hcxpid = getpid();
 fprintf(stdout, "\n\nThis is a highly experimental penetration testing tool!\n"
 		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n"
 		"Requesting interface capabilities. This may take some time.\n"
-		"Please be patient\n\n");
+		"Please be patient...\n\n");
 if(set_signal_handler() == false)
 	{
 	errorcount++;
