@@ -3392,12 +3392,17 @@ static bool open_socket_tx()
 static struct sockaddr_ll saddr;
 static struct packet_mreq mrq;
 static int socket_rx_flags;
+static int prioval;
+static socklen_t priolen;
 
 if((fd_socket_tx = socket(PF_PACKET, SOCK_RAW, htons(ETH_P_ALL))) < 0) return false;
 memset(&mrq, 0, sizeof(mrq));
 mrq.mr_ifindex = ifaktindex;
 mrq.mr_type = PACKET_MR_PROMISC;
 if(setsockopt(fd_socket_tx, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mrq, sizeof(mrq)) < 0) return false;
+priolen = sizeof(prioval);
+prioval = 20;
+if(setsockopt(fd_socket_rx, SOL_SOCKET, SO_PRIORITY,&prioval, priolen) < 0) return false;
 memset(&saddr, 0, sizeof(saddr));
 saddr.sll_family = PF_PACKET;
 saddr.sll_ifindex = ifaktindex;
@@ -3417,6 +3422,8 @@ static struct sockaddr_ll saddr;
 static struct packet_mreq mrq;
 static int enable = 1;
 static int socket_rx_flags;
+static int prioval;
+static socklen_t priolen;
 
 bpf.len = 0;
 if(bpfname != NULL)
@@ -3433,7 +3440,9 @@ memset(&mrq, 0, sizeof(mrq));
 mrq.mr_ifindex = ifaktindex;
 mrq.mr_type = PACKET_MR_PROMISC;
 if(setsockopt(fd_socket_rx, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mrq, sizeof(mrq)) < 0) return false;
-
+priolen = sizeof(prioval);
+prioval = 20;
+if(setsockopt(fd_socket_rx, SOL_SOCKET, SO_PRIORITY,&prioval, priolen) < 0) return false;
 #if(LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0))
 if(setsockopt(fd_socket_rx, SOL_PACKET, PACKET_IGNORE_OUTGOING, &enable, sizeof(int)) < 0) return false;
 #endif
@@ -3442,7 +3451,6 @@ if(bpf.len > 0)
 	{
 	if(setsockopt(fd_socket_rx, SOL_SOCKET, SO_ATTACH_FILTER, &bpf, sizeof(bpf)) < 0) return false;
 	}
-
 memset(&saddr, 0, sizeof(saddr));
 saddr.sll_family = PF_PACKET;
 saddr.sll_ifindex = ifaktindex;
