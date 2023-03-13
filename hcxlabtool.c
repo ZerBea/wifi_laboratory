@@ -485,10 +485,11 @@ static char *pmok = "+";
 static char *ps;
 static char *ms;
 static char *ak;
+static char *ar;
 
 system("clear");
-sprintf(&rtb[0], "  CHA  P M A    MAC-AP    ESSID (last seen on top)         SCAN-FREQUENCY: %6u\n"
-	"---------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency);
+sprintf(&rtb[0], "  CHA  R P M A    MAC-AP    ESSID (last seen on top)         SCAN-FREQUENCY: %6u\n"
+	"------------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency);
 p = strlen(rtb);
 i = 0;
 pa = 0;
@@ -501,8 +502,10 @@ for(i = 0; i < 20 ; i++)
 	else ms = pmdef;
 	if(((aplist +i)->ie.flags & APAKM_MASK) != 0) ak = pmok;
 	else ak = pmdef;
-	sprintf(&rtb[p], " [%3d] %s %s %s %02x%02x%02x%02x%02x%02x %.*s\n",
-			(aplist + i)->ie.channel, ps, ms, ak,
+	if(((aplist +i)->status & AP_IN_RANGE) == AP_IN_RANGE) ar = pmok;
+	else ar = pmdef;
+	sprintf(&rtb[p], " [%3d] %s %s %s %s %02x%02x%02x%02x%02x%02x %.*s\n",
+			(aplist + i)->ie.channel, ar, ps, ms, ak,
 			(aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5],
 			(aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
 	p = strlen(rtb);
@@ -510,7 +513,7 @@ for(i = 0; i < 20 ; i++)
 	}
 for(i = 0; i < (22 - pa); i++) rtb[p++] = '\n';
 sprintf(&rtb[p], "  M2R    MAC-AP     MAC-CLIENT  ESSID (last seen on top)\n"
-	"---------------------------------------------------------------------------------\n");
+	"------------------------------------------------------------------------------------\n");
 p = strlen(rtb);
 for(i = 0; i < 20; i++)
 	{
@@ -1947,6 +1950,7 @@ if(auth->algorithm == OPEN_SYSTEM)
 				{
 				if(memcmp((aplist + i)->macap, macfrx->addr2, ETH_ALEN) == 0)
 					{
+					(aplist + i)->status |= AP_IN_RANGE;
 					if((tsakt - (aplist + i)->tsauth) > TIMEAUTHWAIT)
 						{
 						if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_associationrequest(i);
@@ -4075,10 +4079,11 @@ fprintf(stdout, "long options:\n"
 
 fprintf(stdout, "Legend\n"
 	"real time display:\n"
-	" P = got PMKID\n"
-	" M = AP display;     got EAPOL M1M2M3 (AUTHORIZATION)\n"
-	" M = CLIENT display: got EAPOL M1M2 (ROGUE CHALLENGE\n"
-	" A = AUTHENTICATION KEY MANAGEMENT PSK\n"
+	" R = + AP is in TX range\n"
+	" P = + got PMKID\n"
+	" M = + AP display:     got EAPOL M1M2M3 (AUTHORIZATION)\n"
+	" M = + CLIENT display: got EAPOL M1M2 (ROGUE CHALLENGE\n"
+	" A = + AUTHENTICATION KEY MANAGEMENT PSK\n"
 	"Notice:\n"
 	"This is a penetration testing tool!\n"
 	"It is made to detect vulnerabilities in your NETWORK mercilessly!\n" 
