@@ -484,9 +484,10 @@ static char *pmdef = " ";
 static char *pmok = "+";
 static char *ps;
 static char *ms;
+static char *ak;
 
 system("clear");
-sprintf(&rtb[0], "  CHA  P M3A    MAC-AP    ESSID (last seen on top)         SCAN-FREQUENCY: %6u\n"
+sprintf(&rtb[0], "  CHA  P M A    MAC-AP    ESSID (last seen on top)         SCAN-FREQUENCY: %6u\n"
 	"---------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency);
 p = strlen(rtb);
 i = 0;
@@ -498,8 +499,10 @@ for(i = 0; i < 20 ; i++)
 	else ps = pmdef;
 	if(((aplist +i)->status & AP_EAPOL_M3) == AP_EAPOL_M3) ms = pmok;
 	else ms = pmdef;
-	sprintf(&rtb[p], " [%3d] %s  %s  %02x%02x%02x%02x%02x%02x %.*s\n",
-			(aplist + i)->ie.channel, ps, ms,
+	if(((aplist +i)->ie.flags & APAKM_MASK) != 0) ak = pmok;
+	else ak = pmdef;
+	sprintf(&rtb[p], " [%3d] %s %s %s %02x%02x%02x%02x%02x%02x %.*s\n",
+			(aplist + i)->ie.channel, ps, ms, ak,
 			(aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5],
 			(aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
 	p = strlen(rtb);
@@ -1388,7 +1391,6 @@ for(c = 0; c < rsnsuitecount->count; c++)
 		if(rsnsuite->type == RSN_AKM_PSK) infoelement->flags |= APRSNAKM_PSK;
 		if(rsnsuite->type == RSN_AKM_PSK256) infoelement->flags |= APRSNAKM_PSK256;
 		if(rsnsuite->type == RSN_AKM_PSKFT) infoelement->flags |= APRSNAKM_PSKFT;
-
 		}
 	infostart += IEEE80211_RSNSUITE_SIZE;
 	infolen -= IEEE80211_RSNSUITE_SIZE;
@@ -3954,7 +3956,18 @@ __attribute__ ((noreturn))
 static inline void usage(char *eigenname)
 {
 fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
-	"usage  : %s <options>\n"
+	"usage: %s <options>\n"
+	"        press ctrl+c to terminate\n"
+	"        press GPIO button to terminate\n"
+	"        hardware modification is necessary, read more:\n"
+	"        https://github.com/ZerBea/hcxdumptool/tree/master/docs\n"
+	"        do not set monitor mode by third party tools (iwconfig, iw, airmon-ng)\n"
+	"        do not use logical (NETLINK) interfaces (monx, wlanxmon, prismx, ...) created by airmon-ng and iw\n"
+	"        do use virtual machines or emulators\n"
+	"        do not run other tools that take access to the interface in parallel (except: tshark, wireshark, tcpdump)\n"
+	"        do not use tools to change MAC (like macchanger), because hcxdumptool runs its own MAC space and will ignore this changes\n"
+	"        stop all services (e.g.: wpa_supplicant.service, NetworkManager.service) that take access to the interface\n"
+	"\n"
 	"\n"
 	"short options:\n"
 	"-i <INTERFACE> : name of INTERFACE to be used\n"
@@ -4056,14 +4069,23 @@ fprintf(stdout, "long options:\n"
 	#endif
 	"--help                         : show this help\n"
 	"--version                      : show version\n"
-	"\n"
+	"\n",
+	eigenname, eigenname,
+	BEACONTX_MAX, PROBERESPONSETX_MAX, ERROR_MAX, WATCHDOG_MAX, ATTEMPTCLIENT_MAX, ATTEMPTAP_MAX);
+
+fprintf(stdout, "Legend\n"
+	"real time display:\n"
+	" P = got PMKID\n"
+	" M = AP display;     got EAPOL M1M2M3 (AUTHORIZATION)\n"
+	" M = CLIENT display: got EAPOL M1M2 (ROGUE CHALLENGE\n"
+	" A = AUTHENTICATION KEY MANAGEMENT PSK\n"
 	"Notice:\n"
 	"This is a penetration testing tool!\n"
 	"It is made to detect vulnerabilities in your NETWORK mercilessly!\n" 
 	"To store entire traffic, run <tshark -i <interface> -w allframes.pcapng> in parallel\n"
-	"\n",
-	eigenname, eigenname,
-	BEACONTX_MAX, PROBERESPONSETX_MAX, ERROR_MAX, WATCHDOG_MAX, ATTEMPTCLIENT_MAX, ATTEMPTAP_MAX);
+	"\n");
+
+
 exit(EXIT_SUCCESS);
 }
 /*---------------------------------------------------------------------------*/
