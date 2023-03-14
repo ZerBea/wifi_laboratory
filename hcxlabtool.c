@@ -469,8 +469,7 @@ for(i = 0; i < ifpresentlistcounter; i++)
 fprintf(stdout, "\n"
 		"* active monitor mode available\n"
 		"+ monitor mode available\n"
-		"- no monitor mode available\n"
-		"\n");
+		"- no monitor mode available\n");
 return;
 }
 /*---------------------------------------------------------------------------*/
