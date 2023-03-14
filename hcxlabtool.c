@@ -398,7 +398,7 @@ for(i = 0; i < ifpresentlistcounter; i++)
 	for(i = 0; i < FREQUENCYLIST_MAX; i++)
 		{
 		if((scanlist + i)->frequency == 0) break;
-		if(i % 4 == 0) fprintf(stdout, "\n");
+		if(i % 5 == 0) fprintf(stdout, "\n");
 		else  fprintf(stdout, "\t");
 		fprintf(stdout, "%6d [%3d]", (scanlist + i)->frequency, (scanlist + i)->channel);
 		}
