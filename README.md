@@ -103,15 +103,17 @@ entire AUTHENTICATION process should be done using a low data rate of 1.0 Mb/s a
 
 there are (much) better ways than injecting stupid DEAUTHENTICATION frames to disconnect a CLIENT
 
-the most useful frame is an EAPOL M2 frame(!)
+the most useful EAPOL frame is an EAPOL M2 frame(!)
 
 NL80211 provide a lot more features than WIRLESS EXTENSIONS
 
-NL80211 / RTNETLINK can be used without libnl dependency
+NL80211 / RTNETLINK protocol can be used without libnl dependency
 
 sharing the interface (e.g. iw phy phy1 interface add mon0 type monitor) is counterproductive
 
 TX power is (completely) meaningless - RX sensitivity and a good antenna is all
+
+it is a thousand times faster using a Berkeley Packet Filter (BPF) than walking through endless filter lists 
 
 
 Warning
@@ -121,7 +123,7 @@ hcxlabtool is designed to be an analysis tool
 
 It should only be used in a 100% controlled environment(!)
 
-If you can't control the environment it is absolutely mandatory to set a Berkeley Packet Filter (BPF)
+If you can't control the environment it is absolutely mandatory to set a Berkeley Packet Filter.
 
 Using the BPF to remove unwanted frames save CPU cycles (not type ctl subtype ack and not type ctl subtype rts and not type ctl subtype cts)
 
