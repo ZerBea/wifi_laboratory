@@ -4081,7 +4081,7 @@ fprintf(stdout, "long options:\n"
 	"--version                      : show version\n"
 	"\n",
 	eigenname, eigenname,
-	BEACONTX_MAX, PROBERESPONSETX_MAX, ERROR_MAX, WATCHDOG_MAX, ATTEMPTCLIENT_MAX, ATTEMPTAP_MAX);
+	BEACONTX_MAX, PROBERESPONSETX_MAX, ERROR_MAX, WATCHDOG_MAX, ATTEMPTCLIENT_MAX, ATTEMPTAP_MAX / 8);
 
 fprintf(stdout, "Legend\n"
 	"real time display:\n"
@@ -4259,6 +4259,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 			fprintf(stderr, "number of attempts must be > 0\n");
 			exit(EXIT_FAILURE);
 			}
+		attemptapmax *= 8;
 		break;
 
 		case HCX_HOLD_TIME:
