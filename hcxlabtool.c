@@ -123,7 +123,7 @@ static u32 watchdogcountmax = WATCHDOG_MAX;
 static u32 attemptapmax = ATTEMPTAP_MAX;
 static u32 attemptclientmax = ATTEMPTCLIENT_MAX;
 
-static size_t packetcount = 0;
+static size_t packetcount = 1;
 
 static size_t beaconindex = 0;
 static size_t proberesponseindex = 0;
@@ -2389,7 +2389,7 @@ static int fd_epoll = 0;
 static int epi = 0;
 static int epret = 0;
 static struct epoll_event ev, events[EPOLL_EVENTS_MAX];
-static size_t packetcountlast = -1;
+static size_t packetcountlast = 0;
 static u64 timer1count;
 static struct timespec sleepled;
 
