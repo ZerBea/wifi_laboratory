@@ -3968,6 +3968,10 @@ static inline void usage(char *eigenname)
 {
 fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"usage: %s <options>\n"
+	"        first stop all services that take access to the interface , e.g.:\n"
+	"        $ sudo systemctl stop NetworkManager.service\n"
+	"        $ sudo systemctl stop wpa_supplicant.service\n"
+	"        than run %s\n"
 	"        press ctrl+c to terminate\n"
 	"        press GPIO button to terminate\n"
 	"        hardware modification is necessary, read more:\n"
@@ -4006,7 +4010,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"-h             : show this help\n"
 	"-v             : show version\n"
 	"\n",
-	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, eigenname, TIMEHOLD / 1000000000ULL);
+	eigenname, VERSIONTAG, VERSIONYEAR, eigenname, eigenname, eigenname, TIMEHOLD / 1000000000ULL);
 fprintf(stdout, "long options:\n"
 	"--bpf=<file>                   : input kernel space Berkeley Packet Filter (BPF) code\n"
 	"                                  steps to create a BPF (it only has to be done once):\n"
