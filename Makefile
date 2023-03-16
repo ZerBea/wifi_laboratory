@@ -6,6 +6,9 @@ CFLAGS	= -O3 -Wall -Wextra -ggdb -fsanitize=address
 
 all: build
 
+# headless operation without status display: remove -DSTATUSOUT
+# gps not needed: remove -DNMEAOUT
+
 build:
 	$(CC) $(CFLAGS) $(CFLAGS1) -o hcxlabtool hcxlabtool.c -DSTATUSOUT -DNMEAOUT
 
