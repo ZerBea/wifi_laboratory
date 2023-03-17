@@ -2879,6 +2879,60 @@ while(1)
 return false;
 }
 /*---------------------------------------------------------------------------*/
+static inline void nl_set_powersave_off()
+{
+static ssize_t i;
+static ssize_t msglen;
+static struct nlmsghdr *nlh;
+static struct genlmsghdr *glh;
+static struct nlattr *nla;
+static struct nlmsgerr *nle;
+
+i = 0;
+nlh = (struct nlmsghdr*)nltxbuffer;
+nlh->nlmsg_type = nlfamily; 
+nlh->nlmsg_flags =  NLM_F_REQUEST | NLM_F_ACK;
+nlh->nlmsg_seq = nlseqcounter++;
+nlh->nlmsg_pid = hcxpid;
+i += sizeof(struct nlmsghdr);
+glh = (struct genlmsghdr*)(nltxbuffer + i);
+glh->cmd = NL80211_CMD_SET_INTERFACE;
+glh->version = 1;
+glh->reserved = 0;
+i += sizeof(struct genlmsghdr);
+nla = (struct nlattr*)(nltxbuffer + i);
+nla->nla_len = 8;
+nla->nla_type = NL80211_ATTR_IFINDEX;
+*(u32*)nla_data(nla) = ifaktindex;
+i += 8;
+nla = (struct nlattr*)(nltxbuffer + i);
+nla->nla_len = 8;
+nla->nla_type = NL80211_ATTR_PS_STATE;
+*(u32*)nla_data(nla) = NL80211_PS_DISABLED;
+i += 8;
+
+nlh->nlmsg_len = i;
+if((write(fd_socket_nl, nltxbuffer, i)) != i) return;
+while(1)
+	{
+	msglen = read(fd_socket_nl, &nlrxbuffer, NLRX_SIZE);
+	if(msglen == -1) break;
+	if(msglen == 0) break;
+	for(nlh = (struct nlmsghdr*)nlrxbuffer; NLMSG_OK(nlh, msglen); nlh = NLMSG_NEXT (nlh, msglen))
+		{
+		if(nlh->nlmsg_type == NLMSG_DONE) return;
+		if(nlh->nlmsg_type == NLMSG_ERROR)
+			{
+			nle = (struct nlmsgerr*)(nlrxbuffer + sizeof(struct nlmsghdr));
+			if(nle->error == 0) return;
+			errorcount++;
+			return;
+			}
+		}
+	}
+return;
+}
+/*---------------------------------------------------------------------------*/
 static inline bool nl_set_monitormode()
 {
 static ssize_t i;
@@ -3284,6 +3338,7 @@ if(rt_set_interface(0) == false) return false;
 if(rt_set_interfacemac() == false) return false;
 if(nl_set_monitormode() == false) return false;
 if(rt_set_interface(IFF_UP) == false) return false;
+nl_set_powersave_off();
 if(nl_get_interfacestatus() == false) return false;
 if(rt_get_interfacestatus() == false) return false;
 scanlistindex = 0;
