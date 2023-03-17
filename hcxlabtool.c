@@ -4553,7 +4553,7 @@ byebye:
 close_fds();
 close_sockets();
 close_lists();
-if(errorcount > 0) fprintf(stderr, "\n%zu errors during runtime\n", errorcount);
+if(errorcount > 0) fprintf(stderr, "\n%llu errors during runtime\n", errorcount);
 if((wanteventflag & EXIT_ON_SIGTERM) == EXIT_ON_SIGTERM)
 	{
 	if(exitsigtermflag == EXIT_ACTION_REBOOT)
