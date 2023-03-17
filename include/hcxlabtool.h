@@ -205,7 +205,7 @@ typedef struct __attribute__((__packed__))
  u8	mic[4];
 #define CLIENT_EAPOL_M2		0b00010000
  u8	status;
- u8	count;
+ u32	count;
  infoelement_t	ie;
 }clientlist_t;
 #define CLIENTLIST_SIZE (sizeof(clientlist_t))
