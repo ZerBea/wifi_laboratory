@@ -119,35 +119,35 @@ static int timerwaitnd = TIMER_EPWAITND;
 
 static u64 errorcountmax = ERROR_MAX;
 static u64 errorcount = 0;
-static u64 watchdogcountmax = WATCHDOG_MAX;
-static u64 attemptapmax = ATTEMPTAP_MAX;
-static u64 attemptclientmax = ATTEMPTCLIENT_MAX;
+static u32 watchdogcountmax = WATCHDOG_MAX;
+static u32 attemptapmax = ATTEMPTAP_MAX;
+static u32 attemptclientmax = ATTEMPTCLIENT_MAX;
 
 static u64 packetcount = 1;
 
 static size_t beaconindex = 0;
 static size_t proberesponseindex = 0;
 
-static size_t beacontxmax = BEACONTX_MAX;
-static size_t proberesponsetxmax = PROBERESPONSETX_MAX;
+static u32 beacontxmax = BEACONTX_MAX;
+static u32 proberesponsetxmax = PROBERESPONSETX_MAX;
 
 static u64 beacontimestamp = 1;
 
 static rth_t *rth = NULL;
 static ssize_t packetlen = 0;
 static u8 *packetptr = NULL;
-static u32 ieee82011len = 0;
+static u16 ieee82011len = 0;
 static u8 *ieee82011ptr = NULL;
-static u32 payloadlen = 0;
+static u16 payloadlen = 0;
 static u8 *payloadptr = NULL;
 static ieee80211_mac_t *macfrx = NULL;
 static u8 *llcptr = NULL;
 static ieee80211_llc_t *llc = NULL;
 static u16 eapauthlen = 0;
 static ieee80211_eapauth_t *eapauth;
-static u32 eapauthpllen = 0;
+static u16 eapauthpllen = 0;
 static u8 *eapauthplptr = NULL;
-static u32 eapolpllen = 0;
+static u16 eapolpllen = 0;
 static u8 *eapolplptr = NULL;
 static ieee80211_wpakey_t *wpakey;
 static ieee80211_pmkid_t *pmkid;
@@ -4553,7 +4553,7 @@ byebye:
 close_fds();
 close_sockets();
 close_lists();
-if(errorcount > 0) fprintf(stderr, "\n%llu errors during runtime\n", errorcount);
+if(errorcount > 0) fprintf(stderr, "\n%" PRIu64 " errors during runtime\n", errorcount);
 if((wanteventflag & EXIT_ON_SIGTERM) == EXIT_ON_SIGTERM)
 	{
 	if(exitsigtermflag == EXIT_ACTION_REBOOT)
