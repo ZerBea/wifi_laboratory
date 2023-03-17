@@ -148,7 +148,7 @@ typedef struct __attribute__((__packed__))
  u64	tsakt;
  u64	tshold1;
  u64	tsauth;
- u8	count;
+ u64	count;
  u8	macap[6];
  u8	macclient[6];
  u8	status;

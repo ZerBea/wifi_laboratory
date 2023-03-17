@@ -101,7 +101,7 @@ static aplist_t* aplist = NULL;
 static aprglist_t* aprglist = NULL;
 static clientlist_t* clientlist = NULL;
 static maclist_t* maclist = NULL;
-static u32 lifetime = 0;
+static u64 lifetime = 0;
 static u32 ouiaprg = 0;
 static u32 nicaprg = 0;
 static u32 ouiclientrg = 0;
@@ -114,16 +114,16 @@ static u64 tsfirst = 0;
 static u64 tshold = 0;
 static u64 tottime = 0;
 static u64 timehold = TIMEHOLD;
-static u32 clientm2count = CLIENTM2COUNT;
+static u64 clientm2count = CLIENTM2COUNT;
 static int timerwaitnd = TIMER_EPWAITND;
 
-static size_t errorcountmax = ERROR_MAX;
-static ssize_t errorcount = 0;
-static u32 watchdogcountmax = WATCHDOG_MAX;
-static u32 attemptapmax = ATTEMPTAP_MAX;
-static u32 attemptclientmax = ATTEMPTCLIENT_MAX;
+static u64 errorcountmax = ERROR_MAX;
+static u64 errorcount = 0;
+static u64 watchdogcountmax = WATCHDOG_MAX;
+static u64 attemptapmax = ATTEMPTAP_MAX;
+static u64 attemptclientmax = ATTEMPTCLIENT_MAX;
 
-static size_t packetcount = 1;
+static u64 packetcount = 1;
 
 static size_t beaconindex = 0;
 static size_t proberesponseindex = 0;
@@ -136,18 +136,18 @@ static u64 beacontimestamp = 1;
 static rth_t *rth = NULL;
 static ssize_t packetlen = 0;
 static u8 *packetptr = NULL;
-static u16 ieee82011len = 0;
+static u32 ieee82011len = 0;
 static u8 *ieee82011ptr = NULL;
-static u16 payloadlen = 0;
+static u32 payloadlen = 0;
 static u8 *payloadptr = NULL;
 static ieee80211_mac_t *macfrx = NULL;
 static u8 *llcptr = NULL;
 static ieee80211_llc_t *llc = NULL;
 static u16 eapauthlen = 0;
 static ieee80211_eapauth_t *eapauth;
-static u16 eapauthpllen = 0;
+static u32 eapauthpllen = 0;
 static u8 *eapauthplptr = NULL;
-static u16 eapolpllen = 0;
+static u32 eapolpllen = 0;
 static u8 *eapolplptr = NULL;
 static ieee80211_wpakey_t *wpakey;
 static ieee80211_pmkid_t *pmkid;
@@ -2170,7 +2170,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 				{
 				if(((aplist + i)->status & AP_ESSID) == AP_ESSID)
 					{
-					if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_authenticationrequestnoack();
+					if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_authenticationrequest();
 					}
 				}
 			}
@@ -2219,6 +2219,7 @@ tagwalk_channel_essid_rsn(&(aplist + i)->ie, beaconlen, beacon->ie);
 if((aplist + i)->ie.channel == 0) (aplist + i)->ie.channel = (scanlist + scanlistindex)->channel;
 if((aplist + i)->ie.channel != (scanlist + scanlistindex)->channel) return;
 if(((aplist + i)->ie.flags & APIE_ESSID) == APIE_ESSID) (aplist + i)->status |= AP_ESSID;
+
 if((aplist + i)->ie.channel == (scanlist +scanlistindex)->channel)
 	{
 	if(deauthenticationflag == true)
