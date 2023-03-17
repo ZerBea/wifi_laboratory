@@ -52,7 +52,6 @@ return;
 */
 /*===========================================================================*/
 /* global var */
-static bool activebeaconflag = true;
 static bool deauthenticationflag = true;
 static bool proberequestflag = true;
 static bool associationflag = true;
@@ -116,6 +115,7 @@ static u64 tshold = 0;
 static u64 tottime = 0;
 static u64 timehold = TIMEHOLD;
 static u32 clientm2count = CLIENTM2COUNT;
+static int timerwaitnd = TIMER_EPWAITND;
 
 static size_t errorcountmax = ERROR_MAX;
 static ssize_t errorcount = 0;
@@ -2418,7 +2418,7 @@ sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
 while(!wanteventflag)
 	{
-	epret = epoll_pwait(fd_epoll, events, epi, -1, NULL);
+	epret = epoll_pwait(fd_epoll, events, epi, timerwaitnd, NULL);
 	if(epret == -1 && errno == EINTR) continue;
 	else if(epret < -1)
 		{
@@ -2470,12 +2470,12 @@ while(!wanteventflag)
 				if(packetcount == packetcountlast) wanteventflag |= EXIT_ON_WATCHDOG;
 				packetcountlast = packetcount;
 				}
-			send_80211_beacon();
 			}
 		#ifdef NMEAOUT
 		else if(events[i].data.fd == fd_gps) process_nmea0183();
 		#endif
 		}
+	if(epret == 0) send_80211_beacon();
 	}
 return true;
 }
@@ -4212,7 +4212,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		break;
 
 		case HCX_DISABLE_BEACON:
-		activebeaconflag = false;
+		timerwaitnd = -1;
 		break;
 
 		case HCX_DISABLE_DEAUTHENTICATION:
