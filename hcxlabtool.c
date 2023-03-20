@@ -2419,6 +2419,7 @@ sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
 while(!wanteventflag)
 	{
+	if(errorcount > ERROR_MAX) wanteventflag |= EXIT_ON_ERROR;
 	epret = epoll_pwait(fd_epoll, events, epi, timerwaitnd, NULL);
 	if(epret == -1)
 		{
@@ -2472,7 +2473,6 @@ while(!wanteventflag)
 		#endif
 		}
 	if(epret == 0) send_80211_beacon();
-	if(errorcount > ERROR_MAX) wanteventflag |= EXIT_ON_ERROR;
 	}
 return true;
 }
