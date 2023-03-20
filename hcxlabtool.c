@@ -403,6 +403,9 @@ for(i = 0; i < ifpresentlistcounter; i++)
 		fprintf(stdout, "%6d [%3d]", (scanlist + i)->frequency, (scanlist + i)->channel);
 		}
 	fprintf(stdout, "\n");
+
+
+
 	}
 return;
 }
@@ -3396,7 +3399,6 @@ else
 	}
 scanlistindex = 0;
 if(nl_set_frequency() == false) return false;
-
 show_interfacecapabilities2();
 return true;
 }
@@ -4173,6 +4175,7 @@ static u8 exitgpiobuttonflag = 0;
 static u8 exittotflag = 0;
 static u8 exitwatchdogflag = 0;
 static u8 exiterrorflag = 0;
+static struct timespec tspecifo, tspeciforem;
 static bool monitormodeflag = false;
 static bool interfaceinfoflag = false;
 static bool interfacefrequencyflag = false;
@@ -4471,9 +4474,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 	}
 setbuf(stdout, NULL);
 hcxpid = getpid();
-fprintf(stdout, "\n\nThis is a highly experimental penetration testing tool!\n"
-		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n"
-		"Requesting interface capabilities. This may take some time.\n"
+fprintf(stdout, "\nRequesting interface capabilities. This may take some time.\n"
 		"Please be patient...\n\n");
 if(set_signal_handler() == false)
 	{
@@ -4592,8 +4593,14 @@ if(set_timer() == false)
 	goto byebye;
 	}
 /*---------------------------------------------------------------------------*/
-if(bpf.len == 0) fprintf(stderr, "BPF is unset. Make sure hcxlabtool is running in a 100%% controlled environment!\n");
-fprintf(stdout, "\e[?25l");
+tspecifo.tv_sec = 5;
+tspecifo.tv_nsec = 0;
+fprintf(stdout, "\nThis is a highly experimental penetration testing tool!\n"
+		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n\n");
+if(bpf.len == 0) fprintf(stderr, "BPF is unset! Make sure hcxlabtool is running in a 100%% controlled environment!\n\n");
+fprintf(stdout, "Initialize main scan loop...\e[?25l");
+nanosleep(&tspecifo, &tspeciforem);
+
 if(nl_scanloop() == false)
 	{
 	errorcount++;
