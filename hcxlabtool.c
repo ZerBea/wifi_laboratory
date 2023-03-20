@@ -1660,7 +1660,7 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 	(clientlist + i)->tsakt = tsakt;
 	(clientlist + i)->status |= CLIENT_EAPOL_M2;
 	if((clientlist + i)->count == 0) return;
-	if(memcmp((clientlist + i)->mic, &wpakey->keymic[0], 4) == 0) return;
+	if(memcmp((clientlist + i)->mic, &wpakey->keymic[0], 4) == 0) send_80211_disassociation_fm_ap(macfrx->addr2, macfrx->addr1, WLAN_REASON_PREV_AUTH_NOT_VALID);
 	memcpy((clientlist + i)->mic, &wpakey->keymic[0], 4);
 	(clientlist + i)->count--;
 	return;
@@ -2506,7 +2506,7 @@ static const char *protocol80211 = "IEEE 802.11";
 memset(&pwrq, 0, sizeof(pwrq));
 memcpy(pwrq.ifr_name, (ifpresentlist + i)->name, IF_NAMESIZE);
 if(ioctl(fd_socket_unix, SIOCGIWNAME, &pwrq) < 0) return;
-if(strncmp(protocol80211, pwrq.u.name, IF_NAMESIZE) == 0) (ifpresentlist + i)->type |= IF_HAS_WEXT;
+if(strncmp(protocol80211, pwrq.u.name, 11) == 0) (ifpresentlist + i)->type |= IF_HAS_WEXT;
 return;
 }
 /*===========================================================================*/
