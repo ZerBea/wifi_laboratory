@@ -2422,9 +2422,7 @@ while(!wanteventflag)
 	epret = epoll_pwait(fd_epoll, events, epi, timerwaitnd, NULL);
 	if(epret == -1)
 		{
-		if(errno == EINTR) continue;
-		errorcount++;
-		if(errorcount > ERROR_MAX) wanteventflag |= EXIT_ON_ERROR;
+		if(errno != EINTR) errorcount++;
 		continue;
 		}
 	for(i = 0; i < epret; i++)
@@ -2474,6 +2472,7 @@ while(!wanteventflag)
 		#endif
 		}
 	if(epret == 0) send_80211_beacon();
+	if(errorcount > ERROR_MAX) wanteventflag |= EXIT_ON_ERROR;
 	}
 return true;
 }
