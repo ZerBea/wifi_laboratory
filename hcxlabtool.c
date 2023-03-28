@@ -309,7 +309,6 @@ static uint8_t eapolm1data[] =
 0x00, 0x00
 };
 #define EAPOLM1DATA_SIZE sizeof(eapolm1data)
-
 /*---------------------------------------------------------------------------*/
 /* interface bit rate */
 static uint8_t legacy241mbdata[] =
