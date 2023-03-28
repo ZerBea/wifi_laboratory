@@ -2479,6 +2479,14 @@ while(!wanteventflag)
 return true;
 }
 /*===========================================================================*/
+/* RCA SCAN LOOP */
+static bool nl_scanloop_rca()
+{
+
+
+return true;
+}
+/*===========================================================================*/
 /*===========================================================================*/
 /* IOCTL WIRELESS EXTENSIONS */
 static inline void ioctl_set_frequency()
@@ -4179,6 +4187,7 @@ static bool monitormodeflag = false;
 static bool interfaceinfoflag = false;
 static bool interfacefrequencyflag = false;
 static bool interfacelistflag = false;
+static bool rcascanflag = false;
 static char *bpfname = NULL;
 static char *essidlistname = NULL;
 static char *userchannellistname = NULL;
@@ -4600,10 +4609,21 @@ if(bpf.len == 0) fprintf(stderr, "BPF is unset! Make sure hcxlabtool is running 
 fprintf(stdout, "Initialize main scan loop...\e[?25l");
 nanosleep(&tspecifo, &tspeciforem);
 
-if(nl_scanloop() == false)
+if(rcascanflag == false)
 	{
-	errorcount++;
-	fprintf(stderr, "failed to intitalize epoll\n");
+	if(nl_scanloop() == false)
+		{
+		errorcount++;
+		fprintf(stderr, "failed to intitalize main scan loop\n");
+		}
+	}
+else
+	{
+	if(nl_scanloop_rca() == false)
+		{
+		errorcount++;
+		fprintf(stderr, "failed to intitalize rca scan loop\n");
+		}
 	}
 /*---------------------------------------------------------------------------*/
 byebye:
