@@ -3680,6 +3680,19 @@ tval1.it_interval.tv_nsec = TIMER1_INTERVAL_NSEC;
 if(timerfd_settime(fd_timer1, 0, &tval1, NULL) == -1) return false;
 return true;
 }
+/*---------------------------------------------------------------------------*/
+static bool set_timer_rca()
+{
+static struct itimerspec tval1;
+
+if((fd_timer1 = timerfd_create(CLOCK_BOOTTIME, 0)) <0 ) return false;
+tval1.it_value.tv_sec = TIMER_RCA_VALUE_SEC;
+tval1.it_value.tv_nsec = TIMER_RCA_VALUE_NSEC;
+tval1.it_interval.tv_sec = TIMER_RCA_INTERVAL_SEC;
+tval1.it_interval.tv_nsec = TIMER_RCA_INTERVAL_NSEC;
+if(timerfd_settime(fd_timer1, 0, &tval1, NULL) == -1) return false;
+return true;
+}
 /*===========================================================================*/
 /* SIGNALHANDLER */
 static void signal_handler(int signum)
@@ -4594,11 +4607,23 @@ if(open_socket_tx() == false)
 	fprintf(stderr, "failed to open transmit socket\n");
 	goto byebye;
 	}
-if(set_timer() == false)
+if(rcascanflag == false)
 	{
-	errorcount++;
-	fprintf(stderr, "failed to initialize timer\n");
-	goto byebye;
+	if(set_timer() == false)
+		{
+		errorcount++;
+		fprintf(stderr, "failed to initialize timer\n");
+		goto byebye;
+		}
+	}
+else
+	{
+	if(set_timer_rca() == false)
+		{
+		errorcount++;
+		fprintf(stderr, "failed to initialize timer\n");
+		goto byebye;
+		}
 	}
 /*---------------------------------------------------------------------------*/
 tspecifo.tv_sec = 5;
