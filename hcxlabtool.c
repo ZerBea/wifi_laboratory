@@ -355,9 +355,7 @@ static char gpgga[NMEA_MSG_MAX] = { 0 };
 static char gptxt[NMEA_MSG_MAX] = { 0 };
 #endif
 
-#ifdef STATUSOUT
 static char rtb[RTD_LEN] = { 0 };
-#endif
 /*===========================================================================*/
 /*===========================================================================*/
 /* status print */
@@ -472,6 +470,43 @@ fprintf(stdout, "\n"
 		"* active monitor mode available\n"
 		"+ monitor mode available\n"
 		"- no monitor mode available\n");
+return;
+}
+/*---------------------------------------------------------------------------*/
+static inline void show_realtime_rca()
+{
+static size_t i;
+static size_t p;
+static size_t pa;
+static time_t tvlast;
+static char *pmdef = " ";
+static char *pmok = "+";
+static char *ar;
+static char timestring[32];
+
+system("clear");
+sprintf(&rtb[0], "  CHA  FREQ    LAST   R    MAC-AP    ESSID                   SCAN-FREQUENCY: %6u\n"
+	"------------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency);
+p = strlen(rtb);
+i = 0;
+pa = 0;
+for(i = 0; i < 40 ; i++)
+	{
+	if((aplist + i)->tsakt == 0) break;
+	if(((aplist +i)->status & AP_IN_RANGE) == AP_IN_RANGE) ar = pmok;
+	else ar = pmdef;
+	tvlast = (aplist + i)->tsakt /1000000000;
+	strftime(timestring, 32, "%H:%M:%S", localtime(&tvlast));
+
+	sprintf(&rtb[p], " [%3d %5d] %s %s %02x%02x%02x%02x%02x%02x %.*s\n",
+			(aplist + i)->ie.channel, (aplist + i)->count, timestring, ar,
+			(aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5],
+			(aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
+	p = strlen(rtb);
+	pa++;
+	}
+rtb[p] = 0;
+fprintf(stdout, "%s", rtb); 
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -2105,23 +2140,20 @@ tagwalk_channel_essid_rsn(&(aplist + i)->ie, proberesponselen, proberesponse->ie
 if((aplist + i)->ie.channel == 0) (aplist + i)->ie.channel = (scanlist + scanlistindex)->channel;
 if((aplist + i)->ie.channel != (scanlist + scanlistindex)->channel) return;
 if(((aplist + i)->ie.flags & APIE_ESSID) == APIE_ESSID) (aplist + i)->status |= AP_ESSID;
-if((aplist + i)->ie.channel == (scanlist + scanlistindex)->channel)
+if(deauthenticationflag == true)
 	{
-	if(deauthenticationflag == true)
+	if(((aplist + i)->ie.flags & AP_MFP) == 0)
 		{
-		if(((aplist + i)->ie.flags & AP_MFP) == 0)
-			{
-			if(((aplist + i)->ie.flags & APAKM_MASK) != 0) send_80211_deauthentication_fm_ap(macbc, (aplist + i)->macap, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
-			}
+		if(((aplist + i)->ie.flags & APAKM_MASK) != 0) send_80211_deauthentication_fm_ap(macbc, (aplist + i)->macap, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 		}
-	if(associationflag == true)
-		{
-		if((((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) && (((aplist + i)->ie.flags & APIE_ESSID) == 0)) send_80211_authenticationrequest();
-		}
-	if(reassociationflag == true)
-		{
-		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
-		}
+	}
+if(associationflag == true)
+	{
+	if((((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) && (((aplist + i)->ie.flags & APIE_ESSID) == 0)) send_80211_authenticationrequest();
+	}
+if(reassociationflag == true)
+	{
+	if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_reassociationrequest(i);
 	}
 writeepb();
 #ifdef NMEAOUT
@@ -2146,15 +2178,14 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	(aplist + i)->tsakt = tsakt;
 	if(((aplist + i)->status & AP_BEACON) == 0)
 		{
-		writeepb();
 		tshold = tsakt;
-		#ifdef NMEAOUT
-		if(fd_gps > 0) writegpwpl(i);
-		#endif
 		(aplist + i)->status |= AP_BEACON;
 		}
 	if((aplist + i)->status >= AP_EAPOL_M3) return;
 	tagwalk_channel_essid_rsn(&(aplist + i)->ie, beaconlen, beacon->ie);
+	if((aplist + i)->ie.channel == 0) (aplist + i)->ie.channel = (scanlist + scanlistindex)->channel;
+	if((aplist + i)->ie.channel != (scanlist + scanlistindex)->channel) return;
+	(aplist + i)->count = (scanlist + scanlistindex)->frequency;
 	return;
 	}
 memset((aplist + i), 0, APLIST_SIZE);
@@ -2166,6 +2197,9 @@ memcpy((aplist + i)->macap, macfrx->addr3, ETH_ALEN);
 memcpy((aplist + i)->macclient, &macbc, ETH_ALEN);
 (aplist + i)->status |= AP_BEACON;
 tagwalk_channel_essid_rsn(&(aplist + i)->ie, beaconlen, beacon->ie);
+if((aplist + i)->ie.channel == 0) (aplist + i)->ie.channel = (scanlist + scanlistindex)->channel;
+if((aplist + i)->ie.channel != (scanlist + scanlistindex)->channel) return;
+(aplist + i)->count = (scanlist + scanlistindex)->frequency;
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 return;
 }
@@ -2259,28 +2293,24 @@ tagwalk_channel_essid_rsn(&(aplist + i)->ie, beaconlen, beacon->ie);
 if((aplist + i)->ie.channel == 0) (aplist + i)->ie.channel = (scanlist + scanlistindex)->channel;
 if((aplist + i)->ie.channel != (scanlist + scanlistindex)->channel) return;
 if(((aplist + i)->ie.flags & APIE_ESSID) == APIE_ESSID) (aplist + i)->status |= AP_ESSID;
-
-if((aplist + i)->ie.channel == (scanlist +scanlistindex)->channel)
+if(deauthenticationflag == true)
 	{
-	if(deauthenticationflag == true)
+	if(((aplist + i)->ie.flags & AP_MFP) == 0)
 		{
-		if(((aplist + i)->ie.flags & AP_MFP) == 0)
-			{
-			if(((aplist + i)->ie.flags & APAKM_MASK) != 0) send_80211_deauthentication_fm_ap(macbc, (aplist + i)->macap, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
-			}
+		if(((aplist + i)->ie.flags & APAKM_MASK) != 0) send_80211_deauthentication_fm_ap(macbc, (aplist + i)->macap, WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA);
 		}
-	if(associationflag == true)
-		{
-		if((((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) && (((aplist + i)->ie.flags & APIE_ESSID) == 0)) send_80211_authenticationrequest();
-		}
-	if(proberequestflag == true)
-		{
-		if(((aplist + i)->ie.flags & APIE_ESSID) == 0) send_80211_proberequest_undirected();
-		}
-	if(reassociationflag == true)
-		{
-		if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_associationrequest_org(i);
-		}
+	}
+if(associationflag == true)
+	{
+	if((((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) && (((aplist + i)->ie.flags & APIE_ESSID) == 0)) send_80211_authenticationrequest();
+	}
+if(proberequestflag == true)
+	{
+	if(((aplist + i)->ie.flags & APIE_ESSID) == 0) send_80211_proberequest_undirected();
+	}
+if(reassociationflag == true)
+	{
+	if(((aplist + i)->ie.flags & APRSNAKM_PSK) != 0) send_80211_associationrequest_org(i);
 	}
 writeepb();
 #ifdef NMEAOUT
@@ -2608,7 +2638,7 @@ while(!wanteventflag)
 			{
 			read(fd_timer1, &timer1count, sizeof(u64));
 			lifetime++;
-//			show_realtime_rca();
+			if((lifetime % 5) == 0) show_realtime_rca();
 			scanlistindex++;
 			if(nl_set_frequency() == false) errorcount++;
 			if((lifetime % 10) == 0)
@@ -4308,6 +4338,7 @@ fprintf(stdout, "long options:\n"
 	"                                   gpsbabel -w -t -i nmea -f in_file.nmea -o kml -F out_file.kml\n"
 	"                                  get more information: https://en.wikipedia.org/wiki/NMEA_0183\n"
 	#endif
+	"--rcascan_passive              : do passive (R)adio (C)hannel (A)ssignment scan\n" 
 	"--help                         : show this help\n"
 	"--version                      : show version\n"
 	"\n",
@@ -4397,6 +4428,7 @@ static const struct option long_options[] =
 	{"onerror",			required_argument,	NULL,	HCX_ON_ERROR},
 	{"gpio_button",			required_argument,	NULL,	HCX_GPIO_BUTTON},
 	{"gpio_statusled",		required_argument,	NULL,	HCX_GPIO_STATUSLED},
+	{"rcascan_passive",		no_argument,		NULL,	HCX_RCASCAN_PASSIVE},
 	{"version",			no_argument,		NULL,	HCX_VERSION},
 	{"help",			no_argument,		NULL,	HCX_HELP},
 	{NULL,				0,			NULL,	0}
@@ -4630,6 +4662,10 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		break;
 		#endif
 
+		case HCX_RCASCAN_PASSIVE:
+		rcascanflag = true;
+		break;
+
 		case HCX_HELP:
 		usage(basename(argv[0]));
 		break;
@@ -4742,11 +4778,14 @@ if(set_interface(interfacefrequencyflag, userfrequencylistname, userchannellistn
 	goto byebye;
 	}
 if(essidlistname != NULL) read_essidlist(essidlistname);
-if(open_pcapng(pcapngoutname) == false)
+if(rcascanflag == false)
 	{
-	errorcount++;
-	fprintf(stderr, "failed to open dump file\n");
-	goto byebye;
+	if(open_pcapng(pcapngoutname) == false)
+		{
+		errorcount++;
+		fprintf(stderr, "failed to open dump file\n");
+		goto byebye;
+		}
 	}
 if(open_socket_rx(bpfname) == false)
 	{
