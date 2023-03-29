@@ -2353,7 +2353,7 @@ static inline void process_packet()
 {
 if((packetlen = read(fd_socket_rx, packetptr, PCAPNG_SNAPLEN)) < RTHRX_SIZE)
 	{
-	if(packetlen == - 1) errorcount++;
+	if(packetlen == -1) errorcount++;
 	return;
 	}
 rth = (rth_t*)packetptr;
