@@ -482,10 +482,11 @@ static time_t tvlast;
 static char *pmdef = " ";
 static char *pmok = "+";
 static char *ar;
+static char *ak;
 static char timestring[32];
 
 system("clear");
-sprintf(&rtb[0], "  CHA  FREQ    LAST   R    MAC-AP    ESSID                   SCAN-FREQUENCY: %6u\n"
+sprintf(&rtb[0], "  CHA  FREQ    LAST   R A    MAC-AP    ESSID                 SCAN-FREQUENCY: %6u\n"
 	"------------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency);
 p = strlen(rtb);
 i = 0;
@@ -495,11 +496,13 @@ for(i = 0; i < 40 ; i++)
 	if((aplist + i)->tsakt == 0) break;
 	if(((aplist +i)->status & AP_IN_RANGE) == AP_IN_RANGE) ar = pmok;
 	else ar = pmdef;
+	if(((aplist +i)->ie.flags & APAKM_MASK) != 0) ak = pmok;
+	else ak = pmdef;
 	tvlast = (aplist + i)->tsakt /1000000000;
 	strftime(timestring, 32, "%H:%M:%S", localtime(&tvlast));
 
-	sprintf(&rtb[p], " [%3d %5d] %s %s %02x%02x%02x%02x%02x%02x %.*s\n",
-			(aplist + i)->ie.channel, (aplist + i)->count, timestring, ar,
+	sprintf(&rtb[p], " [%3d %5d] %s %s %s %02x%02x%02x%02x%02x%02x %.*s\n",
+			(aplist + i)->ie.channel, (aplist + i)->count, timestring, ar, ak,
 			(aplist + i)->macap[0], (aplist + i)->macap[1], (aplist + i)->macap[2], (aplist + i)->macap[3], (aplist + i)->macap[4], (aplist + i)->macap[5],
 			(aplist + i)->ie.essidlen, (aplist + i)->ie.essid);
 	p = strlen(rtb);
