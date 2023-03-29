@@ -2299,6 +2299,56 @@ return;
 }
 #endif
 /*===========================================================================*/
+static inline void process_packet_rca()
+{
+if((packetlen = read(fd_socket_rx, packetptr, PCAPNG_SNAPLEN)) < RTHRX_SIZE)
+	{
+	if(packetlen == - 1) errorcount++;
+	return;
+	}
+rth = (rth_t*)packetptr;
+#ifndef __LITTLE_ENDIAN__
+if((rth->it_present & IEEE80211_RADIOTAP_DBM_ANTSIGNAL) == 0) return;
+if(rth->it_len > packetlen)
+	{
+	errorcount++;
+	return;
+	}
+ieee82011ptr = packetptr + rth->it_len;
+ieee82011len = packetlen - rth->it_len;
+#else
+if((le32toh(rth->it_present) & IEEE80211_RADIOTAP_DBM_ANTSIGNAL) == 0) return;
+if(le16toh(rth->it_len) > packetlen)
+	{
+	errorcount++;
+	return;
+	}
+ieee82011ptr = packetptr + le16toh(rth->it_len);
+ieee82011len = packetlen - le16toh(rth->it_len);
+#endif
+if(ieee82011len <= MAC_SIZE_RTS) return;
+macfrx = (ieee80211_mac_t*)ieee82011ptr;
+if((macfrx->from_ds == 1) && (macfrx->to_ds == 1))
+	{
+	payloadptr = ieee82011ptr +MAC_SIZE_LONG;
+	payloadlen = ieee82011len -MAC_SIZE_LONG;
+	}
+else
+	{
+	payloadptr = ieee82011ptr +MAC_SIZE_NORM;
+	payloadlen = ieee82011len -MAC_SIZE_NORM;
+	}
+clock_gettime(CLOCK_REALTIME, &tspecakt);
+tsakt = ((u64)tspecakt.tv_sec * 1000000000ULL) + tspecakt.tv_nsec;
+packetcount++;
+if(macfrx->type == IEEE80211_FTYPE_MGMT)
+	{
+//	if(macfrx->subtype == IEEE80211_STYPE_BEACON) process80211beacon_rca();
+//	else if(macfrx->subtype == IEEE80211_STYPE_PROBE_RESP) process80211proberesponse_rca();
+	}
+return;
+}
+/*---------------------------------------------------------------------------*/
 static inline void process_packet()
 {
 if((packetlen = read(fd_socket_rx, packetptr, PCAPNG_SNAPLEN)) < RTHRX_SIZE)
@@ -2482,8 +2532,73 @@ return true;
 /* RCA SCAN LOOP */
 static bool nl_scanloop_rca()
 {
+static ssize_t i;
+static int fd_epoll = 0;
+static int epi = 0;
+static int epret = 0;
+static struct epoll_event ev, events[EPOLL_EVENTS_MAX];
+static size_t packetcountlast = 0;
+static u64 timer1count;
+static struct timespec sleepled;
 
+if((fd_epoll= epoll_create(1)) < 0) return false;
+ev.data.fd = fd_socket_rx;
+ev.events = EPOLLIN;
+if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_socket_rx, &ev) < 0) return false;
+epi++;
 
+ev.data.fd = fd_timer1;
+ev.events = EPOLLIN;
+if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_timer1, &ev) < 0) return false;
+epi++;
+
+sleepled.tv_sec = 0;
+sleepled.tv_nsec = GPIO_LED_DELAY;
+while(!wanteventflag)
+	{
+	if(errorcount > ERROR_MAX) wanteventflag |= EXIT_ON_ERROR;
+	epret = epoll_pwait(fd_epoll, events, epi, timerwaitnd, NULL);
+	if(epret == -1)
+		{
+		if(errno != EINTR) errorcount++;
+		continue;
+		}
+	for(i = 0; i < epret; i++)
+		{
+		if(events[i].data.fd == fd_socket_rx) process_packet_rca();
+		else if(events[i].data.fd == fd_timer1)
+			{
+			read(fd_timer1, &timer1count, sizeof(u64));
+			lifetime++;
+//			show_realtime_rca();
+			scanlistindex++;
+			if(nl_set_frequency() == false) errorcount++;
+			if((lifetime % 10) == 0)
+				{
+				if(gpiostatusled > 0)
+					{
+					GPIO_SET = 1 << gpiostatusled;
+					nanosleep(&sleepled, NULL);
+					GPIO_CLR = 1 << gpiostatusled;
+					}
+				if(gpiobutton > 0)
+					{
+					if(GET_GPIO(gpiobutton) > 0)
+						{
+						wanteventflag |= EXIT_ON_GPIOBUTTON;
+						if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
+						}
+					}
+				}
+			if((tottime > 0) && (lifetime >= tottime)) wanteventflag |= EXIT_ON_TOT;
+			if((lifetime % watchdogcountmax) == 0)
+				{
+				if(packetcount == packetcountlast) wanteventflag |= EXIT_ON_WATCHDOG;
+				packetcountlast = packetcount;
+				}
+			}
+		}
+	}
 return true;
 }
 /*===========================================================================*/
