@@ -52,7 +52,7 @@ typedef struct  __attribute__((__packed__))
 }rth_t;
 #define	RTHRX_SIZE (ssize_t)(sizeof(rth_t))
 /*---------------------------------------------------------------------------*/
-static u8 rthtxdata[] =
+static const u8 rthtxdata[] =
 {
 0x00, 0x00, /* radiotap version and padding */
 0x08, 0x00, /* radiotap header length */
@@ -60,7 +60,7 @@ static u8 rthtxdata[] =
 };
 #define RTHTX_SIZE sizeof(rthtxdata)
 /*---------------------------------------------------------------------------*/
-static u8 rthtxnoackdata[] =
+static const u8 rthtxnoackdata[] =
 {
 0x00, 0x00, /* radiotap version and padding */
 0x0a, 0x00, /* radiotap header length */
