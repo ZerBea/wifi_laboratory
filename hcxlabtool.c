@@ -1342,7 +1342,7 @@ return;
 /*===========================================================================*/
 /*===========================================================================*/
 /* RX 802.11 */
-static void get_tagvendor(infoelement_t *infoelement, int infolen, u8 *infostart)
+static inline __attribute__((always_inline)) void get_tagvendor(infoelement_t *infoelement, int infolen, u8 *infostart)
 {
 static size_t c;
 static ieee80211_wpaie_t *iewpa;
@@ -1388,7 +1388,7 @@ for(c = 0; c < wpasuitecount->count; c++)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static void get_tagrsn(infoelement_t *infoelement, int infolen, u8 *infostart)
+static inline __attribute__((always_inline)) void get_tagrsn(infoelement_t *infoelement, int infolen, u8 *infostart)
 {
 static size_t c;
 static ieee80211_rsnie_t *iersn;
@@ -1443,7 +1443,7 @@ if((rsncapability->capability & MFP_REQUIRED) == MFP_REQUIRED) infoelement->flag
 return;
 }
 /*---------------------------------------------------------------------------*/
-static void tagwalk_channel_essid_rsn(infoelement_t *infoelement, int infolen, u8 *infostart)
+static inline __attribute__((always_inline)) void tagwalk_channel_essid_rsn(infoelement_t *infoelement, int infolen, u8 *infostart)
 {
 static ieee80211_ietag_t *infoptr;
 
@@ -2207,7 +2207,7 @@ qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211beacon()
+static inline __attribute__((always_inline)) void process80211beacon()
 {
 static size_t i;
 static ieee80211_beacon_proberesponse_t *beacon;
@@ -2420,7 +2420,7 @@ if(macfrx->type == IEEE80211_FTYPE_MGMT)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process_packet()
+static inline __attribute__((always_inline)) void process_packet()
 {
 if((packetlen = read(fd_socket_rx, packetptr, PCAPNG_SNAPLEN)) < RTHRX_SIZE)
 	{
