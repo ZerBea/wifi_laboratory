@@ -166,7 +166,7 @@ static u16 seqcounter2 = 1; /* proberequest authentication association */
 static u16 seqcounter3 = 1; /* probereresponse authentication response 3 */
 static u16 seqcounter4 = 1; /* beacon */
 /*---------------------------------------------------------------------------*/
-const uint8_t beacondata[] =
+static const uint8_t beacondata[] =
 {
 /* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6(B), 9, 12(B), 18, [Mbit/sec] */
 0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x8c, 0x12, 0x98, 0x24,
@@ -187,7 +187,7 @@ const uint8_t beacondata[] =
 };
 #define BEACONDATA_SIZE sizeof(beacondata)
 /*---------------------------------------------------------------------------*/
-const uint8_t proberesponsedata[] =
+static const uint8_t proberesponsedata[] =
 {
 /* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6(B), 9, 12(B), 18, [Mbit/sec] */
 0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x8c, 0x12, 0x98, 0x24,
