@@ -311,7 +311,7 @@ static uint8_t eapolm1data[] =
 #define EAPOLM1DATA_SIZE sizeof(eapolm1data)
 /*---------------------------------------------------------------------------*/
 /* interface bit rate */
-static uint8_t legacy241mbdata[] =
+static const uint8_t legacy241mbdata[] =
 {
 0x10, 0x00,
 0x5a, 0x80,
@@ -321,7 +321,7 @@ static uint8_t legacy241mbdata[] =
 };
 #define LEGACYXXXMB_SIZE sizeof(legacy241mbdata)
 /*---------------------------------------------------------------------------*/
-static uint8_t legacy56mbdata[] =
+static const uint8_t legacy56mbdata[] =
 {
 0x10, 0x00,
 0x5a, 0x80,
@@ -498,7 +498,7 @@ for(i = 0; i < 40 ; i++)
 	else ar = pmdef;
 	if(((aplist +i)->ie.flags & APAKM_MASK) != 0) ak = pmok;
 	else ak = pmdef;
-	tvlast = (aplist + i)->tsakt /1000000000;
+	tvlast = (aplist + i)->tsakt / 1000000000;
 	strftime(timestring, 32, "%H:%M:%S", localtime(&tvlast));
 
 	sprintf(&rtb[p], " [%3d %5d] %s %s %s %02x%02x%02x%02x%02x%02x %.*s\n",
