@@ -2167,7 +2167,7 @@ tshold = tsakt;
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211beacon_rca()
+static inline __attribute__((always_inline)) void process80211beacon_rca()
 {
 static size_t i;
 static ieee80211_beacon_proberesponse_t *beacon;
@@ -2370,7 +2370,7 @@ return;
 }
 #endif
 /*===========================================================================*/
-static inline void process_packet_rca()
+static inline __attribute__((always_inline)) void process_packet_rca()
 {
 if((packetlen = read(fd_socket_rx, packetptr, PCAPNG_SNAPLEN)) < RTHRX_SIZE)
 	{
