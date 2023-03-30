@@ -311,7 +311,7 @@ static uint8_t eapolm1data[] =
 #define EAPOLM1DATA_SIZE sizeof(eapolm1data)
 /*---------------------------------------------------------------------------*/
 /* interface bit rate */
-static uint8_t legacy241mbdata[] =
+static const uint8_t legacy241mbdata[] =
 {
 0x10, 0x00,
 0x5a, 0x80,
@@ -321,7 +321,7 @@ static uint8_t legacy241mbdata[] =
 };
 #define LEGACYXXXMB_SIZE sizeof(legacy241mbdata)
 /*---------------------------------------------------------------------------*/
-static uint8_t legacy56mbdata[] =
+static const uint8_t legacy56mbdata[] =
 {
 0x10, 0x00,
 0x5a, 0x80,
