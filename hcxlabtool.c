@@ -498,7 +498,7 @@ for(i = 0; i < 40 ; i++)
 	else ar = pmdef;
 	if(((aplist +i)->ie.flags & APAKM_MASK) != 0) ak = pmok;
 	else ak = pmdef;
-	tvlast = (aplist + i)->tsakt /1000000000;
+	tvlast = (aplist + i)->tsakt / 1000000000;
 	strftime(timestring, 32, "%H:%M:%S", localtime(&tvlast));
 
 	sprintf(&rtb[p], " [%3d %5d] %s %s %s %02x%02x%02x%02x%02x%02x %.*s\n",
