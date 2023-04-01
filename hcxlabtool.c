@@ -2326,7 +2326,7 @@ return;
 /*===========================================================================*/
 /*===========================================================================*/
 #ifdef NMEAOUT
-static inline void process_nmea0183()
+static inline __attribute__((always_inline)) void process_nmea0183()
 {
 static char *nmeaptr;
 static const char *gprmcid = "$GPRMC,";
