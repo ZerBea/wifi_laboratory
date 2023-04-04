@@ -2058,6 +2058,7 @@ for(i = 0; i < APRGLIST_MAX - 1; i++)
 	send_80211_probereresponse(macfrx->addr2, (aprglist + i)->macaprg, essid.len, essid.essid);
 	return;
 	}
+writeepb();
 return;
 }
 /*---------------------------------------------------------------------------*/
