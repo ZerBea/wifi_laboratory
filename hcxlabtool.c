@@ -1086,7 +1086,7 @@ errorcount++;
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void send_80211_authenticationresponse()
+static inline void send_80211_authenticationresponse(void)
 {
 macftx = (ieee80211_mac_t*)&wltxbuffer[RTHTX_SIZE];
 macftx->type = IEEE80211_FTYPE_MGMT;
@@ -1248,7 +1248,7 @@ errorcount++;
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void send_80211_proberequest_undirected()
+static inline void send_80211_proberequest_undirected(void)
 {
 static ieee80211_mac_t *macftx;
 
@@ -1495,7 +1495,7 @@ else
 return 0;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211pspoll()
+static inline void process80211pspoll(void)
 {
 static size_t i;
 
@@ -1512,7 +1512,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211action()
+static inline void process80211action(void)
 {
 static size_t i;
 static ieee80211_action_t *action;
@@ -1533,7 +1533,7 @@ if((action->category == RADIO_MEASUREMENT) && (action->code == NEIGHBOR_REPORT_R
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211qosdata()
+static inline void process80211qosdata(void)
 {
 static size_t i;
 
@@ -1553,7 +1553,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211qosnull()
+static inline void process80211qosnull(void)
 {
 static size_t i;
 
@@ -1573,7 +1573,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211null()
+static inline void process80211null(void)
 {
 static size_t i;
 
@@ -1593,7 +1593,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211blockack()
+static inline void process80211blockack(void)
 {
 static size_t i;
 
@@ -1610,7 +1610,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211blockackreq()
+static inline void process80211blockackreq(void)
 {
 static size_t i;
 
@@ -1627,7 +1627,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211eapol_m4()
+static inline void process80211eapol_m4(void)
 {
 static size_t i;
 
@@ -1652,7 +1652,7 @@ for(i = 0; i < APLIST_MAX -1; i++)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211eapol_m3()
+static inline void process80211eapol_m3(void)
 {
 static size_t i;
 
@@ -1687,7 +1687,7 @@ authseqakt.status = 0;
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211eapol_m2rg()
+static inline void process80211eapol_m2rg(void)
 {
 size_t i;
 
@@ -1708,7 +1708,7 @@ for(i = 0; i < CLIENTLIST_MAX - 1; i++)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211eapol_m2()
+static inline void process80211eapol_m2(void)
 {
 authseqakt.replaycountm2 = be64toh(wpakey->replaycount);
 if(replaycountrg == authseqakt.replaycountm2)
@@ -1736,7 +1736,7 @@ authseqakt.status = 0;
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211eapol_m1()
+static inline void process80211eapol_m1(void)
 {
 static size_t i;
 
@@ -1772,7 +1772,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211eapol()
+static inline void process80211eapol(void)
 {
 
 eapolplptr = eapauthplptr + IEEE80211_EAPAUTH_SIZE;
@@ -1802,7 +1802,7 @@ switch(keyinfo)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211eapauthentication()
+static inline void process80211eapauthentication(void)
 {
 tshold = tsakt;
 eapauthplptr = payloadptr + IEEE80211_LLC_SIZE;
@@ -1822,14 +1822,14 @@ writeepb();
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211reassociationresponse()
+static inline void process80211reassociationresponse(void)
 {
 tshold = tsakt;
 memcpy(&authseqakt.macap, macfrx->addr2, ETH_ALEN);
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211reassociationrequest()
+static inline void process80211reassociationrequest(void)
 {
 static size_t i;
 static ieee80211_reassoc_req_t *reassociationrequest;
@@ -1881,14 +1881,14 @@ writeepb();
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211associationresponse()
+static inline void process80211associationresponse(void)
 {
 tshold = tsakt;
 memcpy(&authseqakt.macap, macfrx->addr2, ETH_ALEN);
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211associationrequest()
+static inline void process80211associationrequest(void)
 {
 static size_t i;
 static ieee80211_assoc_req_t *associationrequest;
@@ -1938,7 +1938,7 @@ writeepb();
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211authentication_fmclient()
+static inline void process80211authentication_fmclient(void)
 {
 size_t i;
 
@@ -1970,7 +1970,7 @@ writeepb();
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211authentication()
+static inline void process80211authentication(void)
 {
 size_t i;
 static ieee80211_auth_t *auth;
@@ -2026,7 +2026,7 @@ while(0 < infolen)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211proberequest_directed()
+static inline void process80211proberequest_directed(void)
 {
 static size_t i;
 static ieee80211_proberequest_t *proberequest;
@@ -2061,7 +2061,7 @@ for(i = 0; i < APRGLIST_MAX - 1; i++)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline void process80211proberequest_undirected()
+static inline void process80211proberequest_undirected(void)
 {
 static size_t i;
 static ieee80211_proberequest_t *proberequest;
@@ -2105,7 +2105,7 @@ return;
 }
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
-static inline void process80211proberesponse()
+static inline void process80211proberesponse(void)
 {
 static size_t i;
 static ieee80211_beacon_proberesponse_t *proberesponse;
@@ -2167,7 +2167,7 @@ tshold = tsakt;
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline __attribute__((always_inline)) void process80211beacon_rca()
+static inline __attribute__((always_inline)) void process80211beacon_rca(void)
 {
 static size_t i;
 static ieee80211_beacon_proberesponse_t *beacon;
@@ -2207,7 +2207,7 @@ qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline __attribute__((always_inline)) void process80211beacon()
+static inline __attribute__((always_inline)) void process80211beacon(void)
 {
 static size_t i;
 static ieee80211_beacon_proberesponse_t *beacon;
@@ -2370,7 +2370,7 @@ return;
 }
 #endif
 /*===========================================================================*/
-static inline __attribute__((always_inline)) void process_packet_rca()
+static inline __attribute__((always_inline)) void process_packet_rca(void)
 {
 if((packetlen = read(fd_socket_rx, packetptr, PCAPNG_SNAPLEN)) < RTHRX_SIZE)
 	{
@@ -2420,7 +2420,7 @@ if(macfrx->type == IEEE80211_FTYPE_MGMT)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline __attribute__((always_inline)) void process_packet()
+static inline __attribute__((always_inline)) void process_packet(void)
 {
 if((packetlen = read(fd_socket_rx, packetptr, PCAPNG_SNAPLEN)) < RTHRX_SIZE)
 	{
@@ -2506,7 +2506,7 @@ return;
 /*===========================================================================*/
 /*===========================================================================*/
 /* MAIN SCAN LOOP */
-static bool nl_scanloop()
+static bool nl_scanloop(void)
 {
 static ssize_t i;
 static int fd_epoll = 0;
@@ -2601,7 +2601,7 @@ return true;
 }
 /*===========================================================================*/
 /* RCA SCAN LOOP */
-static bool nl_scanloop_rca()
+static bool nl_scanloop_rca(void)
 {
 static ssize_t i;
 static int fd_epoll = 0;
@@ -2675,7 +2675,7 @@ return true;
 /*===========================================================================*/
 /*===========================================================================*/
 /* IOCTL WIRELESS EXTENSIONS */
-static inline void ioctl_set_frequency()
+static inline void ioctl_set_frequency(void)
 {
 static struct iwreq iwrq;
 
@@ -2773,7 +2773,7 @@ while(nla_ok(pos, nestremlen))
 return 0;
 }
 /*---------------------------------------------------------------------------*/
-static bool nl_get_interfacelist()
+static bool nl_get_interfacelist(void)
 {
 static ssize_t i;
 static size_t ii;
@@ -2852,7 +2852,7 @@ while(1)
 return false;
 }
 /*---------------------------------------------------------------------------*/
-static bool nl_get_interfacestatus()
+static bool nl_get_interfacestatus(void)
 {
 static ssize_t i;
 static ssize_t msglen;
@@ -2914,7 +2914,7 @@ while(1)
 return false;
 }
 /*---------------------------------------------------------------------------*/
-static bool nl_get_interfacecapabilities()
+static bool nl_get_interfacecapabilities(void)
 {
 static ssize_t i;
 static ssize_t ii;
@@ -2999,7 +2999,7 @@ while(1)
 return false;
 }
 /*---------------------------------------------------------------------------*/
-static inline bool nl_set_frequency()
+static inline bool nl_set_frequency(void)
 {
 static ssize_t i;
 static ssize_t msglen;
@@ -3071,7 +3071,7 @@ while(1)
 return false;
 }
 /*---------------------------------------------------------------------------*/
-static inline void nl_set_powersave_off()
+static inline void nl_set_powersave_off(void)
 {
 static ssize_t i;
 static ssize_t msglen;
@@ -3125,7 +3125,7 @@ while(1)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline bool nl_set_monitormode()
+static inline bool nl_set_monitormode(void)
 {
 static ssize_t i;
 static ssize_t msglen;
@@ -3194,7 +3194,7 @@ static void *rta_data(const struct rtattr *rta)
 return (u8*)rta +4;
 }
 /*---------------------------------------------------------------------------*/
-static bool rt_set_interfacemac()
+static bool rt_set_interfacemac(void)
 {
 static ssize_t i;
 static ssize_t msglen;
@@ -3288,7 +3288,7 @@ while(1)
 return false;
 }
 /*---------------------------------------------------------------------------*/
-static bool rt_get_interfacestatus()
+static bool rt_get_interfacestatus(void)
 {
 static ssize_t i;
 static ssize_t msglen;
@@ -3334,7 +3334,7 @@ while(1)
 return false;
 }
 /*---------------------------------------------------------------------------*/
-static bool rt_get_interfacelist()
+static bool rt_get_interfacelist(void)
 {
 static ssize_t i;
 static ssize_t msglen;
@@ -3403,7 +3403,7 @@ while(1)
 return false;
 }
 /*---------------------------------------------------------------------------*/
-static bool nl_get_familyid()
+static bool nl_get_familyid(void)
 {
 static ssize_t i;
 static ssize_t msglen;
@@ -3596,7 +3596,7 @@ show_interfacecapabilities2();
 return true;
 }
 /*===========================================================================*/
-static bool set_monitormode()
+static bool set_monitormode(void)
 {
 if(rt_set_interface(0) == false) return false;
 if(nl_set_monitormode() == false) return false;
@@ -3608,7 +3608,7 @@ fprintf(stdout, "\n\nmonitor mode is active...\n");
 return true;
 }
 /*===========================================================================*/
-static bool get_interfacelist()
+static bool get_interfacelist(void)
 {
 static size_t i;
 
@@ -3633,7 +3633,7 @@ return true;
 }
 /*===========================================================================*/
 /* RAW PACKET SOCKET */
-static bool open_socket_tx()
+static bool open_socket_tx(void)
 {
 static struct sockaddr_ll saddr;
 static struct packet_mreq mrq;
@@ -3791,7 +3791,7 @@ return true;
 #endif
 /*===========================================================================*/
 /* CONTROL SOCKETS */
-static void close_sockets()
+static void close_sockets(void)
 {
 if(fd_socket_unix != 0) close(fd_socket_unix);
 if(fd_socket_rt != 0) close(fd_socket_rt);
@@ -3806,13 +3806,13 @@ if(fd_socket_rx != 0) close(fd_socket_rx);
 return;
 }
 /*---------------------------------------------------------------------------*/
-static bool open_socket_unix()
+static bool open_socket_unix(void)
 {
 if((fd_socket_unix = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0) return false;
 return true;
 }
 /*---------------------------------------------------------------------------*/
-static bool open_socket_rt()
+static bool open_socket_rt(void)
 {
 static struct sockaddr_nl saddr;
 static int nltxbuffsize = NLTX_SIZE;
@@ -3828,7 +3828,7 @@ if(bind(fd_socket_rt, (struct sockaddr *)&saddr, sizeof(saddr)) < 0) return fals
 return true;
 }
 /*---------------------------------------------------------------------------*/
-static bool open_socket_nl()
+static bool open_socket_nl(void)
 {
 static struct sockaddr_nl saddr;
 static int nltxbuffsize = NLTX_SIZE;
@@ -3845,7 +3845,7 @@ if(bind(fd_socket_nl, (struct sockaddr *)&saddr, sizeof(saddr)) < 0) return fals
 return true;
 }
 /*===========================================================================*/
-static bool open_control_sockets()
+static bool open_control_sockets(void)
 {
 if(open_socket_rt() == false) return false;
 if(open_socket_nl() == false) return false;
@@ -3854,7 +3854,7 @@ return true;
 }
 /*===========================================================================*/
 /* TIMER */
-static bool set_timer()
+static bool set_timer(void)
 {
 static struct itimerspec tval1;
 
@@ -3867,7 +3867,7 @@ if(timerfd_settime(fd_timer1, 0, &tval1, NULL) == -1) return false;
 return true;
 }
 /*---------------------------------------------------------------------------*/
-static bool set_timer_rca()
+static bool set_timer_rca(void)
 {
 static struct itimerspec tval1;
 
@@ -3890,7 +3890,7 @@ if((signum == SIGINT) || (signum == SIGTERM) || (signum == SIGKILL) || (signum =
 return;
 }
 /*---------------------------------------------------------------------------*/
-static bool set_signal_handler()
+static bool set_signal_handler(void)
 {
 struct sigaction sa;
 
@@ -3903,7 +3903,7 @@ if(sigaction(SIGTSTP, &sa, NULL) < 0) return false;
 return true;
 }
 /*===========================================================================*/
-static void init_values()
+static void init_values(void)
 {
 static size_t i;
 static struct timespec waitfordevice;
@@ -3973,7 +3973,7 @@ memcpy(&gptxt, &gptxtid, 7);
 return;
 }
 /*---------------------------------------------------------------------------*/
-static void close_lists()
+static void close_lists(void)
 {
 static size_t i;
 
@@ -3993,7 +3993,7 @@ if(ifpresentlist != NULL)
 return;
 }
 /*---------------------------------------------------------------------------*/
-static void close_fds()
+static void close_fds(void)
 {
 if(fd_timer1 != 0) close(fd_timer1);
 if(fd_pcapng != 0) close(fd_pcapng);
@@ -4004,7 +4004,7 @@ if(fd_hcxpos != 0) close(fd_hcxpos);
 return;
 }
 /*---------------------------------------------------------------------------*/
-static bool init_lists()
+static bool init_lists(void)
 {
 ssize_t i;
 
@@ -4142,7 +4142,7 @@ gpio = (volatile unsigned *)gpio_map;
 return true;
 }
 /*---------------------------------------------------------------------------*/
-static unsigned int get_rpigpiobasemem()
+static unsigned int get_rpigpiobasemem(void)
 {
 static FILE *procinfo;
 static int len = 0;
@@ -4191,7 +4191,7 @@ if(rpi == true)
 return gpioperibase;
 }
 /*---------------------------------------------------------------------------*/
-static bool init_rpi()
+static bool init_rpi(void)
 {
 static unsigned int gpiobasemem;
 
