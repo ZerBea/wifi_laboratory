@@ -1,9 +1,6 @@
-hcxlabtool now moved to hcxdumptool
-
-
-
-hcxlabtool
+hcxlabtool now moved to hcxdumptool!
 ==============
+
 
 This is a highly experimental penetration testing tool!
 
@@ -12,10 +9,6 @@ Full use of NL80211 and RTNETLINK instead of WIRELESS EXTENSIONS.
 Main purpose is to understand 802.11 protocol and to detect its weak points.
 
 Feature requests will be ignored and code will often change! 
-
-
-Brief description
---------------
 
 It is not made for newbies and it comes without warnings and limited status display.
 
