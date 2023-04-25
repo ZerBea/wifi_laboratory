@@ -1,8 +1,0 @@
-#!/bin/bash
-
-cd /home
-hcxlabtool --gpio_button=4 --gpio_statusled=17 --bpf=own.bpfc
-#loadkeys de
-#dhclient -nw
-#systemctl start sshd.service
-#poweroff
