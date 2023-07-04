@@ -1,19 +1,17 @@
-name: Build master
+name: C/C++ CI
 
-on: [push]
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
 
-strategy:
-  matrix:
-    compiler: [gcc-latest]
 jobs:
   build:
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
-    - name: Run Make
-      env:
-        CC: ${{ matrix.compiler }}
+    - uses: actions/checkout@v3
+    - name: make
       run: make
-      
