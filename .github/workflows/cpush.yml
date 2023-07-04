@@ -2,9 +2,9 @@ name: C CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 jobs:
   build:
@@ -13,14 +13,14 @@ jobs:
 
     strategy:
       matrix:
-        cc: ['gcc-latest']
+        os-version: [ ubuntu-latest ]
+        compiler: [ gcc-latest ]
         deps: ['enabled']
         platform: ['x64', 'x86'] 
 
     steps:
     - uses: actions/checkout@v3
-    - name: make
-      env:
-       CC: gcc-${{matrix.cc}}
-
+      with:
+        fetch-depth: 0
+    - name: Make
       run: make
