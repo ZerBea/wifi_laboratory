@@ -1,0 +1,19 @@
+name: Build master
+
+on: [push]
+
+strategy:
+  matrix:
+    compiler: [gcc-latest]
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Run Make
+      env:
+        CC: ${{ matrix.compiler }}
+      run: make
+      
