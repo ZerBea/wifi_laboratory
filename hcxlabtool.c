@@ -2115,6 +2115,11 @@ memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 memcpy((aplist + i)->apdata->macc, macclientrg, ETH_ALEN);
 get_tags((aplist + i)->apdata, proberesponselen, proberesponse->ie);
 if((aplist +i)->apdata->channel != (scanlist + scanlistindex)->channel) return;
+if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED))
+	{
+	send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
+	(aplist + i)->apdata->tsdisassoc = tsakt;
+	}
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 writeepb();
 return;
@@ -2191,8 +2196,6 @@ if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) !
 	send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
 	(aplist + i)->apdata->tsdisassoc = tsakt;
 	}
-
-
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 writeepb();
 return;
