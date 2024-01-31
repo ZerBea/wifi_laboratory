@@ -866,6 +866,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
 	(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
 	writeepb();
+	wanteventflag |= exiteapolm3flag;
 	return;
 	}
 writeepb();
@@ -899,6 +900,7 @@ if(replaycountrg == replaycount)
 			if((calist + i)->cadata->akm == RSNPSK) writeepbm1wpa2();
 			else if((calist + i)->cadata->akm == WPAPSK) writeepbm1wpa1();
 			writeepb();
+			wanteventflag |= exiteapolm2flag;
 			}
 		if(i > CALIST_HALF) qsort(calist, i + 1, CALIST_SIZE, sort_calist_by_tsakt);
 		return;
@@ -962,6 +964,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 							(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
 							(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
 							(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
+						wanteventflag |= exiteapolpmkidflag;
 						}
 					}
 				}
