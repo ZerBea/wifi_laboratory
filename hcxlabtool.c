@@ -4368,7 +4368,7 @@ hcxpid = getpid();
 #ifdef HCXDEBUG
 if((fh_debug = fopen("hcxdumptool.log", "a")) == NULL)
 	{
-	fprintf(stdout, "error opening fhcxdumptool.log: %s\n", strerror(errno));
+	fprintf(stdout, "error opening hcxdumptool.log: %s\n", strerror(errno));
 	exit(EXIT_FAILURE);
 	}
 #endif
@@ -4491,7 +4491,7 @@ tspecifo.tv_nsec = 0;
 fprintf(stdout, "\nThis is a highly experimental penetration testing tool!\n"
 		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n\n");
 if(vmflag == false) fprintf(stdout, "Failed to set virtual MAC!\n");
-if(bpf.len == 0) fprintf(stderr, "BPF is unset! Make sure hcxdumptool is running in a 100%% controlled environment!\n\n");
+if(bpf.len == 0) fprintf(stderr, "BPF is unset! Make sure %s is running in a 100%% controlled environment!\n\n", basename(argv[0]));
 fprintf(stdout, "starting...\033[?25l\n");
 nanosleep(&tspecifo, &tspeciforem);
 if(nl_scanloop() == false)
