@@ -494,12 +494,11 @@ if(rds == 2)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "%s *%c   %02x%02x%02x%02x%02x%02x %.*s [%u/%u]\n", timestring,
+				fprintf(stdout, "%s *%c   %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->maca[00], (calist + i)->cadata->maca[01], (calist + i)->cadata->maca[02],
 				(calist + i)->cadata->maca[03],	(calist + i)->cadata->maca[04], (calist + i)->cadata->maca[05],
-				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid,
-				(scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
+				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid);
 			if((ii += 1) > w.ws_row) break;
 			}
 		}
