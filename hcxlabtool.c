@@ -1046,6 +1046,7 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void send_80211_associationrequest(size_t i)
 {
+/*
 ssize_t ii;
 
 ii = RTHTX_SIZE;
@@ -1083,7 +1084,7 @@ if((write(fd_socket_tx, &wltxbuffer, ii)) == ii)
 fprintf(fh_debug, "write associationrequest failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
-return;
+*/return;
 }
 /*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void send_80211_disassociationaca(u8 *fmcl, u8 *toap)
@@ -4535,7 +4536,7 @@ if(set_timer() == false)
 tspecifo.tv_sec = 5;
 tspecifo.tv_nsec = 0;
 fprintf(stdout, "\nThis is a highly experimental penetration testing tool!\n"
-		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n\n");
+		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n\n"
 		"Misuse within a network, without specific authorization,\n"
 		"may cause irreparable damage and result in significant consequences!\n"
 		"Not understanding what you were doing> is not going to work as an excuse!\n\n");
