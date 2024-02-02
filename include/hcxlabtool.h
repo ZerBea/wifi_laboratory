@@ -21,6 +21,7 @@
 #define HCX_EXIT_ON_EAPOL		18
 #define HCX_ON_ERROR			19
 #define HCX_ESSIDLIST			20
+#define HCX_RDS				21
 #define HCX_IFNAME			'i'
 #define HCX_PCAPNGNAME			'w'
 #define HCX_INTERFACE_INFO		'I'
@@ -51,7 +52,7 @@
 
 #define ERROR_MAX		100
 #define WATCHDOG_MAX		600
-#define M1M2ROGUE_MAX		4
+#define M1M2ROGUE_MAX		2
 #define M1M2M3_MAX		1
 
 #define IFTYPENL		0x01
@@ -67,10 +68,6 @@
 #define EPOLL_EVENTS_MAX	5
 
 
-#define AL_AUTH			0x0001
-#define AL_DISASSOC		0x0002
-#define ATTACK_LEVEL		0x0003
-
 #define TIMEHOLD		10
 #define TSWAITEAPOLA		10000000UL
 #define TSSECOND1		1000000000ULL
@@ -79,7 +76,9 @@
 
 #define TSSECOND2		2000000000ULL
 #define TSSECOND3		3000000000ULL
+#define TSSECOND4		4000000000ULL
 #define TSSECOND5		5000000000ULL
+#define TSSECOND6		6000000000ULL
 #define TSMINUTE1		60000000000ULL
 #define TSHOUR1			3600000000000ULL
 
@@ -132,6 +131,7 @@ typedef struct __attribute__((__packed__))
  u8	essid[ESSID_MAX];
  u8	essidlen;
  u8	akm;
+ char	m2;
  }cadata_t;
 #define CADATA_SIZE (sizeof(cadata_t))
 /*---------------------------------------------------------------------------*/
@@ -156,6 +156,9 @@ typedef struct __attribute__((__packed__))
 {
  u64	tsauthtx;
  u64	tsauthrx;
+ u64	tsassoctx;
+ u64	tsassocrx;
+ u64	tsnulltx;
  u64	tsdisassoc;
  u64	tsmacc;
  u64	tsm1;
@@ -182,12 +185,14 @@ typedef struct __attribute__((__packed__))
  u8	ucs;
  u8	akm1;
  u8	mfp;
+ char	pmkid;
+ char	m1;
+ char	m1m2;
+ char	m1m2m3;
  bool	beacon;
  bool	proberesponse;
  bool	associationresponse;
  bool	reassociationresponse;
- bool	pmkid;
- bool	m1;
  }apdata_t;
 #define APDATA_SIZE (sizeof(apdata_t))
 /*---------------------------------------------------------------------------*/
