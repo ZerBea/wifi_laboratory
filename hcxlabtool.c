@@ -1044,6 +1044,48 @@ errortxcount++;
 return;
 }
 /*---------------------------------------------------------------------------*/
+static inline __attribute__((always_inline)) void send_80211_associationrequest(size_t i)
+{
+ssize_t ii;
+
+ii = RTHTX_SIZE;
+macftx = (ieee80211_mac_t*)&wltxbuffer[ii];
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_ASSOC_REQ;
+wltxbuffer[ii + 1] = 0;
+macftx->duration = HCXTXDURATION;
+memcpy(macftx->addr1, macfrx->addr2, ETH_ALEN);
+memcpy(macftx->addr2, macclientrg, ETH_ALEN);
+memcpy(macftx->addr3, macfrx->addr3, ETH_ALEN);
+macftx->sequence = __hcx16le(seqcounter2++ << 4);
+if(seqcounter1 > 4095) seqcounter2 = 1;
+ii += MAC_SIZE_NORM;
+memcpy(&wltxbuffer[ii], &associationrequestcapa, ASSOCIATIONREQUESTCAPA_SIZE);
+ii += ASSOCIATIONREQUESTCAPA_SIZE;
+wltxbuffer[ii ++] = 0;
+wltxbuffer[ii ++] = (aplist +i)->ie.essidlen;
+memcpy(&wltxbuffer[ii], (aplist +i)->ie.essid, (aplist +i)->ie.essidlen);
+ii += (aplist +i)->ie.essidlen;
+
+
+memcpy(&wltxbuffer[ii], &associationrequestdata, ASSOCIATIONREQUEST_SIZE);
+if(((aplist +i)->ie.flags & APGS_CCMP) == APGS_CCMP) wltxbuffer[ii +0x17] = RSN_CS_CCMP;
+else if(((aplist +i)->ie.flags & APGS_TKIP) == APGS_TKIP) wltxbuffer[ii +0x17] = RSN_CS_TKIP;
+if(((aplist +i)->ie.flags & APCS_CCMP) == APCS_CCMP) wltxbuffer[ii +0x1d] = RSN_CS_CCMP;
+else if(((aplist +i)->ie.flags & APCS_TKIP) == APCS_TKIP) wltxbuffer[ii +0x1d] = RSN_CS_TKIP;
+ii += ASSOCIATIONREQUEST_SIZE;
+if((write(fd_socket_tx, &wltxbuffer, ii)) == ii)
+	{
+	errortxcount = 0;
+	return;
+	}
+#ifdef HCXDEBUG
+fprintf(fh_debug, "write associationrequest failed: %s\n", strerror(errno));
+#endif
+errortxcount++;
+return;
+}
+/*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void send_80211_disassociationaca(u8 *fmcl, u8 *toap)
 {
 macftx = (ieee80211_mac_t*)&wltxbuffer[RTHTX_SIZE];
@@ -2199,6 +2241,10 @@ if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) !
 	send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
 	(aplist + i)->apdata->tsdisassoc = tsakt;
 	}
+
+
+
+
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 writeepb();
 return;
@@ -4490,6 +4536,9 @@ tspecifo.tv_sec = 5;
 tspecifo.tv_nsec = 0;
 fprintf(stdout, "\nThis is a highly experimental penetration testing tool!\n"
 		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n\n");
+		"Misuse within a network, without specific authorization,\n"
+		"may cause irreparable damage and result in significant consequences!\n"
+		"Not understanding what you were doing> is not going to work as an excuse!\n\n");
 if(vmflag == false) fprintf(stdout, "Failed to set virtual MAC!\n");
 if(bpf.len == 0) fprintf(stderr, "BPF is unset! Make sure hcxdumptool is running in a 100%% controlled environment!\n\n");
 fprintf(stdout, "starting...\033[?25l\n");
