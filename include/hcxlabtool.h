@@ -93,6 +93,10 @@
 
 
 #define OFFSETCHANNEL		0x0c
+#define OFFSETGCS		0x17
+#define OFFSETPCS		0x1d
+#define OFFSETAKM		0x23
+
 #define	BCD_MAX			4095
 
 #define MACLIST_MAX		250
@@ -150,7 +154,8 @@ return 0;
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 typedef struct __attribute__((__packed__))
 {
- u64	tsauth;
+ u64	tsauthtx;
+ u64	tsauthrx;
  u64	tsdisassoc;
  u64	tsmacc;
  u64	tsm1;
@@ -164,6 +169,7 @@ typedef struct __attribute__((__packed__))
  u16	channel;
  u16	aid;
  u8	nonce[4];
+ u8	rsnpmkid[PMKID_MAX];
  u8	maca[ETH_ALEN];
  u8	macc[ETH_ALEN];
  u8	essid[ESSID_MAX];

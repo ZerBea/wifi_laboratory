@@ -358,6 +358,10 @@ static u8 macbc[] =
 #define RSNPSKFT	3
 #define RSNPSK256	4
 
+#define AKMPSK		2
+#define AKMPSKFT	4
+#define AKMPSK256	6
+
 #define SUITE_SIZE	4
 static const u8 rsnpmkid[SUITE_SIZE] =
 {
