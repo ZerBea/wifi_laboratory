@@ -53,8 +53,8 @@
 
 #define ERROR_MAX		100
 #define WATCHDOG_MAX		600
-#define M1M2ROGUE_MAX		2
-#define M1M2M3_MAX		1
+#define CLIENTCOUNT_MAX		4
+#define APCOUNT_MAX		10
 
 #define IFTYPENL		0x01
 #define IFTYPEMON		0x02
@@ -127,7 +127,7 @@ typedef struct __attribute__((__packed__))
  u64	tsnull;
  u8	macc[ETH_ALEN];
  u8	maca[ETH_ALEN];
- u32	miccount;
+ int	clientcount;
  u8	mic[16];
  u8	essid[ESSID_MAX];
  u8	essidlen;
@@ -166,8 +166,7 @@ typedef struct __attribute__((__packed__))
  u64	replaycount1;
  u64	replaycount2;
  u64	replaycount3;
- u32	m2count;
- u32	m3count;
+ int	apcount;
  u16	channel;
  u16	aid;
  u8	nonce[4];

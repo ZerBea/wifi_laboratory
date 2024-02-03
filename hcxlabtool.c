@@ -125,8 +125,8 @@ static u32 errorcount = 0;
 static u32 errortxcount = 0;
 
 static u32 timewatchdog = WATCHDOG_MAX;
-static u32 m1m2m3max = M1M2M3_MAX;
-static u32 m1m2roguemaxx = M1M2ROGUE_MAX;
+static int apcountmax = APCOUNT_MAX;
+static int clientcountmax = CLIENTCOUNT_MAX;
 
 static u64 packetcount = 1;
 static size_t proberesponsetxindex = 0;
@@ -461,11 +461,12 @@ if(rds == 1)
 			{
 			tvlast = (aplist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "%3u %s %c%c%c%c %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+				fprintf(stdout, "%3u %s %c%c%c%c %02x%02x%02x%02x%02x%02x %.*s [%d]\n", (aplist + i)->apdata->channel, timestring,
 				(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
 				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
 				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
-				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
+				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid,
+				(aplist + i)->apdata->apcount);
 			if((ii += 1) > w.ws_row) break;
 			}
 		}
@@ -476,11 +477,12 @@ if(rds == 1)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s *%c   %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "    %s *%c   %02x%02x%02x%02x%02x%02x %.*s [%d]\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->maca[00], (calist + i)->cadata->maca[01], (calist + i)->cadata->maca[02],
 				(calist + i)->cadata->maca[03],	(calist + i)->cadata->maca[04], (calist + i)->cadata->maca[05],
-				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid);
+				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid,
+				(calist + i)->cadata->clientcount);
 			if((ii += 1) > w.ws_row) break;
 			}
 		}
@@ -494,11 +496,12 @@ if(rds == 2)
 			{
 			tvlast = (aplist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "%3u %s %c%c%c%c %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+				fprintf(stdout, "%3u %s %c%c%c%c %02x%02x%02x%02x%02x%02x %.*s [%d]\n", (aplist + i)->apdata->channel, timestring,
 				(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
 				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
 				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
-				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
+				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid,
+				(aplist + i)->apdata->apcount);
 			if((ii += 1) > w.ws_row) break;
 			}
 		}
@@ -509,11 +512,12 @@ if(rds == 2)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s *%c   %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "    %s *%c   %02x%02x%02x%02x%02x%02x %.*s [%d]\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->maca[00], (calist + i)->cadata->maca[01], (calist + i)->cadata->maca[02],
 				(calist + i)->cadata->maca[03],	(calist + i)->cadata->maca[04], (calist + i)->cadata->maca[05],
-				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid);
+				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid,
+				(calist + i)->cadata->clientcount);
 			if((ii += 1) > w.ws_row) break;
 			}
 		}
@@ -947,6 +951,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(((aplist + i)->apdata->replaycount2 +1) != (aplist + i)->apdata->replaycount3) break;
 	if(((aplist + i)->apdata->tsm3 - (aplist + i)->apdata->tsm2) > TSEAPOL1) break;
 	if(((aplist + i)->apdata->tsm3 - (aplist + i)->apdata->tsm1) > TSEAPOL2) break;
+	if(((aplist + i)->apdata->tsm2 - (aplist + i)->apdata->tsm1) > TSEAPOL1) break;
 	(aplist + i)->apdata->m1m2m3 = '+';
 	writeepb();
 	wanteventflag |= exiteapolm3flag;
@@ -973,7 +978,7 @@ if(replaycountrg == replaycount)
 			{
 			if(memcmp((calist + i)->cadata->mic, wpakey->keymic, KEYMIC_MAX) == 0) return;
 			memcpy((calist + i)->cadata->mic, wpakey->keymic, KEYMIC_MAX);
-			(calist + i)->cadata->miccount += 1;
+			(calist + i)->cadata->clientcount -= 1;
 			(calist + i)->cadata->m2 = '*';
 			if((calist + i)->cadata->akm == RSNPSK) writeepbm1wpa2();
 			else if((calist + i)->cadata->akm == WPAPSK) writeepbm1wpa1();
@@ -995,7 +1000,6 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	(aplist + i)->apdata->replaycount2 = __hcx64be(wpakey->replaycount);
 	if(((aplist + i)->apdata->replaycount1) != (aplist + i)->apdata->replaycount2) break;
 	if(((aplist + i)->apdata->tsm2 - (aplist + i)->apdata->tsm1) > TSEAPOL1) break;
-	if((aplist + i)->apdata->essidlen != 0) (aplist + i)->apdata->m2count += 1;
 	(aplist + i)->apdata->m1m2 = '+';
 	writeepb();
 	return;
@@ -1494,6 +1498,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
 	(aplist + i)->tsakt = tsakt;
 	memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
+	if((aplist + i)->apdata->apcount <= 0) return;
 	if((aplist + i)->apdata->akm != AKMPSK) return;
 	if((aplist + i)->apdata->m1 == '+') return;
 	if(tsakt - (aplist + i)->apdata->tsreassocresponse < TSSECOND1) return;
@@ -1504,6 +1509,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		{
 		(aplist + i)->apdata->aid = __hcx16le(capa->aid);
 		(aplist + i)->apdata->reassociationresponse = true;
+		(aplist + i)->apdata->apcount -= 1;
 		writeepb();
 		}
 	return;
@@ -1514,6 +1520,7 @@ memset((aplist + i)->apdata, 0, APDATA_SIZE);
 (aplist + i)->apdata->m1m2 = ' ';
 (aplist + i)->apdata->m1m2m3 = ' ';
 (aplist + i)->apdata->pmkid = ' ';
+(aplist + i)->apdata->apcount = apcountmax;
 (aplist + i)->apdata->reassociationresponse = true;
 (aplist + i)->apdata->aid = __hcx16le(capa->aid);
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
@@ -1542,11 +1549,13 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
 	(aplist + i)->tsakt = tsakt;
 	memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
+	if((aplist + i)->apdata->apcount <= 0) return;
 	if((aplist + i)->apdata->akm != AKMPSK) return;
 	if((aplist + i)->apdata->m1 == '+') return;
 	if(tsakt - (aplist + i)->apdata->tsassocresponse < TSSECOND1) return;
 	send_80211_ack();
 	send_80211_nullrg();
+	(aplist + i)->apdata->apcount -= 1;
 	(aplist + i)->apdata->tsassocresponse = tsakt;
 	if((aplist + i)->apdata->associationresponse == false)
 		{
@@ -1562,6 +1571,7 @@ memset((aplist + i)->apdata, 0, APDATA_SIZE);
 (aplist + i)->apdata->m1m2 = ' ';
 (aplist + i)->apdata->m1m2m3 = ' ';
 (aplist + i)->apdata->pmkid = ' ';
+(aplist + i)->apdata->apcount = apcountmax;
 (aplist + i)->apdata->associationresponse = true;
 (aplist + i)->apdata->aid = __hcx16le(capa->aid);
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
@@ -1582,27 +1592,21 @@ if((macfrx->to_ds == 1) && (macfrx->power == 0))
 		if((calist + i)->tsakt == 0) break;
 		if(memcmp((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN) != 0) continue;
 		if(memcmp((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN) != 0) continue;
-		if((calist + i)->cadata->miccount > m1m2roguemaxx) return;
+		if((calist + i)->cadata->clientcount <= 0) return;
 		(calist + i)->tsakt = tsakt;
 		if(macfrx->retry == 0)
 			{
-			if(m1m2roguemaxx > 0)
+			if((tsakt - (calist + i)->cadata->tsassoc) > TSSECOND2) break;
+			(calist + i)->cadata->tsnull = tsakt;
+			if((calist + i)->cadata->akm == RSNPSK)
 				{
-				if((calist + i)->cadata->miccount < m1m2roguemaxx)
-					{
-					if((tsakt - (calist + i)->cadata->tsassoc) > TSSECOND2) break;
-					(calist + i)->cadata->tsnull = tsakt;
-					if((calist + i)->cadata->akm == RSNPSK)
-						{
-						send_80211_ack();
-						send_80211_eapol_m1_wpa2();
-						}
-					else if((calist + i)->cadata->akm == WPAPSK)
-						{
-						send_80211_ack();
-						send_80211_eapol_m1_wpa1();
-						}
-					}
+				send_80211_ack();
+				send_80211_eapol_m1_wpa2();
+				}
+			else if((calist + i)->cadata->akm == WPAPSK)
+				{
+				send_80211_ack();
+				send_80211_eapol_m1_wpa1();
 				}
 			}
 		if(i > CALIST_HALF) qsort(calist, i + 1, CALIST_SIZE, sort_calist_by_tsakt);
@@ -1653,7 +1657,7 @@ if((macfrx->to_ds == 1) && (macfrx->power == 0))
 		if(memcmp((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN) != 0) continue;
 		if(memcmp((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN) != 0) continue;
 		(calist + i)->tsakt = tsakt;
-		if((calist + i)->cadata->miccount >= m1m2roguemaxx) return;
+		if((calist + i)->cadata->clientcount <= 0) return;
 		if((tsakt - (calist + i)->cadata->tsnull) <= TSSECOND1) return;
 		if((tsakt - (calist + i)->cadata->tsnull) > TSSECOND2) break;
 		if((calist + i)->cadata->akm == RSNPSK)
@@ -1820,7 +1824,7 @@ for(i = 0; i < CALIST_MAX - 1; i++)
 	if(memcmp((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN) != 0) continue;
 	if(memcmp((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN) != 0) continue;
 	(calist + i)->tsakt = tsakt;
-	if((calist + i)->cadata->miccount >= m1m2roguemaxx) return;
+	if((calist + i)->cadata->clientcount <= 0) return;
 	if((tsakt - (calist + i)->cadata->tsreassoc) < TSSECOND1) return;
 	(calist + i)->cadata->akm = get_akm((calist + i)->cadata, reassociationrequestlen, reassociationrequest->ie);
 	if((calist + i)->cadata->akm == RSNPSK)
@@ -1846,9 +1850,10 @@ for(i = 0; i < CALIST_MAX - 1; i++)
 (calist + i)->tsakt = tsakt;
 memset((calist + i)->cadata, 0, CADATA_SIZE);
 (calist + i)->cadata->m2 = ' ';
+(calist + i)->cadata->clientcount = clientcountmax;
 memcpy((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN);
 memcpy((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN);
-if(m1m2roguemaxx != (calist + i)->cadata->miccount)
+if(clientcountmax > 0)
 	{
 	(calist + i)->cadata->akm = get_akm((calist + i)->cadata, reassociationrequestlen, reassociationrequest->ie);
 	if((calist + i)->cadata->akm == RSNPSK)
@@ -1923,7 +1928,7 @@ for(i = 0; i < CALIST_MAX - 1; i++)
 	if(memcmp((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN) != 0) continue;
 	if(memcmp((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN) != 0) continue;
 	(calist + i)->tsakt = tsakt;
-	if((calist + i)->cadata->miccount >= m1m2roguemaxx) return;
+	if((calist + i)->cadata->clientcount <= 0) return;
 	if((tsakt - (calist + i)->cadata->tsassoc) < TSSECOND1) return;
 	(calist + i)->cadata->akm = get_akm((calist + i)->cadata, associationrequestlen, associationrequest->ie);
 	if((calist + i)->cadata->akm == RSNPSK)
@@ -1949,9 +1954,10 @@ for(i = 0; i < CALIST_MAX - 1; i++)
 (calist + i)->tsakt = tsakt;
 memset((calist + i)->cadata, 0, CADATA_SIZE);
 (calist + i)->cadata->m2 = ' ';
+(calist + i)->cadata->clientcount = clientcountmax;
 memcpy((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN);
 memcpy((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN);
-if(m1m2roguemaxx != (calist + i)->cadata->miccount)
+if(clientcountmax > 0)
 	{
 	(calist + i)->cadata->akm = get_akm((calist + i)->cadata, associationrequestlen, associationrequest->ie);
 	if((calist + i)->cadata->akm == RSNPSK)
@@ -2019,9 +2025,8 @@ if(auth->algorithm == OPEN_SYSTEM)
 			if(memcmp((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN) != 0) continue;
 			if(memcmp((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN) != 0) continue;
 			(calist + i)->tsakt = tsakt;
-			if((calist + i)->cadata->miccount >= m1m2roguemaxx) return;
+			if((calist + i)->cadata->clientcount <= 0) return;
 			if((tsakt - (calist + i)->cadata->tsauth) <= TSSECOND1) return;
-			if((calist + i)->cadata->miccount < m1m2roguemaxx)
 				{
 				(calist + i)->cadata->tsauth = tsakt;
 				send_80211_ack();
@@ -2033,9 +2038,10 @@ if(auth->algorithm == OPEN_SYSTEM)
 		(calist + i)->tsakt = tsakt;
 		memset((calist + i)->cadata, 0, CADATA_SIZE);
 		(calist + i)->cadata->m2 = ' ';
+		(calist + i)->cadata->clientcount = clientcountmax;
 		memcpy((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN);
 		memcpy((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN);
-		if(m1m2roguemaxx != (calist + i)->cadata->miccount)
+		if(clientcountmax > 0)
 			{
 			(calist + i)->cadata->tsauth = tsakt;
 			send_80211_ack();
@@ -2054,6 +2060,7 @@ if(auth->algorithm == OPEN_SYSTEM)
 				if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
 				(aplist + i)->tsakt = tsakt;
 				(aplist + i)->apdata->opensystem = 1;
+				if((aplist + i)->apdata->apcount <= 0) return;
 				if((aplist + i)->apdata->akm != AKMPSK) return;
 				if((aplist + i)->apdata->m1 == '+') return;
 				if((tsakt - (aplist + i)->apdata->tsauthresponse) < TSSECOND1) return;
@@ -2061,6 +2068,7 @@ if(auth->algorithm == OPEN_SYSTEM)
 					send_80211_ack();
 					send_80211_associationrequest2((aplist + i)->apdata);
 					(aplist + i)->apdata->tsauthresponse = tsakt;
+					(aplist + i)->apdata->apcount -= 1;
 					return;
 					}
 				memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
@@ -2071,6 +2079,7 @@ if(auth->algorithm == OPEN_SYSTEM)
 			(aplist + i)->apdata->m1m2 = ' ';
 			(aplist + i)->apdata->m1m2m3 = ' ';
 			(aplist + i)->apdata->pmkid = ' ';
+			(aplist + i)->apdata->apcount = apcountmax;
 			(aplist + i)->apdata->opensystem = 1;
 			memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 /*
@@ -2442,6 +2451,7 @@ memset((aplist + i)->apdata, 0, APDATA_SIZE);
 (aplist + i)->apdata->m1m2 = ' ';
 (aplist + i)->apdata->m1m2m3 = ' ';
 (aplist + i)->apdata->pmkid = ' ';
+(aplist + i)->apdata->apcount = apcountmax;
 (aplist + i)->apdata->proberesponse = true;
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 memcpy((aplist + i)->apdata->macc, macclientrg, ETH_ALEN);
@@ -2499,6 +2509,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		(aplist + i)->apdata->beacon = true;
 		writeepb();
 		}
+	if((aplist + i)->apdata->apcount <= 0) return;
 	if((aplist + i)->apdata->m1m2m3 == '+') return; 
 	if((aplist + i)->apdata->pmkid == '+') return;
 	if((tsakt - (aplist + i)->apdata->tsrequest) > TSSECOND2)
@@ -2510,6 +2521,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 				send_80211_authenticationrequest((aplist + i)->apdata);
 //				send_80211_associationrequest2((aplist + i)->apdata);
 				(aplist + i)->apdata->tsrequest = tsakt;
+				(aplist + i)->apdata->apcount -= 1;
 				}
 			}
 		}
@@ -2587,31 +2599,38 @@ memset((aplist + i)->apdata, 0, APDATA_SIZE);
 (aplist + i)->apdata->m1m2 = ' ';
 (aplist + i)->apdata->m1m2m3 = ' ';
 (aplist + i)->apdata->pmkid = ' ';
+(aplist + i)->apdata->apcount = apcountmax;
 (aplist + i)->apdata->beacon = true;
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 memcpy((aplist + i)->apdata->macc, macclientrg, ETH_ALEN);
 get_tags((aplist + i)->apdata, beaconlen, beacon->ie);
 if((aplist + i)->apdata->channel != (scanlist + scanlistindex)->channel) return;
-if((aplist + i)->apdata->akm == AKMPSK)
+if(apcountmax > 0)
 	{
-	if((aplist + i)->apdata->essidlen != 0)
+	if((aplist + i)->apdata->akm == AKMPSK)
 		{
-		send_80211_associationrequest2bc((aplist + i)->apdata);
-		(aplist + i)->apdata->tsrequest = tsakt;
-		}
-	else
-		{
-		if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED))
+		if((aplist + i)->apdata->essidlen != 0)
 			{
-			send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
+			send_80211_associationrequest2bc((aplist + i)->apdata);
 			(aplist + i)->apdata->tsrequest = tsakt;
+			(aplist + i)->apdata->apcount -= 1;
+			}
+		else
+			{
+			if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED))
+				{
+				send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
+				(aplist + i)->apdata->tsrequest = tsakt;
+				(aplist + i)->apdata->apcount -= 1;
+				}
 			}
 		}
-	}
-else if((aplist + i)->apdata->akm1 == AKMPSK)
-	{
-	send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
-	(aplist + i)->apdata->tsrequest = tsakt;
+	else if((aplist + i)->apdata->akm1 == AKMPSK)
+		{
+		send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
+		(aplist + i)->apdata->tsrequest = tsakt;
+		(aplist + i)->apdata->apcount -= 1;
+		}
 	}
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 writeepb();
@@ -4456,7 +4475,7 @@ fprintf(stdout, "less common options:\n--------------------\n"
 	"--m3max=<digit>           : set maximum of received M1M2MM3\n"
 	"                             default: %d M1M2RM3\n"
 	"                             to disable AP attacks set 0\n",
-	PROBERESPONSETX_MAX, ERROR_MAX, WATCHDOG_MAX, M1M2ROGUE_MAX, M1M2M3_MAX);
+	PROBERESPONSETX_MAX, ERROR_MAX, WATCHDOG_MAX, CLIENTCOUNT_MAX, APCOUNT_MAX);
 fprintf(stdout, "--tot=<digit>             : enable timeout timer in minutes\n"
 	"--exitoneapol=<type>      : exit on first EAPOL occurrence:\n"
 	"                             bitmask:\n"
@@ -4623,11 +4642,11 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		break;
 
 		case HCX_M1M2ROGUE_MAX:
-		m1m2roguemaxx = strtoul(optarg, NULL, 10);
+		clientcountmax = strtoul(optarg, NULL, 10);
 		break;
 
 		case HCX_M1M2M3_MAX:
-		m1m2m3max = strtoul(optarg, NULL, 10);
+		apcountmax = strtoul(optarg, NULL, 10);
 		break;
 
 		case HCX_HOLD_TIME:
