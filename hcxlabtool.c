@@ -473,11 +473,11 @@ if(rds == 1)
 	for(i = 0; i < CALIST_MAX - 1; i++)
 		{
 		if((calist + i)->tsakt == 0) break;
-		if((calist +i)->cadata->m2 == '*') 
+		if((calist +i)->cadata->m2 == '+') 
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s *%c   %02x%02x%02x%02x%02x%02x %.*s [%d]\n", timestring,
+				fprintf(stdout, "    %s +%c   %02x%02x%02x%02x%02x%02x %.*s [%d]\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->maca[00], (calist + i)->cadata->maca[01], (calist + i)->cadata->maca[02],
 				(calist + i)->cadata->maca[03],	(calist + i)->cadata->maca[04], (calist + i)->cadata->maca[05],
@@ -508,11 +508,11 @@ if(rds == 2)
 	for(i = 0; i < CALIST_MAX - 1; i++)
 		{
 		if((calist + i)->tsakt == 0) break;
-		if((calist +i)->cadata->m2 == '*') 
+		if((calist +i)->cadata->m2 == '+') 
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s *%c   %02x%02x%02x%02x%02x%02x %.*s [%d]\n", timestring,
+				fprintf(stdout, "    %s +%c   %02x%02x%02x%02x%02x%02x %.*s [%d]\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->maca[00], (calist + i)->cadata->maca[01], (calist + i)->cadata->maca[02],
 				(calist + i)->cadata->maca[03],	(calist + i)->cadata->maca[04], (calist + i)->cadata->maca[05],
@@ -979,7 +979,7 @@ if(replaycountrg == replaycount)
 			if(memcmp((calist + i)->cadata->mic, wpakey->keymic, KEYMIC_MAX) == 0) return;
 			memcpy((calist + i)->cadata->mic, wpakey->keymic, KEYMIC_MAX);
 			(calist + i)->cadata->clientcount -= 1;
-			(calist + i)->cadata->m2 = '*';
+			(calist + i)->cadata->m2 = '+';
 			if((calist + i)->cadata->akm == RSNPSK) writeepbm1wpa2();
 			else if((calist + i)->cadata->akm == WPAPSK) writeepbm1wpa1();
 			writeepb();
