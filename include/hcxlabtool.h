@@ -38,14 +38,15 @@
 #define HCX_VERSION			'v'
 /*---------------------------------------------------------------------------*/
 #define HCX_DONE		1
-#define EXIT_ON_SIGTERM		0x01
-#define EXIT_ON_GPIOBUTTON	0x02
-#define EXIT_ON_TOT		0x04
-#define EXIT_ON_WATCHDOG	0x08
-#define EXIT_ON_EAPOL_PMKID	0x10
-#define EXIT_ON_EAPOL_M2	0x20
-#define EXIT_ON_EAPOL_M3	0x40
-#define EXIT_ON_ERROR		0x80
+#define EXIT_ON_SIGTERM		0x0001
+#define EXIT_ON_GPIOBUTTON	0x0002
+#define EXIT_ON_TOT		0x0004
+#define EXIT_ON_WATCHDOG	0x0008
+#define EXIT_ON_EAPOL_PMKID	0x0010
+#define EXIT_ON_EAPOL_M3	0x0020
+#define EXIT_ON_EAPOL_M2	0x0040
+#define EXIT_ON_EAPOL_M1	0x0080
+#define EXIT_ON_ERROR		0x0010
 
 #define EXIT_ACTION_REBOOT	0x01
 #define EXIT_ACTION_POWEROFF	0x02
@@ -68,7 +69,7 @@
 #define EPOLL_EVENTS_MAX	5
 
 
-#define TIMEHOLD		10
+#define TIMEHOLD		6
 #define TSWAITEAPOLA		10000000UL
 #define TSSECOND1		1000000000ULL
 #define TSEAPOL1		50000000ULL
@@ -154,12 +155,10 @@ return 0;
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
 typedef struct __attribute__((__packed__))
 {
- u64	tsauthtx;
- u64	tsauthrx;
- u64	tsassoctx;
- u64	tsassocrx;
- u64	tsnulltx;
- u64	tsdisassoc;
+ u64	tsrequest;
+ u64	tsauthresponse;
+ u64	tsassocresponse;
+ u64	tsreassocresponse;
  u64	tsmacc;
  u64	tsm1;
  u64	tsm2;
@@ -191,6 +190,7 @@ typedef struct __attribute__((__packed__))
  char	m1m2m3;
  bool	beacon;
  bool	proberesponse;
+ bool	suthentication;
  bool	associationresponse;
  bool	reassociationresponse;
  }apdata_t;
