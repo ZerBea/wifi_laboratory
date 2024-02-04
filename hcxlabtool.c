@@ -461,12 +461,11 @@ if(rds == 1)
 			{
 			tvlast = (aplist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "%3u %s %c%c%c%c %02x%02x%02x%02x%02x%02x %.*s [%d]\n", (aplist + i)->apdata->channel, timestring,
+				fprintf(stdout, "%3u %s %c%c%c%c %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
 				(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
 				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
 				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
-				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid,
-				(aplist + i)->apdata->apcount);
+				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
 			if((ii += 1) > w.ws_row) break;
 			}
 		}
@@ -477,12 +476,11 @@ if(rds == 1)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s +%c   %02x%02x%02x%02x%02x%02x %.*s [%d]\n", timestring,
+				fprintf(stdout, "    %s +%c   %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->maca[00], (calist + i)->cadata->maca[01], (calist + i)->cadata->maca[02],
 				(calist + i)->cadata->maca[03],	(calist + i)->cadata->maca[04], (calist + i)->cadata->maca[05],
-				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid,
-				(calist + i)->cadata->clientcount);
+				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid);
 			if((ii += 1) > w.ws_row) break;
 			}
 		}
@@ -496,12 +494,11 @@ if(rds == 2)
 			{
 			tvlast = (aplist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "%3u %s %c%c%c%c %02x%02x%02x%02x%02x%02x %.*s [%d]\n", (aplist + i)->apdata->channel, timestring,
+				fprintf(stdout, "%3u %s %c%c%c%c %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
 				(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
 				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
 				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
-				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid,
-				(aplist + i)->apdata->apcount);
+				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
 			if((ii += 1) > w.ws_row) break;
 			}
 		}
@@ -512,12 +509,11 @@ if(rds == 2)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s +%c   %02x%02x%02x%02x%02x%02x %.*s [%d]\n", timestring,
+				fprintf(stdout, "    %s +%c   %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->maca[00], (calist + i)->cadata->maca[01], (calist + i)->cadata->maca[02],
 				(calist + i)->cadata->maca[03],	(calist + i)->cadata->maca[04], (calist + i)->cadata->maca[05],
-				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid,
-				(calist + i)->cadata->clientcount);
+				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid);
 			if((ii += 1) > w.ws_row) break;
 			}
 		}
@@ -1122,7 +1118,7 @@ errortxcount++;
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline __attribute__((always_inline)) void send_80211_nullrg(void)
+static inline __attribute__((always_inline)) void send_80211_null(void)
 {
 macftx = (ieee80211_mac_t*)&wltxbuffer[RTHTX_SIZE];
 macftx->type = IEEE80211_FTYPE_DATA;
@@ -1131,7 +1127,7 @@ wltxbuffer[RTHTX_SIZE +1] = 0;
 macftx->to_ds = 1;
 macftx->duration = HCXTXDURATION;
 memcpy(macftx->addr1, macfrx->addr2, ETH_ALEN);
-memcpy(macftx->addr2, macclientrg, ETH_ALEN);
+memcpy(macftx->addr2, macfrx->addr1, ETH_ALEN);
 memcpy(macftx->addr3, macfrx->addr2, ETH_ALEN);
 macftx->sequence = __hcx16le(seqcounter1++ << 4);
 if(seqcounter1 > BCD_MAX) seqcounter1 = 1;
@@ -1497,19 +1493,20 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if((aplist + i)->tsakt == 0) break;
 	if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
 	(aplist + i)->tsakt = tsakt;
+	(aplist + i)->apdata->aid = __hcx16le(capa->aid);
 	memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
 	if((aplist + i)->apdata->apcount <= 0) return;
-	if((aplist + i)->apdata->akm != AKMPSK) return;
+	if((aplist + i)->apdata->essidlen == 0) return;
+	if(((aplist + i)->apdata->akm != AKMPSK) && ((aplist + i)->apdata->akm != AKMPSK256)) return;
 	if((aplist + i)->apdata->m1 == '+') return;
-	if(tsakt - (aplist + i)->apdata->tsreassocresponse < TSSECOND1) return;
+	if((tsakt - (aplist + i)->apdata->tsreassocresponse) < TSSECOND05) return;
 	send_80211_ack();
-	send_80211_nullrg();
+	send_80211_null();
 	(aplist + i)->apdata->tsreassocresponse = tsakt;
+	(aplist + i)->apdata->apcount -= 1;
 	if((aplist + i)->apdata->reassociationresponse == false)
 		{
-		(aplist + i)->apdata->aid = __hcx16le(capa->aid);
 		(aplist + i)->apdata->reassociationresponse = true;
-		(aplist + i)->apdata->apcount -= 1;
 		writeepb();
 		}
 	return;
@@ -1548,18 +1545,19 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if((aplist + i)->tsakt == 0) break;
 	if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
 	(aplist + i)->tsakt = tsakt;
+	(aplist + i)->apdata->aid = __hcx16le(capa->aid);
 	memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
 	if((aplist + i)->apdata->apcount <= 0) return;
-	if((aplist + i)->apdata->akm != AKMPSK) return;
+	if((aplist + i)->apdata->essidlen == 0) return;
+	if(((aplist + i)->apdata->akm != AKMPSK) && ((aplist + i)->apdata->akm != AKMPSK256)) return;
 	if((aplist + i)->apdata->m1 == '+') return;
-	if(tsakt - (aplist + i)->apdata->tsassocresponse < TSSECOND1) return;
+	if((tsakt - (aplist + i)->apdata->tsassocresponse) < TSSECOND05) return;
 	send_80211_ack();
-	send_80211_nullrg();
-	(aplist + i)->apdata->apcount -= 1;
+	send_80211_null();
 	(aplist + i)->apdata->tsassocresponse = tsakt;
+	(aplist + i)->apdata->apcount -= 1;
 	if((aplist + i)->apdata->associationresponse == false)
 		{
-		(aplist + i)->apdata->aid = __hcx16le(capa->aid);
 		(aplist + i)->apdata->associationresponse = true;
 		writeepb();
 		}
@@ -2026,7 +2024,7 @@ if(auth->algorithm == OPEN_SYSTEM)
 			if(memcmp((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN) != 0) continue;
 			(calist + i)->tsakt = tsakt;
 			if((calist + i)->cadata->clientcount <= 0) return;
-			if((tsakt - (calist + i)->cadata->tsauth) <= TSSECOND1) return;
+			if((tsakt - (calist + i)->cadata->tsauth) < TSSECOND1) return;
 				{
 				(calist + i)->cadata->tsauth = tsakt;
 				send_80211_ack();
@@ -2058,20 +2056,19 @@ if(auth->algorithm == OPEN_SYSTEM)
 				{
 				if((aplist + i)->tsakt == 0) break;
 				if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
+				memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 				(aplist + i)->tsakt = tsakt;
 				(aplist + i)->apdata->opensystem = 1;
-				if((aplist + i)->apdata->apcount <= 0) return;
-				if((aplist + i)->apdata->akm != AKMPSK) return;
-				if((aplist + i)->apdata->m1 == '+') return;
-				if((tsakt - (aplist + i)->apdata->tsauthresponse) < TSSECOND1) return;
-					{
-					send_80211_ack();
-					send_80211_associationrequest2((aplist + i)->apdata);
-					(aplist + i)->apdata->tsauthresponse = tsakt;
-					(aplist + i)->apdata->apcount -= 1;
-					return;
-					}
 				memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
+				if((aplist + i)->apdata->apcount <= 0) return;
+				if((aplist + i)->apdata->essidlen == 0) return;
+				if(((aplist + i)->apdata->akm != AKMPSK) && ((aplist + i)->apdata->akm != AKMPSK256)) return;
+				if((aplist + i)->apdata->m1 == '+') return;
+				if((tsakt - (aplist + i)->apdata->tsauthresponse) < TSSECOND05) return;
+				send_80211_ack();
+				send_80211_associationrequest2((aplist + i)->apdata);
+				(aplist + i)->apdata->tsauthresponse = tsakt;
+				(aplist + i)->apdata->apcount -= 1;
 				}
 			(aplist + i)->tsakt = tsakt;
 			memset((aplist + i)->apdata, 0, APDATA_SIZE);
@@ -2082,18 +2079,23 @@ if(auth->algorithm == OPEN_SYSTEM)
 			(aplist + i)->apdata->apcount = apcountmax;
 			(aplist + i)->apdata->opensystem = 1;
 			memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
-/*
-			if(memcmp(macclientrg, macfrx->addr1, ETH_ALEN) == 0)
-				{
-				send_80211_ack();
-				send_80211_associationrequestrg((aplist + i)->apdata);
-				(aplist + i)->apdata->tsassoctx = tsakt;
-				return;
-				}
-*/
 			memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
-			qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
+			if(apcountmax > 0)
+				{
+				if((aplist + i)->apdata->essidlen != 0)
+					{
+					if(((aplist + i)->apdata->akm != AKMPSK) && ((aplist + i)->apdata->akm != AKMPSK256)) return;
+						{
+						send_80211_ack();
+						send_80211_associationrequest2((aplist + i)->apdata);
+						(aplist + i)->apdata->tsauthresponse = tsakt;
+						(aplist + i)->apdata->apcount -= 1;
+						}
+					}
+				}
+			if(i > APLIST_HALF) qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 			writeepb();
+			return;
 			}
 		}
 	return;
@@ -2457,26 +2459,23 @@ memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 memcpy((aplist + i)->apdata->macc, macclientrg, ETH_ALEN);
 get_tags((aplist + i)->apdata, proberesponselen, proberesponse->ie);
 if((aplist + i)->apdata->channel != (scanlist + scanlistindex)->channel) return;
-if((aplist + i)->apdata->akm == AKMPSK)
+if(apcountmax > 0)
 	{
-	if((aplist + i)->apdata->essidlen != 0)
+	if((aplist + i)->apdata->akm == AKMPSK)
 		{
-		send_80211_associationrequest2bc((aplist + i)->apdata);
-		(aplist + i)->apdata->tsrequest = tsakt;
-		}
-	else
-		{
-		if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED))
+		if((aplist + i)->apdata->essidlen != 0)
 			{
-			send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
+			send_80211_associationrequest2bc((aplist + i)->apdata);
 			(aplist + i)->apdata->tsrequest = tsakt;
+			(aplist + i)->apdata->apcount -= 1;
 			}
 		}
-	}
-else if((aplist + i)->apdata->akm1 == AKMPSK)
-	{
-	send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
-	(aplist + i)->apdata->tsrequest = tsakt;
+	if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED))
+		{
+		send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
+		(aplist + i)->apdata->tsrequest = tsakt;
+		(aplist + i)->apdata->apcount -= 1;
+		}
 	}
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 writeepb();
@@ -2512,83 +2511,31 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if((aplist + i)->apdata->apcount <= 0) return;
 	if((aplist + i)->apdata->m1m2m3 == '+') return; 
 	if((aplist + i)->apdata->pmkid == '+') return;
-	if((tsakt - (aplist + i)->apdata->tsrequest) > TSSECOND2)
+	if((tsakt - (aplist + i)->apdata->tsrequest) < TSSECOND2) return;
+	if(((aplist + i)->apdata->m1 != '+') && ((aplist + i)->apdata->essidlen != 0))
 		{
-		if(((aplist + i)->apdata->akm == AKMPSK) && ((aplist + i)->apdata->essidlen != 0))
+		if(((aplist + i)->apdata->akm == AKMPSK) || ((aplist + i)->apdata->akm == AKMPSK256))
 			{
-			if((aplist + i)->apdata->m1 != '+')
-				{
-				send_80211_authenticationrequest((aplist + i)->apdata);
-//				send_80211_associationrequest2((aplist + i)->apdata);
-				(aplist + i)->apdata->tsrequest = tsakt;
-				(aplist + i)->apdata->apcount -= 1;
-				}
+			send_80211_authenticationrequest((aplist + i)->apdata);
+			(aplist + i)->apdata->tsrequest = tsakt;
+			(aplist + i)->apdata->apcount -= 1;
 			}
 		}
-
-
-
-//	if(((aplist + i)->apdata->m1 == '+') && (memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0)) return;
-
-
-/*
-
-		if(memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0)
+	if(disassociationflag == true) 
+		{
+		if((memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0) || (tsakt - (aplist + i)->apdata->tsmacc) > TSMINUTE1)
 			{
-			send_80211_associationrequest2bc((aplist + i)->apdata);
+			send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
+			(aplist + i)->apdata->tsrequest = tsakt;
+			(aplist + i)->apdata->apcount -= 1;
 			}
 		else
-
-
-	if((aplist + i)->apdata->akm == AKMPSK)
-		{
-		if((aplist + i)->apdata->essidlen != 0)
 			{
-
-		if((tsakt - (aplist + i)->apdata->tsassoc) > TSSECOND3)
-
-
-		if((tsakt - (aplist + i)->apdata->tsmacc) < TSSECOND5)
-
-		if(memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) != 0)
-			{
-
-
-			}
-
-//		if((aplist + i)->apdata->m1 == '+') return;
-
-
-
-
-
-		if((tsakt - (aplist + i)->apdata->tsmacc) < TSSECOND5)
-
-	if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED))
-		{
-		if((tsakt - (aplist + i)->apdata->tsmacc) < TSSECOND5)
-			{
-			if((tsakt - (aplist + i)->apdata->tsdisassoc) > TSSECOND3)
-				{
-				if(memcmp((aplist + i)->apdata->macc, macclientrg, ETH_ALEN) != 0)
-					{
-					send_80211_disassociationcaa((aplist + i)->apdata->macc, macfrx->addr2);
-					(aplist + i)->apdata->tsdisassoc = tsakt;
-					return;
-					}
-				}
+			send_80211_disassociationcaa((aplist + i)->apdata->macc, macfrx->addr2);
+			(aplist + i)->apdata->tsrequest = tsakt;
+			(aplist + i)->apdata->apcount -= 1;
 			}
 		}
-	if((aplist + i)->apdata->akm != AKMPSK) return;
-	if((aplist + i)->apdata->m1 == '+') return;
-	if((aplist + i)->apdata->essidlen == 0) return;
-	if((tsakt - (aplist + i)->apdata->tsauthtx) > TSSECOND6)
-		{
-//		send_80211_authenticationrequestrg();
-		(aplist + i)->apdata->tsauthtx = tsakt;
-		}
-*/
-
 	if(i > APLIST_HALF) qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 	return;
 	}
@@ -2607,7 +2554,7 @@ get_tags((aplist + i)->apdata, beaconlen, beacon->ie);
 if((aplist + i)->apdata->channel != (scanlist + scanlistindex)->channel) return;
 if(apcountmax > 0)
 	{
-	if((aplist + i)->apdata->akm == AKMPSK)
+	if(((aplist + i)->apdata->akm == AKMPSK) || ((aplist + i)->apdata->akm == AKMPSK256))
 		{
 		if((aplist + i)->apdata->essidlen != 0)
 			{
@@ -2615,17 +2562,8 @@ if(apcountmax > 0)
 			(aplist + i)->apdata->tsrequest = tsakt;
 			(aplist + i)->apdata->apcount -= 1;
 			}
-		else
-			{
-			if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED))
-				{
-				send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
-				(aplist + i)->apdata->tsrequest = tsakt;
-				(aplist + i)->apdata->apcount -= 1;
-				}
-			}
 		}
-	else if((aplist + i)->apdata->akm1 == AKMPSK)
+	if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED))
 		{
 		send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
 		(aplist + i)->apdata->tsrequest = tsakt;
@@ -3085,8 +3023,8 @@ static struct genlmsghdr *glh;
 static struct nlattr *nla;
 static struct nlmsgerr *nle;
 static char *drivername = NULL;
-static char driverfmt[128] = { 0 };
-static char driverlink[128] = { 0 };
+static char driverfmt[DRIVER_FORMAT] = { 0 };
+static char driverlink[DRIVER_LINK] = { 0 };
 
 nlh = (struct nlmsghdr*)nltxbuffer;
 nlh->nlmsg_type = nlfamily;
@@ -3132,9 +3070,9 @@ while(1)
 			if(nla->nla_type == NL80211_ATTR_WIPHY)
 				{
 				(ifpresentlist + ii)->wiphy = *((u32*)nla_data(nla));
-				snprintf(driverfmt, 64, "/sys/class/ieee80211/phy%d/device/driver", (ifpresentlist + ii)->wiphy);
-				memset(driverlink, 0, 128);
-				if((dnlen = readlink(driverfmt, driverlink, 64)) > 0)
+				snprintf(driverfmt, DRIVER_FORMAT, "/sys/class/ieee80211/phy%d/device/driver", (ifpresentlist + ii)->wiphy);
+				memset(driverlink, 0, DRIVER_LINK);
+				if((dnlen = readlink(driverfmt, driverlink, DRIVER_LINK)) > 0)
 					{
 					drivername = basename(driverlink);
 					if(drivername != NULL) strncpy((ifpresentlist + ii)->driver, drivername, DRIVERNAME_MAX -1);
@@ -3786,7 +3724,7 @@ for(i = 0; i < INTERFACELIST_MAX -1; i++)
 	ifpresentlistcounter++;
 	}
 if(rt_get_interfacelist() == false) return false;
-if(ifpresentlistcounter == 0) return false;
+if(ifpresentlist->index == 0) return false;
 qsort(ifpresentlist, ifpresentlistcounter, INTERFACELIST_SIZE, sort_interfacelist_by_index);
 return true;
 }
