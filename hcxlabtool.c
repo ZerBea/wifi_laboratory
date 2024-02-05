@@ -4411,8 +4411,8 @@ fprintf(stdout, "less common options:\n--------------------\n"
 	"--m2max=<digit>           : set maximum of received M1M2ROGUE\n"
 	"                             default: %d M1M2ROGUE\n"
 	"                             to disable CLIENT attacks set 0\n"
-	"--m3max=<digit>           : set maximum of received M1M2MM3\n"
-	"                             default: %d M1M2RM3\n"
+	"--attemptapmax=<digit>    : set maximum of attempts to attack an AP\n"
+	"                             default: %d attempts\n"
 	"                             to disable AP attacks set 0\n",
 	PROBERESPONSETX_MAX, ERROR_MAX, WATCHDOG_MAX, CLIENTCOUNT_MAX, APCOUNT_MAX);
 fprintf(stdout, "--tot=<digit>             : enable timeout timer in minutes\n"
@@ -4505,7 +4505,7 @@ static const struct option long_options[] =
 #endif
 	{"disable_disassociation",	no_argument,		NULL,	HCX_DISABLE_DISASSOCIATION},
 	{"m2max",			required_argument,	NULL,	HCX_M1M2ROGUE_MAX},
-	{"m3max",			required_argument,	NULL,	HCX_M1M2M3_MAX},
+	{"attemptapmax",		required_argument,	NULL,	HCX_APCOUNT_MAX},
 	{"prtxmax",			required_argument,	NULL,	HCX_PRTX_MAX},
 	{"tot",				required_argument,	NULL,	HCX_TOT},
 	{"essidlist",			required_argument,	NULL,	HCX_ESSIDLIST},
@@ -4584,7 +4584,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		clientcountmax = strtoul(optarg, NULL, 10);
 		break;
 
-		case HCX_M1M2M3_MAX:
+		case HCX_APCOUNT_MAX:
 		apcountmax = strtoul(optarg, NULL, 10);
 		break;
 

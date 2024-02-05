@@ -12,7 +12,7 @@
 #define HCX_DISABLE_DISASSOCIATION	9
 #define HCX_WATCHDOG_MAX		10
 #define HCX_M1M2ROGUE_MAX		11
-#define HCX_M1M2M3_MAX			12
+#define HCX_APCOUNT_MAX			12
 #define HCX_PRTX_MAX			13
 #define HCX_ON_SIGTERM			14
 #define HCX_ON_TOT			15
@@ -54,7 +54,7 @@
 #define ERROR_MAX		100
 #define WATCHDOG_MAX		600
 #define CLIENTCOUNT_MAX		4
-#define APCOUNT_MAX		10
+#define APCOUNT_MAX		100
 
 #define IFTYPENL		0x01
 #define IFTYPEMON		0x02
