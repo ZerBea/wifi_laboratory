@@ -2508,6 +2508,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		(aplist + i)->apdata->beacon = true;
 		writeepb();
 		}
+	if((tsakt - (aplist + i)->apdata->tsrequest) > TSHOUR1) (aplist + i)->apdata->apcount = apcountmax;
 	if((aplist + i)->apdata->apcount <= 0) return;
 	if((aplist + i)->apdata->m1m2m3 == '+') return; 
 	if((aplist + i)->apdata->pmkid == '+') return;
@@ -4217,37 +4218,37 @@ if((procinfo = fopen("/proc/cpuinfo", "r")) != NULL)
 		}
 	fclose(procinfo);
 	}
-if((procinfo = fopen("/proc/iomem", "r")) != NULL)
+if((fd_devinfo = open("/dev/gpiomem", O_RDWR | O_SYNC)) > 0)
 	{
-	while(1)
-		{
-		if((len = fgetline(procinfo, RASPBERRY_INFO, linein)) == -1) break;
-		if(strstr(linein, ".gpio") != NULL)
-			{
-			if(linein[8] != '-') break;
-				{
-				linein[8] = 0;
-				gpioperibase = strtoul(linein, NULL, 16);
-				break;
-				}
-			}
-		}
-	fclose(procinfo);
-	}
-if(gpioperibase != 0)
-	{
-	if((fd_devinfo = open("/dev/mem", O_RDWR | O_SYNC)) > 0)
-		{
-		gpio_map = mmap(NULL, RPI_BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd_devinfo, gpioperibase);
-		close(fd_devinfo);
-		}
+	gpio_map = mmap(NULL, RPI_BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd_devinfo, gpioperibase);
+	close(fd_devinfo);
 	}
 else
 	{
-	if((fd_devinfo = open("/dev/gpiomem", O_RDWR | O_SYNC)) > 0)
+	if((procinfo = fopen("/proc/iomem", "r")) != NULL)
 		{
-		gpio_map = mmap(NULL, RPI_BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd_devinfo, gpioperibase);
-		close(fd_devinfo);
+		while(1)
+			{
+			if((len = fgetline(procinfo, RASPBERRY_INFO, linein)) == -1) break;
+			if(strstr(linein, ".gpio") != NULL)
+				{
+				if(linein[8] != '-') break;
+					{
+					linein[8] = 0;
+					gpioperibase = strtoul(linein, NULL, 16);
+					if(gpioperibase != 0)
+						{
+						if((fd_devinfo = open("/dev/mem", O_RDWR | O_SYNC)) > 0)
+							{
+							gpio_map = mmap(NULL, RPI_BLOCK_SIZE, PROT_READ|PROT_WRITE, MAP_SHARED, fd_devinfo, gpioperibase);
+							close(fd_devinfo);
+							}
+						}
+					break;
+					}
+				}
+			}
+		fclose(procinfo);
 		}
 	}
 if(gpio_map == MAP_FAILED)
