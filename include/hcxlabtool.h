@@ -233,7 +233,7 @@ typedef struct __attribute__((__packed__))
 typedef struct __attribute__((__packed__))
 {
  int	index;
- u32	wiphy;
+ int	wiphy;
 #define IF_HAS_NETLINK		0x01
 #define IF_HAS_MONITOR		0x02
 #define IF_HAS_MONITOR_ACTIVE	0x04
@@ -246,20 +246,20 @@ typedef struct __attribute__((__packed__))
  u8	status;
  u8	hwmac[6];
  u8	vimac[6];
- char	name[IFNAMSIZ];
+ char	name[IFNAMSIZ +1];
  char	driver[DRIVERNAME_MAX];
  size_t	i;
  frequencylist_t *frequencylist;
 }interface_t;
 #define INTERFACELIST_SIZE (sizeof(interface_t))
 
-static int sort_interfacelist_by_index(const void *a, const void *b)
+static int sort_interfacelist_by_wiphy(const void *a, const void *b)
 {
 const interface_t *ia = (const interface_t *)a;
 const interface_t *ib = (const interface_t *)b;
 
-if(ia->index > ib->index) return 1;
-else if(ia->index < ib->index) return -1;
+if(ia->wiphy > ib->wiphy) return 1;
+else if(ia->wiphy < ib->wiphy) return -1;
 return 0;
 }
 /*===========================================================================*/

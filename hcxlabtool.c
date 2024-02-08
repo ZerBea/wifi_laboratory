@@ -2513,28 +2513,44 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if((aplist + i)->apdata->m1m2m3 == '+') return; 
 	if((aplist + i)->apdata->pmkid == '+') return;
 	if((tsakt - (aplist + i)->apdata->tsrequest) < TSSECOND2) return;
-	if(((aplist + i)->apdata->m1 != '+') && ((aplist + i)->apdata->essidlen != 0))
+	if((aplist + i)->apdata->essidlen != 0)
 		{
 		if(((aplist + i)->apdata->akm == AKMPSK) || ((aplist + i)->apdata->akm == AKMPSK256))
 			{
-			send_80211_authenticationrequest((aplist + i)->apdata);
-			(aplist + i)->apdata->tsrequest = tsakt;
-			(aplist + i)->apdata->apcount -= 1;
+			if(memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0)
+				{
+				if((aplist + i)->apdata->m1 != '+')
+					{
+					send_80211_associationrequest2bc((aplist + i)->apdata);
+					send_80211_authenticationrequest((aplist + i)->apdata);
+					(aplist + i)->apdata->tsrequest = tsakt;
+					(aplist + i)->apdata->apcount -= 1;
+					}
+				}
+			else
+				{
+				send_80211_associationrequest2((aplist + i)->apdata);
+				(aplist + i)->apdata->tsrequest = tsakt;
+				(aplist + i)->apdata->apcount -= 1;
+				}
 			}
 		}
 	if(disassociationflag == true) 
 		{
-		if((memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0) || (tsakt - (aplist + i)->apdata->tsmacc) > TSMINUTE1)
+		if(((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED)
 			{
-			send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
-			(aplist + i)->apdata->tsrequest = tsakt;
-			(aplist + i)->apdata->apcount -= 1;
-			}
-		else
-			{
-			send_80211_disassociationcaa((aplist + i)->apdata->macc, macfrx->addr2);
-			(aplist + i)->apdata->tsrequest = tsakt;
-			(aplist + i)->apdata->apcount -= 1;
+			if((memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0) || (tsakt - (aplist + i)->apdata->tsmacc) > TSMINUTE1)
+				{
+				send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
+				(aplist + i)->apdata->tsrequest = tsakt;
+				(aplist + i)->apdata->apcount -= 1;
+				}
+			else
+				{
+				send_80211_disassociationcaa((aplist + i)->apdata->macc, macfrx->addr2);
+				(aplist + i)->apdata->tsrequest = tsakt;
+				(aplist + i)->apdata->apcount -= 1;
+				}
 			}
 		}
 	if(i > APLIST_HALF) qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
@@ -2813,18 +2829,18 @@ return 0;
 /*---------------------------------------------------------------------------*/
 static bool nl_get_interfacelist(void)
 {
-static ssize_t i;
 static size_t ii;
+static ssize_t i;
 static ssize_t msglen;
 static int nlremlen = 0;
-static u32 ifindex;
-static u32 wiphy;
 static struct nlmsghdr *nlh;
 static struct genlmsghdr *glh;
 static struct nlattr *nla;
 static struct nlmsgerr *nle;
-static char ifname[IF_NAMESIZE];
-static u8 vimac[ETH_ALEN];
+static u32 *wiphytmp;
+static u32 *ifidxtmp;
+static u8 *vimactmp;
+static char *ifnametmp;
 
 i = 0;
 nlh = (struct nlmsghdr*)nltxbuffer;
@@ -2840,12 +2856,15 @@ glh->reserved = 0;
 i += sizeof(struct genlmsghdr);
 nlh->nlmsg_len = i;
 if((write(fd_socket_nl, nltxbuffer, i)) != i) return false;
-ii = 0;
 while(1)
 	{
 	msglen = read(fd_socket_nl, &nlrxbuffer, NLRX_SIZE);
 	if(msglen == -1) break;
 	if(msglen == 0) break;
+	wiphytmp = NULL;
+	ifidxtmp = NULL;;
+	vimactmp = NULL;;
+	ifnametmp = NULL;
 	for(nlh = (struct nlmsghdr*)nlrxbuffer; NLMSG_OK(nlh, (u32)msglen); nlh = NLMSG_NEXT(nlh, msglen))
 		{
 		if(nlh->nlmsg_type == NLMSG_DONE) return true;
@@ -2863,26 +2882,22 @@ while(1)
 		nlremlen = NLMSG_PAYLOAD(nlh, 0) -4;
 		while(nla_ok(nla, nlremlen))
 			{
-			if(nla->nla_type == NL80211_ATTR_IFINDEX) ifindex = *((u32*)nla_data(nla));
-			if(nla->nla_type == NL80211_ATTR_IFNAME) strncpy(ifname, nla_data(nla), IF_NAMESIZE -1);
-			if(nla->nla_type == NL80211_ATTR_WIPHY)
-				{
-				wiphy = *((u32*)nla_data(nla));
-				}
+			if(nla->nla_type == NL80211_ATTR_IFINDEX) ifidxtmp = nla_data(nla);
+			if(nla->nla_type == NL80211_ATTR_IFNAME) ifnametmp = nla_data(nla);
+			if(nla->nla_type == NL80211_ATTR_WIPHY) wiphytmp = nla_data(nla);
 			if(nla->nla_type == NL80211_ATTR_MAC)
 				{
-				if(nla->nla_len == 10) memcpy(vimac, nla_data(nla), ETH_ALEN);
+				if(nla->nla_len == 10) vimactmp = nla_data(nla);
 				}
 			nla = nla_next(nla, &nlremlen);
 			}
-		for(ii = 0; ii < INTERFACELIST_MAX; ii++)
+		for(ii = 0; ii < ifpresentlistcounter; ii++)
 			{
-			if((ifpresentlist + ii)->wiphy == wiphy)
+			if((ifpresentlist + ii)->wiphy == *(int*)wiphytmp)
 				{
-				(ifpresentlist + ii)->index = ifindex;
-				strncpy((ifpresentlist + ii)->name, ifname, IF_NAMESIZE);
-				memcpy((ifpresentlist + ii)->vimac, vimac, ETH_ALEN);
-				break;
+				if(ifidxtmp != NULL) (ifpresentlist + ii)->index = *(u32*)ifidxtmp;
+				if(vimactmp != NULL)memcpy((ifpresentlist + ii)->vimac, vimactmp, ETH_ALEN);
+				if(ifnametmp != NULL)strncpy((ifpresentlist + ii)->name, ifnametmp, IF_NAMESIZE);
 				}
 			}
 		}
@@ -3012,10 +3027,10 @@ while(1)
 return false;
 }
 /*---------------------------------------------------------------------------*/
-static bool nl_get_interfacecapabilities(void)
+static bool nl_get_interfacephylist(void)
 {
 static ssize_t i;
-static ssize_t ii;
+static size_t ii;
 static ssize_t msglen;
 static int nlremlen;
 static size_t dnlen;
@@ -3041,12 +3056,11 @@ i += sizeof(struct genlmsghdr);
 nla = (struct nlattr*)(nltxbuffer + i);
 nla->nla_len = 4;
 nla->nla_type = NL80211_ATTR_SPLIT_WIPHY_DUMP;
-*(u32*)nla_data(nla) = ifaktindex;
 i += 4;
 nlh->nlmsg_len = i;
 if((write(fd_socket_nl, nltxbuffer, i)) != i) return false;
 ii = 0;
-while(1)
+while(ii <= ifpresentlistcounter)
 	{
 	msglen = read(fd_socket_nl, &nlrxbuffer, NLRX_SIZE);
 	if(msglen == -1) break;
@@ -3092,7 +3106,55 @@ while(1)
 			nla = nla_next(nla, &nlremlen);
 			}
 		}
-	if(ii < INTERFACELIST_MAX) ii++;
+	ii += 1;
+	}
+return false;
+}
+/*---------------------------------------------------------------------------*/
+static bool nl_get_interfacephycount(void)
+{
+static ssize_t i;
+static ssize_t msglen;
+static struct nlmsghdr *nlh;
+static struct genlmsghdr *glh;
+static struct nlattr *nla;
+static struct nlmsgerr *nle;
+
+nlh = (struct nlmsghdr*)nltxbuffer;
+nlh->nlmsg_type = nlfamily;
+nlh->nlmsg_flags = NLM_F_REQUEST | NLM_F_DUMP | NLM_F_ACK;
+nlh->nlmsg_seq = nlseqcounter++;
+nlh->nlmsg_pid = hcxpid;
+i += sizeof(struct nlmsghdr);
+glh = (struct genlmsghdr*)(nltxbuffer + i);
+glh->cmd = NL80211_CMD_GET_WIPHY;
+glh->version = 1;
+glh->reserved = 0;
+i += sizeof(struct genlmsghdr);
+nla = (struct nlattr*)(nltxbuffer + i);
+nla->nla_len = 4;
+nla->nla_type = NL80211_ATTR_SPLIT_WIPHY_DUMP;
+i += 4;
+nlh->nlmsg_len = i;
+if((write(fd_socket_nl, nltxbuffer, i)) != i) return false;
+ifpresentlistcounter = 0;
+while(1)
+	{
+	msglen = read(fd_socket_nl, &nlrxbuffer, NLRX_SIZE);
+	if(msglen == -1) break;
+	if(msglen == 0) break;
+	for(nlh = (struct nlmsghdr*)nlrxbuffer; NLMSG_OK(nlh, (u32)msglen); nlh = NLMSG_NEXT(nlh, msglen))
+		{
+		if(nlh->nlmsg_type == NLMSG_DONE) return true;
+		if(nlh->nlmsg_type == NLMSG_ERROR)
+			{
+			nle = (struct nlmsgerr*)(nlrxbuffer + sizeof(struct nlmsghdr));
+			if(nle->error == 0) return true;
+			errorcount++;
+			return 0;
+			}
+		}
+	ifpresentlistcounter += 1;
 	}
 return false;
 }
@@ -3427,6 +3489,8 @@ return false;
 /*---------------------------------------------------------------------------*/
 static bool rt_get_interfacelist(void)
 {
+
+static size_t ii;
 static ssize_t i;
 static ssize_t msglen;
 static struct nlmsghdr *nlh;
@@ -3434,7 +3498,7 @@ static struct ifinfomsg *ifih;
 static struct nlmsgerr *nle;
 static struct rtattr *rta;
 static int rtaremlen;
-static u8 hwmac[ETH_ALEN];
+static u8 *hwmactmp;
 
 i = 0;
 nlh = (struct nlmsghdr*)nltxbuffer;
@@ -3476,26 +3540,33 @@ while(1)
 		if((ifih->ifi_flags & IFF_UP) == IFF_UP) ifaktstatus |= IF_STAT_UP;
 		rta = (struct rtattr*)((unsigned char*)NLMSG_DATA(nlh) + sizeof(struct ifinfomsg));
 		rtaremlen = NLMSG_PAYLOAD(nlh, 0) - sizeof(struct ifinfomsg);
+		hwmactmp = NULL;
 		while(RTA_OK(rta, rtaremlen))
 			{
 			#if(LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
 			if(rta->rta_type == IFLA_PERM_ADDRESS)
 				{
-				if(rta->rta_len == 10) memcpy(hwmac, rta_data(rta), ETH_ALEN);
+				if(rta->rta_len == 10) hwmactmp = rta_data(rta);
 				}
 			#else
 			if(rta->rta_type == IFLA_ADDRESS)
 				{
-				if(rta->rta_len == 10) memcpy(hwmac, rta_data(rta), ETH_ALEN);
+				if(rta->rta_len == 10) hwmactmp = rta_data(rta);
 				}
 			#endif
 			rta = RTA_NEXT(rta, rtaremlen);
 			}
-		for(i = 0; i < INTERFACELIST_MAX; i++)
+		for(ii = 0; ii < ifpresentlistcounter; ii++)
 			{
-			if((ifpresentlist + i)->index == ifih->ifi_index) memcpy((ifpresentlist + i)->hwmac, hwmac, ETH_ALEN);
+			if((ifpresentlist + ii)->index == ifih->ifi_index)
+				{
+				if(hwmactmp != 0) memcpy((ifpresentlist + ii)->hwmac, hwmactmp, ETH_ALEN);
+				}
 			}
 		}
+
+// memcpy(hwmac, rta_data(rta), ETH_ALEN);
+
 	}
 return false;
 }
@@ -3717,16 +3788,18 @@ if(nlfamily == 0)
 	return false;
 	}
 nl_get_regulatorydomain();
-if(nl_get_interfacecapabilities() == false) return false;
-if(nl_get_interfacelist() == false) return false;
-for(i = 0; i < INTERFACELIST_MAX -1; i++)
+if(nl_get_interfacephycount() == false) return false;
+if((ifpresentlist = (interface_t*)calloc(ifpresentlistcounter, INTERFACELIST_SIZE)) == NULL) return false;
+for(i = 0; i < ifpresentlistcounter; i++)
 	{
-	if((ifpresentlist + i)->index == 0) break;
-	ifpresentlistcounter++;
+	if(((ifpresentlist + i)->frequencylist = (frequencylist_t*)calloc(FREQUENCYLIST_MAX, FREQUENCYLIST_SIZE)) == NULL) return false;
 	}
+if(nl_get_interfacephylist() == false) return false;
+if(nl_get_interfacelist() == false) return false;
 if(rt_get_interfacelist() == false) return false;
-if(ifpresentlist->index == 0) return false;
-qsort(ifpresentlist, ifpresentlistcounter, INTERFACELIST_SIZE, sort_interfacelist_by_index);
+if(ifpresentlistcounter == 0) return false;
+
+qsort(ifpresentlist, ifpresentlistcounter, INTERFACELIST_SIZE, sort_interfacelist_by_wiphy);
 return true;
 }
 /*===========================================================================*/
@@ -3995,7 +4068,7 @@ if(aplist != NULL) free(aplist);
 if(scanlist != NULL) free(scanlist);
 if(ifpresentlist != NULL)
 	{
-	for(i = 0; i < INTERFACELIST_MAX; i++)
+	for(i = 0; i < ifpresentlistcounter; i++)
 		{
 		if((ifpresentlist + i)->frequencylist != NULL) free((ifpresentlist + i)->frequencylist);
 		}
@@ -4020,12 +4093,6 @@ static bool init_lists(void)
 ssize_t i;
 
 if((scanlist = (frequencylist_t*)calloc(SCANLIST_MAX, FREQUENCYLIST_SIZE)) == NULL) return false;
-if((ifpresentlist = (interface_t*)calloc(INTERFACELIST_MAX, INTERFACELIST_SIZE)) == NULL) return false;
-for(i = 0; i < INTERFACELIST_MAX; i++)
-	{
-	if(((ifpresentlist + i)->frequencylist = (frequencylist_t*)calloc(FREQUENCYLIST_MAX, FREQUENCYLIST_SIZE)) == NULL) return false;
-	}
-
 if((aplist = (aplist_t*)calloc(APLIST_MAX, APLIST_SIZE)) == NULL) return false;
 for(i = 0; i < APLIST_MAX; i++)
 	{
@@ -4899,6 +4966,7 @@ if((monitormodeflag != true) && (interfacelistflag != true) && (interfaceinfofla
 close_fds();
 close_sockets();
 close_lists();
+
 if(rooterrorflag == true) exit(EXIT_FAILURE);
 if((monitormodeflag == true) || (interfacelistflag == true) || (interfaceinfoflag == true) || (interfacelistshortflag == true)) return EXIT_SUCCESS;
 fprintf(stdout, "\n\033[?25h");
