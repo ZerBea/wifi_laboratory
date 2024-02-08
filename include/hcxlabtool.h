@@ -234,6 +234,7 @@ typedef struct __attribute__((__packed__))
 {
  int	index;
  int	wiphy;
+ u64	wdev;
 #define IF_HAS_NETLINK		0x01
 #define IF_HAS_MONITOR		0x02
 #define IF_HAS_MONITOR_ACTIVE	0x04

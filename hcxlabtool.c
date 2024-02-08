@@ -83,6 +83,7 @@ static struct sock_fprog bpf = { 0 };
 static u8 rds = 0;
 
 static int ifaktindex = 0;
+static int ifaktwiphy = 0;
 static u8 ifaktstatus = 0;
 static u8 ifakttype = 0;
 
@@ -2838,6 +2839,7 @@ static struct genlmsghdr *glh;
 static struct nlattr *nla;
 static struct nlmsgerr *nle;
 static u32 *wiphytmp;
+static u64 *wdevtmp;
 static u32 *ifidxtmp;
 static u8 *vimactmp;
 static char *ifnametmp;
@@ -2862,6 +2864,7 @@ while(1)
 	if(msglen == -1) break;
 	if(msglen == 0) break;
 	wiphytmp = NULL;
+	wdevtmp = NULL;
 	ifidxtmp = NULL;;
 	vimactmp = NULL;;
 	ifnametmp = NULL;
@@ -2882,6 +2885,7 @@ while(1)
 		nlremlen = NLMSG_PAYLOAD(nlh, 0) -4;
 		while(nla_ok(nla, nlremlen))
 			{
+			if(nla->nla_type == NL80211_ATTR_WDEV) wdevtmp = nla_data(nla);
 			if(nla->nla_type == NL80211_ATTR_IFINDEX) ifidxtmp = nla_data(nla);
 			if(nla->nla_type == NL80211_ATTR_IFNAME) ifnametmp = nla_data(nla);
 			if(nla->nla_type == NL80211_ATTR_WIPHY) wiphytmp = nla_data(nla);
@@ -2896,6 +2900,7 @@ while(1)
 			if((ifpresentlist + ii)->wiphy == *(int*)wiphytmp)
 				{
 				if(ifidxtmp != NULL) (ifpresentlist + ii)->index = *(u32*)ifidxtmp;
+				if(wdevtmp != NULL) (ifpresentlist + ii)->wdev = *(u64*)wdevtmp;
 				if(vimactmp != NULL)memcpy((ifpresentlist + ii)->vimac, vimactmp, ETH_ALEN);
 				if(ifnametmp != NULL)strncpy((ifpresentlist + ii)->name, ifnametmp, IF_NAMESIZE);
 				}
@@ -3670,6 +3675,7 @@ if(ifaktindex == 0)
 		{
 		if(((ifpresentlist + i)->type & IF_HAS_NLMON) == IF_HAS_NLMON)
 			{
+			ifaktwiphy = (ifpresentlist + i)->wiphy;
 			ifaktindex = (ifpresentlist + i)->index;
 			ifakttype = (ifpresentlist + i)->type;
 			memcpy(ifaktname, (ifpresentlist + i)->name, IF_NAMESIZE);
