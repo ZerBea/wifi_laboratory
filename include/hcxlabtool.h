@@ -188,6 +188,7 @@ typedef struct __attribute__((__packed__))
  u8	ucs;
  u8	akm1;
  u8	mfp;
+ u8	akmstat;
  char	pmkid;
  char	m1;
  char	m1m2;

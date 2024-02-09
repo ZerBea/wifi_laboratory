@@ -477,7 +477,7 @@ if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1)
 	}
 if(w.ws_row > 10) w.ws_row -= 2;
 ii = 0;
-fprintf(stdout, "CHA   LAST   123P    MAC-AP    ESSID                                      SCAN:%6u/%u\n"
+fprintf(stdout, "CHA   LAST   A123P    MAC-AP    ESSID                                     SCAN:%6u/%u\n"
 		"-----------------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
 if(rds == 1)
 	{
@@ -488,7 +488,8 @@ if(rds == 1)
 			{
 			tvlast = (aplist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "%3u %s %c%c%c%c %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+				fprintf(stdout, "%3u %s %c%c%c%c%c %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+				(aplist + i)->apdata->akmstat,
 				(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
 				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
 				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
@@ -521,7 +522,8 @@ if(rds == 2)
 			{
 			tvlast = (aplist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "%3u %s %c%c%c%c %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+				fprintf(stdout, "%3u %s %c%c%c%c%c %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+				(aplist + i)->apdata->akmstat,
 				(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
 				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
 				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
@@ -1540,10 +1542,12 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	}
 (aplist + i)->tsakt = tsakt;
 memset((aplist + i)->apdata, 0, APDATA_SIZE);
+(aplist + i)->apdata->pmkid = ' ';
 (aplist + i)->apdata->m1 = ' ';
 (aplist + i)->apdata->m1m2 = ' ';
 (aplist + i)->apdata->m1m2m3 = ' ';
 (aplist + i)->apdata->pmkid = ' ';
+(aplist + i)->apdata->akmstat = ' ';
 (aplist + i)->apdata->apcount = apcountmax;
 (aplist + i)->apdata->reassociationresponse = true;
 (aplist + i)->apdata->aid = __hcx16le(capa->aid);
@@ -1592,10 +1596,12 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	}
 (aplist + i)->tsakt = tsakt;
 memset((aplist + i)->apdata, 0, APDATA_SIZE);
+(aplist + i)->apdata->pmkid = ' ';
 (aplist + i)->apdata->m1 = ' ';
 (aplist + i)->apdata->m1m2 = ' ';
 (aplist + i)->apdata->m1m2m3 = ' ';
 (aplist + i)->apdata->pmkid = ' ';
+(aplist + i)->apdata->akmstat = ' ';
 (aplist + i)->apdata->apcount = apcountmax;
 (aplist + i)->apdata->associationresponse = true;
 (aplist + i)->apdata->aid = __hcx16le(capa->aid);
@@ -2099,10 +2105,12 @@ if(auth->algorithm == OPEN_SYSTEM)
 				}
 			(aplist + i)->tsakt = tsakt;
 			memset((aplist + i)->apdata, 0, APDATA_SIZE);
+			(aplist + i)->apdata->pmkid = ' ';
 			(aplist + i)->apdata->m1 = ' ';
 			(aplist + i)->apdata->m1m2 = ' ';
 			(aplist + i)->apdata->m1m2m3 = ' ';
 			(aplist + i)->apdata->pmkid = ' ';
+			(aplist + i)->apdata->akmstat = ' ';
 			(aplist + i)->apdata->apcount = apcountmax;
 			(aplist + i)->apdata->opensystem = 1;
 			memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
@@ -2402,7 +2410,11 @@ while(0 < infolen)
 					tlen += 2;
 					for(i = 0; i < __hcx16le(rsn->count); i++)
 						{
-						if(memcmp(rsnpsk, &infoptr->ie[tlen], 4) == 0) apdata->akm = infoptr->ie[tlen +3];
+						if(memcmp(rsnpsk, &infoptr->ie[tlen], 4) == 0)
+							{
+							apdata->akm = infoptr->ie[tlen +3];
+							apdata->akmstat = '+';
+							}
 						tlen += 4;
 						if(tlen > infoptr->len) return;
 						}
@@ -2435,7 +2447,11 @@ while(0 < infolen)
 							tlen += 2;
 							for(i = 0; i < __hcx16le(wpa->count); i++)
 								{
-								if(memcmp(wpapsk, &infoptr->ie[tlen], 4) == 0) apdata->akm1 = infoptr->ie[tlen +3];
+								if(memcmp(wpapsk, &infoptr->ie[tlen], 4) == 0)
+									{
+									apdata->akm1 = infoptr->ie[tlen +3];
+									apdata->akmstat = '+';
+									}
 								tlen += 4;
 								if(tlen > infoptr->len) return;
 								}
@@ -2476,10 +2492,12 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	}
 (aplist + i)->tsakt = tsakt;
 memset((aplist + i)->apdata, 0, APDATA_SIZE);
+(aplist + i)->apdata->pmkid = ' ';
 (aplist + i)->apdata->m1 = ' ';
 (aplist + i)->apdata->m1m2 = ' ';
 (aplist + i)->apdata->m1m2m3 = ' ';
 (aplist + i)->apdata->pmkid = ' ';
+(aplist + i)->apdata->akmstat = ' ';
 (aplist + i)->apdata->apcount = apcountmax;
 (aplist + i)->apdata->proberesponse = true;
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
@@ -2590,6 +2608,7 @@ memset((aplist + i)->apdata, 0, APDATA_SIZE);
 (aplist + i)->apdata->m1m2 = ' ';
 (aplist + i)->apdata->m1m2m3 = ' ';
 (aplist + i)->apdata->pmkid = ' ';
+(aplist + i)->apdata->akmstat = ' ';
 (aplist + i)->apdata->apcount = apcountmax;
 (aplist + i)->apdata->beacon = true;
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
