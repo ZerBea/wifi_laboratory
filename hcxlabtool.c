@@ -454,12 +454,12 @@ for(i = 0; i < ifpresentlistcounter; i++)
 		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
 		mode, IF_NAMESIZE, (ifpresentlist + i)->name, (ifpresentlist + i)->driver, po);
 	}
-fprintf(stdout, "\n"
-		"* active monitor mode available (reported by driver - do not trust it)\n"
-		"S active monitor mode available on shared interface (reported by driver - do not trust it)\n"
-		"+ monitor mode available (reported by driver)\n"
-		"s monitor mode available on shared interface (reported by driver)\n"
-		"- no monitor mode available (reported by driver)\n");
+fprintf(stdout, "\nmodes reported by the driver:\n"
+		"* active monitor mode available (do not trust it)\n"
+		"S active monitor mode available on shared interface (do not trust it)\n"
+		"+ monitor mode available\n"
+		"s monitor mode available on shared interface\n"
+		"- no monitor mode available\n");
 return;
 }
 /*---------------------------------------------------------------------------*/
