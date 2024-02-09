@@ -371,8 +371,16 @@ for(i = 0; i < ifpresentlistcounter; i++)
 	fprintf(stdout, "interface information:\n\nphy idx hw-mac       virtual-mac  m ifname           driver (protocol)\n"
 			"---------------------------------------------------------------------------------------------\n");
 	if(((ifpresentlist + i)->type & IF_HAS_NETLINK) == IF_HAS_NETLINK) po = "NETLINK";
-	if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "*";
-	else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
+	if(((ifpresentlist + i)->type & IF_IS_SHARED) != IF_IS_SHARED)
+		{
+		if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "*";
+		else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
+		}
+	else
+		{
+		if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "S";
+		else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "s";
+		}
 	fprintf(stdout, "%3d %3d %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %s %-*s %s (%s)\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
 		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
 		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
@@ -402,8 +410,16 @@ static const char *mode = "-";
 for(i = 0; i < ifpresentlistcounter; i++)
 	{
 	if(((ifpresentlist + i)->type & IF_HAS_NETLINK) == IF_HAS_NETLINK) po = "NETLINK";
-	if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "*";
-	else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
+	if(((ifpresentlist + i)->type & IF_IS_SHARED) != IF_IS_SHARED)
+		{
+		if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "*";
+		else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
+		}
+	else
+		{
+		if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "S";
+		else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "s";
+		}
 	fprintf(stdout, "%3d\t%3d\t%02x%02x%02x%02x%02x%02x\t%02x%02x%02x%02x%02x%02x\t%s\t%-*s\t%s\t%s\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
 		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
 		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
@@ -423,8 +439,16 @@ fprintf(stdout, "available wlan devices:\n\nphy idx hw-mac       virtual-mac  m 
 for(i = 0; i < ifpresentlistcounter; i++)
 	{
 	if(((ifpresentlist + i)->type & IF_HAS_NETLINK) == IF_HAS_NETLINK) po = "NETLINK";
-	if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "*";
-	else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
+	if(((ifpresentlist + i)->type & IF_IS_SHARED) != IF_IS_SHARED)
+		{
+		if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "*";
+		else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "+";
+		}
+	else
+		{
+		if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "S";
+		else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "s";
+		}
 	fprintf(stdout, "%3d %3d %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %s %-*s %s (%s)\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
 		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
 		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
@@ -432,8 +456,10 @@ for(i = 0; i < ifpresentlistcounter; i++)
 	}
 fprintf(stdout, "\n"
 		"* active monitor mode available (reported by driver - do not trust it)\n"
+		"S active monitor mode available on shared interface (reported by driver - do not trust it)\n"
 		"+ monitor mode available (reported by driver)\n"
-		"- no monitor mode available\n");
+		"s monitor mode available on shared interface (reported by driver)\n"
+		"- no monitor mode available (reported by driver)\n");
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -2900,7 +2926,14 @@ while(1)
 			if((ifpresentlist + ii)->wiphy == *(int*)wiphytmp)
 				{
 				if(ifidxtmp != NULL) (ifpresentlist + ii)->index = *(u32*)ifidxtmp;
-				if(wdevtmp != NULL) (ifpresentlist + ii)->wdev = *(u64*)wdevtmp;
+				if(wdevtmp != NULL)
+					{
+					if((ifpresentlist + ii)->wdev != 0)
+						{
+						if((ifpresentlist + ii)->wdev != *(u64*)wdevtmp) (ifpresentlist + ii)->type |= IF_IS_SHARED;
+						}
+					(ifpresentlist + ii)->wdev = *(u64*)wdevtmp;
+					}
 				if(vimactmp != NULL)memcpy((ifpresentlist + ii)->vimac, vimactmp, ETH_ALEN);
 				if(ifnametmp != NULL)strncpy((ifpresentlist + ii)->name, ifnametmp, IF_NAMESIZE);
 				}
