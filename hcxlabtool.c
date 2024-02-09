@@ -3188,8 +3188,8 @@ glh->reserved = 0;
 i += sizeof(struct genlmsghdr);
 nla = (struct nlattr*)(nltxbuffer + i);
 nla->nla_len = 8;
-nla->nla_type = NL80211_ATTR_IFINDEX;
-*(u32*)nla_data(nla) = ifaktindex;
+nla->nla_type = NL80211_ATTR_WIPHY;
+*(u32*)nla_data(nla) = ifaktwiphy;
 i += 8;
 nla = (struct nlattr*)(nltxbuffer + i);
 nla->nla_len = 8;
@@ -4449,8 +4449,8 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                  default %d seconds\n"
 	"-A             : ACK incoming frames\n"
 	"                  INTERFACE must support active monitor mode\n"
-	"-L             : show INTERFACE list and terminate\n"
-	"-l             : show INTERFACE list (tabulator separated and greppable) and terminate\n"
+	"-L             : show PHYSICAL INTERFACE list and terminate\n"
+	"-l             : show PHYSICAL INTERFACE list (tabulator separated and greppable) and terminate\n"
 	"-I <INTERFACE> : show detailed information about INTERFACE and terminate\n"
 #ifdef HCXWANTLIBPCAP
 	"--bpfc=<filter>: compile Berkeley Packet Filter (BPF) and exit\n"
