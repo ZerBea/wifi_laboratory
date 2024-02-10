@@ -477,7 +477,7 @@ if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1)
 	}
 if(w.ws_row > 10) w.ws_row -= 2;
 ii = 0;
-fprintf(stdout, "CHA   LAST   A123P    MAC-AP    ESSID                                     SCAN:%6u/%u\n"
+fprintf(stdout, "CHA   LAST   A123P    MAC-CL       MAC-AP    ESSID                        SCAN:%6u/%u\n"
 		"-----------------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
 if(rds == 1)
 	{
@@ -488,9 +488,11 @@ if(rds == 1)
 			{
 			tvlast = (aplist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "%3u %s %c%c%c%c%c %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+				fprintf(stdout, "%3u %s %c%c%c%c%c %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
 				(aplist + i)->apdata->akmstat,
 				(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
+				(aplist + i)->apdata->macc[00], (aplist + i)->apdata->macc[01], (aplist + i)->apdata->macc[02],
+				(aplist + i)->apdata->macc[03],	(aplist + i)->apdata->macc[04], (aplist + i)->apdata->macc[05],
 				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
 				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
 				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
@@ -504,8 +506,10 @@ if(rds == 1)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s +%c   %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "    %s ++%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
 				(calist + i)->cadata->m2,
+				(calist + i)->cadata->macc[00], (calist + i)->cadata->macc[01], (calist + i)->cadata->macc[02],
+				(calist + i)->cadata->macc[03],	(calist + i)->cadata->macc[04], (calist + i)->cadata->macc[05],
 				(calist + i)->cadata->maca[00], (calist + i)->cadata->maca[01], (calist + i)->cadata->maca[02],
 				(calist + i)->cadata->maca[03],	(calist + i)->cadata->maca[04], (calist + i)->cadata->maca[05],
 				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid);
@@ -522,9 +526,11 @@ if(rds == 2)
 			{
 			tvlast = (aplist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "%3u %s %c%c%c%c%c %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+				fprintf(stdout, "%3u %s %c%c%c%c%c %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
 				(aplist + i)->apdata->akmstat,
 				(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
+				(aplist + i)->apdata->macc[00], (aplist + i)->apdata->macc[01], (aplist + i)->apdata->macc[02],
+				(aplist + i)->apdata->macc[03],	(aplist + i)->apdata->macc[04], (aplist + i)->apdata->macc[05],
 				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
 				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
 				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
@@ -538,8 +544,10 @@ if(rds == 2)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s +%c   %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "    %s ++%c    %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
 				(calist + i)->cadata->m2,
+				(calist + i)->cadata->macc[00], (calist + i)->cadata->macc[01], (calist + i)->cadata->macc[02],
+				(calist + i)->cadata->macc[03],	(calist + i)->cadata->macc[04], (calist + i)->cadata->macc[05],
 				(calist + i)->cadata->maca[00], (calist + i)->cadata->maca[01], (calist + i)->cadata->maca[02],
 				(calist + i)->cadata->maca[03],	(calist + i)->cadata->maca[04], (calist + i)->cadata->maca[05],
 				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid);
@@ -3240,8 +3248,8 @@ glh->reserved = 0;
 i += sizeof(struct genlmsghdr);
 nla = (struct nlattr*)(nltxbuffer + i);
 nla->nla_len = 8;
-nla->nla_type = NL80211_ATTR_WIPHY;
-*(u32*)nla_data(nla) = ifaktwiphy;
+nla->nla_type = NL80211_ATTR_IFINDEX;
+*(u32*)nla_data(nla) = ifaktindex;
 i += 8;
 nla = (struct nlattr*)(nltxbuffer + i);
 nla->nla_len = 8;
