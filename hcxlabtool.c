@@ -506,7 +506,7 @@ if(rds == 1)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s ++%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "    %s p+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->macc[00], (calist + i)->cadata->macc[01], (calist + i)->cadata->macc[02],
 				(calist + i)->cadata->macc[03],	(calist + i)->cadata->macc[04], (calist + i)->cadata->macc[05],
@@ -544,7 +544,7 @@ if(rds == 2)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s ++%c    %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "    %s p+%c    %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->macc[00], (calist + i)->cadata->macc[01], (calist + i)->cadata->macc[02],
 				(calist + i)->cadata->macc[03],	(calist + i)->cadata->macc[04], (calist + i)->cadata->macc[05],
@@ -2421,7 +2421,7 @@ while(0 < infolen)
 						if(memcmp(rsnpsk, &infoptr->ie[tlen], 4) == 0)
 							{
 							apdata->akm = infoptr->ie[tlen +3];
-							apdata->akmstat = '+';
+							apdata->akmstat = 'p';
 							}
 						tlen += 4;
 						if(tlen > infoptr->len) return;
@@ -2458,7 +2458,7 @@ while(0 < infolen)
 								if(memcmp(wpapsk, &infoptr->ie[tlen], 4) == 0)
 									{
 									apdata->akm1 = infoptr->ie[tlen +3];
-									apdata->akmstat = '+';
+									apdata->akmstat = 'p';
 									}
 								tlen += 4;
 								if(tlen > infoptr->len) return;
@@ -4606,7 +4606,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                  1 = show all APs\n"
 	"                  2 = show only APs with comfirmed M1M2, M1M2M3 or PMKID only\n"
 	"                  columns:\n"
-	"                   A = AKM PSK\n"
+	"                   A = AKM (p)re-shared key\n"
 	"                   1 = received M1\n"
 	"                   2 = received M1M2\n"
 	"                   3 = received M1M2M3\n"
