@@ -2725,7 +2725,7 @@ return;
 }
 /*===========================================================================*/
 /*===========================================================================*/
-/* MAIN SCAN LOOP */
+/*SCAN LOOPs */
 static bool nl_scanloop(void)
 {
 static ssize_t i;
@@ -2775,7 +2775,89 @@ while(!wanteventflag)
 			lifetime++;
 			if((lifetime % timehold) == 0)
 				{
-				if(rds > 0) show_realtime();
+				scanlistindex++;
+				if(nl_set_frequency() == false) errorcount++;
+				}
+			if((lifetime % 10) == 0)
+				{
+				if(gpiostatusled > 0)
+					{
+					GPIO_SET = 1 << gpiostatusled;
+					nanosleep(&sleepled, NULL);
+					GPIO_CLR = 1 << gpiostatusled;
+					}
+				if(gpiobutton > 0)
+					{
+					if(GET_GPIO(gpiobutton) > 0)
+						{
+						wanteventflag |= EXIT_ON_GPIOBUTTON;
+						if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
+						}
+					}
+				if(errortxcount > errorcountmax) wanteventflag |= EXIT_ON_ERROR;
+				}
+			if((tottime > 0) && (lifetime >= tottime)) wanteventflag |= EXIT_ON_TOT;
+			if((lifetime % timewatchdog) == 0)
+				{
+				if(packetcount == packetcountlast) wanteventflag |= EXIT_ON_WATCHDOG;
+				packetcountlast = packetcount;
+				}
+			}
+		}
+	}
+return true;
+}
+/*---------------------------------------------------------------------------*/
+static bool nl_scanloop_rds(void)
+{
+static ssize_t i;
+static int fd_epoll = 0;
+static int epi = 0;
+static int epret = 0;
+static struct epoll_event ev, events[EPOLL_EVENTS_MAX];
+static size_t packetcountlast = 0;
+static u64 timer1count;
+static struct timespec sleepled;
+
+if((fd_epoll= epoll_create(1)) < 0) return false;
+ev.data.fd = fd_socket_rx;
+ev.events = EPOLLIN;
+if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_socket_rx, &ev) < 0) return false;
+epi++;
+
+ev.data.fd = fd_timer1;
+ev.events = EPOLLIN;
+if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_timer1, &ev) < 0) return false;
+epi++;
+
+sleepled.tv_sec = 0;
+sleepled.tv_nsec = GPIO_LED_DELAY;
+
+while(!wanteventflag)
+	{
+	if(errorcount > errorcountmax) wanteventflag |= EXIT_ON_ERROR;
+	epret = epoll_pwait(fd_epoll, events, epi, timerwaitnd, NULL);
+	if(epret == -1)
+		{
+		if(errno != EINTR)
+			{
+			#ifdef HCXDEBUG
+			fprintf(fh_debug, "epret failed: %s\n", strerror(errno));
+			#endif
+			errorcount++;
+			}
+		continue;
+		}
+	for(i = 0; i < epret; i++)
+		{
+		if(events[i].data.fd == fd_socket_rx) process_packet();
+		else if(events[i].data.fd == fd_timer1)
+			{
+			if(read(fd_timer1, &timer1count, sizeof(u64)) == -1) errorcount++;
+			lifetime++;
+			if((lifetime % timehold) == 0)
+				{
+				show_realtime();
 				scanlistindex++;
 				if(nl_set_frequency() == false) errorcount++;
 				}
@@ -3887,7 +3969,7 @@ priolen = sizeof(prioval);
 prioval = 20;
 if(setsockopt(fd_socket_rx, SOL_SOCKET, SO_PRIORITY, &prioval, priolen) < 0) return false;
 memset(&saddr, 0, sizeof(saddr));
-saddr.sll_family = PF_PACKET;
+saddr.sll_family = AF_PACKET;
 saddr.sll_ifindex = ifaktindex;
 saddr.sll_protocol = htons(ETH_P_ALL);
 saddr.sll_halen = ETH_ALEN;
@@ -3936,7 +4018,7 @@ if(bpf.len > 0)
 	if(setsockopt(fd_socket_rx, SOL_SOCKET, SO_ATTACH_FILTER, &bpf, sizeof(bpf)) < 0) return false;
 	}
 memset(&saddr, 0, sizeof(saddr));
-saddr.sll_family = PF_PACKET;
+saddr.sll_family = AF_PACKET;
 saddr.sll_ifindex = ifaktindex;
 saddr.sll_protocol = htons(ETH_P_ALL);
 saddr.sll_halen = ETH_ALEN;
@@ -5021,10 +5103,21 @@ if(vmflag == false) fprintf(stdout, "Failed to set virtual MAC!\n");
 if(bpf.len == 0) fprintf(stderr, "BPF is unset! Make sure hcxdumptool is running in a 100%% controlled environment!\n\n");
 fprintf(stdout, "starting...\033[?25l\n");
 nanosleep(&tspecifo, &tspeciforem);
-if(nl_scanloop() == false)
+if(rds == 0)
 	{
-	errorcount++;
-	fprintf(stderr, "failed to initialize main scan loop\n");
+	if(nl_scanloop() == false)
+		{
+		errorcount++;
+		fprintf(stderr, "failed to initialize main scan loop\n");
+		}
+	}
+else
+	{
+	if(nl_scanloop_rds() == false)
+		{
+		errorcount++;
+		fprintf(stderr, "failed to initialize main scan loop\n");
+		}
 	}
 /*---------------------------------------------------------------------------*/
 byebye:
