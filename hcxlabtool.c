@@ -5066,6 +5066,7 @@ if(ftcflag == true)
 	if((fd_fakeclock = open(ftcname, O_RDONLY)) > 0)
 		{
 		if(read(fd_fakeclock, &tspecakt, sizeof(struct timespec)) == sizeof(struct timespec)) printf("read timestamp: %ld\n", tspecakt.tv_sec);
+		clock_settime(CLOCK_REALTIME, &tspecakt);
 		close(fd_fakeclock);
 		}
 	}
