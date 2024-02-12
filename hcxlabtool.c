@@ -20,6 +20,7 @@
 #include <linux/version.h>
 #include <net/ethernet.h>
 #include <net/if.h>
+#include <pwd.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -53,6 +54,7 @@
 static bool activemonitorflag = false;
 static bool vmflag = true;
 static bool disassociationflag = true;
+static bool ftcflag = false;
 
 static u16 wanteventflag = 0;
 static u16 exiteapolpmkidflag = 0;
@@ -475,8 +477,10 @@ if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1)
 	{
 	errorcount++;
 	}
-if(w.ws_row > 10) w.ws_row -= 2;
+if(w.ws_row > 10) w.ws_row -= 4;
 ii = 0;
+qsort(aplist, APLIST_MAX, APLIST_SIZE, sort_aplist_by_tsakt);
+qsort(calist, CALIST_MAX, CALIST_SIZE, sort_calist_by_tsakt);
 fprintf(stdout, "CHA   LAST   A123P    MAC-CL       MAC-AP    ESSID                        SCAN:%6u/%u\n"
 		"-----------------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
 if(rds == 1)
@@ -544,7 +548,7 @@ if(rds == 2)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s p+%c    %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "    %s p+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->macc[00], (calist + i)->cadata->macc[01], (calist + i)->cadata->macc[02],
 				(calist + i)->cadata->macc[03],	(calist + i)->cadata->macc[04], (calist + i)->cadata->macc[05],
@@ -4601,6 +4605,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 #endif
 	"--bpf=<file>   : input Berkeley Packet Filter (BPF) code (maximum %d instructions) in tcpdump decimal numbers format\n"
 	"                  see --help for more information\n"
+	"--ftc          : enable fake fime clock\n"
 	"--rds=<digit>  : enable real time display\n"
 	"                  default = 0 (off)\n"
 	"                  1 = show all APs\n"
@@ -4687,6 +4692,7 @@ int main(int argc, char *argv[])
 {
 static int auswahl = -1;
 static int index = 0;
+static int fd_fakeclock = 0;
 static u8 exiteapolflag = 0;
 static u8 exitsigtermflag = 0;
 static u8 exitgpiobuttonflag = 0;
@@ -4694,16 +4700,20 @@ static u8 exittotflag = 0;
 static u8 exitwatchdogflag = 0;
 static u8 exiterrorflag = 0;
 static struct timespec tspecifo, tspeciforem;
+static struct passwd *pwd;
+static uid_t uid;
+static struct tpacket_stats lStats = { 0 };
+static socklen_t lStatsLength = sizeof(lStats);
+static char *bpfname = NULL;
+#ifdef HCXWANTLIBPCAP
+static char *bpfstring = NULL;
+#endif
 static bool monitormodeflag = false;
 static bool interfaceinfoflag = false;
 static bool interfacefrequencyflag = false;
 static bool interfacelistflag = false;
 static bool interfacelistshortflag = false;
 static bool rooterrorflag = false;
-static char *bpfname = NULL;
-#ifdef HCXWANTLIBPCAP
-static char *bpfstring = NULL;
-#endif
 static char *essidlistname = NULL;
 static char *userchannellistname = NULL;
 static char *userfrequencylistname = NULL;
@@ -4716,14 +4726,14 @@ static char *nmeaoutname = NULL;
 static const char *rebootstring = "reboot";
 static const char *poweroffstring = "poweroff";
 static const char *short_options = "i:w:c:f:m:I:t:FLlAhHv";
-static struct tpacket_stats lStats = { 0 };
-static socklen_t lStatsLength = sizeof(lStats);
+static char ftcname[PATH_MAX] = { 0 };
 static const struct option long_options[] =
 {
 	{"bpf",				required_argument,	NULL,	HCX_BPF},
 #ifdef HCXWANTLIBPCAP
 	{"bpfc",			required_argument,	NULL,	HCX_BPFC},
 #endif
+	{"ftc",				no_argument,		NULL,	HCX_FTC},
 	{"disable_disassociation",	no_argument,		NULL,	HCX_DISABLE_DISASSOCIATION},
 	{"m2max",			required_argument,	NULL,	HCX_M1M2ROGUE_MAX},
 	{"attemptapmax",		required_argument,	NULL,	HCX_APCOUNT_MAX},
@@ -4763,6 +4773,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		case HCX_BPF:
 		bpfname = optarg;
 		break;
+
 #ifdef HCXWANTLIBPCAP
 		case HCX_BPFC:
 		bpfstring = optarg;
@@ -4773,6 +4784,10 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 			}
 		break;
 #endif
+		case HCX_FTC:
+		ftcflag = true;
+		break;
+
 		case HCX_PCAPNGNAME:
 		pcapngoutname = optarg;
 		break;
@@ -5036,12 +5051,23 @@ if(interfaceinfoflag == true)
 	goto byebye;
 	}
 /*---------------------------------------------------------------------------*/
-if(getuid() != 0)
+if((uid = getuid()) != 0)
 	{
 	errorcount++;
 	fprintf(stderr, "%s must be run as root\n", basename(argv[0]));
 	rooterrorflag = true;
 	goto byebye;
+	}
+pwd = getpwuid(uid);
+strncpy(ftcname, pwd->pw_dir, PATH_MAX -10);
+strcat(ftcname, "/.hcxftc");
+if(ftcflag == true)
+	{
+	if((fd_fakeclock = open(ftcname, O_RDONLY)) > 0)
+		{
+		if(read(fd_fakeclock, &tspecakt, sizeof(struct timespec)) == sizeof(struct timespec)) printf("read timestamp: %ld\n", tspecakt.tv_sec);
+		close(fd_fakeclock);
+		}
 	}
 if(set_interface(interfacefrequencyflag, userfrequencylistname, userchannellistname) == false)
 	{
@@ -5138,6 +5164,15 @@ fprintf(stdout, "\n\033[?25h");
 fprintf(stderr, "%u ERROR(s) during runtime\n", errorcount);
 fprintf(stdout, "%u Packet(s) captured by kernel\n", lStats.tp_packets);
 fprintf(stdout, "%u Packet(s) dropped by kernel\n", lStats.tp_drops);
+if(ftcflag == true)
+	{
+	clock_gettime(CLOCK_REALTIME, &tspecakt);
+	if((fd_fakeclock = open(ftcname, O_WRONLY | O_TRUNC | O_CREAT, 0777)) > 0)
+		{
+		if(write(fd_fakeclock, &tspecakt, sizeof(struct timespec)) == sizeof(struct timespec)) printf("write timestamp: %ld\n", tspecakt.tv_sec);
+		close(fd_fakeclock);
+		}
+	}
 if(exiteapolflag != 0)
 	{
 	if((wanteventflag & EXIT_ON_EAPOL_PMKID) == EXIT_ON_EAPOL_PMKID) fprintf(stdout, "exit on PMKID\n");

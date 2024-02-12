@@ -3,7 +3,7 @@
 #ifdef HCXWANTLIBPCAP
 #define HCX_BPFC			2
 #endif
-#define HCX_ATTACK_LEVEL		3
+#define HCX_FTC				3
 #define HCX_TX_MAX			4
 #define HCX_GPIO_BUTTON			5
 #define HCX_GPIO_STATUSLED		6
@@ -68,7 +68,6 @@
 #define TIMER1_INTERVAL_SEC	1L
 #define TIMER1_INTERVAL_NSEC	0L
 #define EPOLL_EVENTS_MAX	5
-
 
 #define TIMEHOLD		6
 #define TSWAITEAPOLA		10000000UL
