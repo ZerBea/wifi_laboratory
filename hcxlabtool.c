@@ -2510,6 +2510,7 @@ memset((aplist + i)->apdata, 0, APDATA_SIZE);
 (aplist + i)->apdata->akmstat = ' ';
 (aplist + i)->apdata->apcount = apcountmax;
 (aplist + i)->apdata->proberesponse = true;
+(aplist + i)->apdata->beacon = false;
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 memcpy((aplist + i)->apdata->macc, macclientrg, ETH_ALEN);
 get_tags((aplist + i)->apdata, proberesponselen, proberesponse->ie);
@@ -2546,7 +2547,6 @@ static u16 beaconlen;
 
 beacon = (ieee80211_beacon_proberesponse_t*)payloadptr;
 if((beaconlen = payloadlen - IEEE80211_BEACON_SIZE) < IEEE80211_IETAG_SIZE) return;
-
 for(i = 0; i < APLIST_MAX - 1; i++)
 	{
 	if((aplist + i)->tsakt == 0) break;
@@ -2621,6 +2621,7 @@ memset((aplist + i)->apdata, 0, APDATA_SIZE);
 (aplist + i)->apdata->akmstat = ' ';
 (aplist + i)->apdata->apcount = apcountmax;
 (aplist + i)->apdata->beacon = true;
+(aplist + i)->apdata->proberesponse = false;
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 memcpy((aplist + i)->apdata->macc, macclientrg, ETH_ALEN);
 get_tags((aplist + i)->apdata, beaconlen, beacon->ie);
