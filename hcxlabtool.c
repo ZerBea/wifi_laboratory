@@ -82,12 +82,11 @@ static FILE *fh_debug = NULL;
 #endif
 static struct sock_fprog bpf = { 0 };
 
-static u8 rds = 0;
-
 static int ifaktindex = 0;
 static int ifaktwiphy = 0;
 static u8 ifaktstatus = 0;
 static u8 ifakttype = 0;
+static u8 rds = 0;
 
 static aplist_t *aplist = NULL;
 static aplist_t *aprglist = NULL;
@@ -118,7 +117,6 @@ static struct timespec tspecakt = { 0 };
 static struct timespec tsremain, tsreq = {0, TSWAITEAPOLA};
 
 static u64 tsakt = 0;
-static u64 tsfirst = 0;
 static u64 tottime = 0;
 static u64 timehold = TIMEHOLD;
 static int timerwaitnd = TIMER_EPWAITND;
@@ -481,8 +479,8 @@ if(w.ws_row > 10) w.ws_row -= 4;
 ii = 0;
 qsort(aplist, APLIST_MAX, APLIST_SIZE, sort_aplist_by_tsakt);
 qsort(calist, CALIST_MAX, CALIST_SIZE, sort_calist_by_tsakt);
-fprintf(stdout, "CHA   LAST   A123P    MAC-CL       MAC-AP    ESSID                        SCAN:%6u/%u\n"
-		"-----------------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
+fprintf(stdout, "CHA   LAST   A123P    MAC-CL       MAC-AP    ESSID            SCAN:%6u/%u\n"
+		"-----------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
 if(rds == 1)
 	{
 	for(i = 0; i < APLIST_MAX - 1; i++)
@@ -4139,13 +4137,7 @@ return true;
 static void init_values(void)
 {
 static size_t i;
-static struct timespec waitfordevice;
 
-waitfordevice.tv_sec = 1;
-waitfordevice.tv_nsec = 0;
-clock_gettime(CLOCK_REALTIME, &tspecakt);
-tsfirst = ((u64)tspecakt.tv_sec * TSSECOND1) + tspecakt.tv_nsec;
-nanosleep(&waitfordevice, NULL);
 clock_gettime(CLOCK_REALTIME, &tspecakt);
 tsakt = ((u64)tspecakt.tv_sec * TSSECOND1) + tspecakt.tv_nsec;
 strftime(timestring, TIMESTRING_LEN, "%Y%m%d%H%M%S", localtime(&tspecakt.tv_sec));
@@ -4700,8 +4692,8 @@ static u8 exittotflag = 0;
 static u8 exitwatchdogflag = 0;
 static u8 exiterrorflag = 0;
 static struct timespec tspecifo, tspeciforem;
-static struct passwd *pwd;
-static uid_t uid;
+static struct passwd *pwd = NULL;
+static uid_t uid = 1000;
 static struct tpacket_stats lStats = { 0 };
 static socklen_t lStatsLength = sizeof(lStats);
 static char *bpfname = NULL;
@@ -4985,6 +4977,21 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		}
 	}
 setbuf(stdout, NULL);
+uid = getuid();
+if((uid == 0) && (ftcflag == true))
+	{
+	pwd = getpwuid(uid);
+	strncpy(ftcname, pwd->pw_dir, PATH_MAX -10);
+	strcat(ftcname, "/.hcxftc");
+		{
+		if((fd_fakeclock = open(ftcname, O_RDONLY)) > 0)
+			{
+			if(read(fd_fakeclock, &tspecakt, sizeof(struct timespec)) == sizeof(struct timespec)) clock_settime(CLOCK_REALTIME, &tspecakt);
+			printf("read timestamp: %ld\n", tspecakt.tv_sec);
+			close(fd_fakeclock);
+			}
+		}
+	}
 hcxpid = getpid();
 #ifdef HCXDEBUG
 if((fh_debug = fopen("hcxerror.log", "a")) == NULL)
@@ -5051,24 +5058,12 @@ if(interfaceinfoflag == true)
 	goto byebye;
 	}
 /*---------------------------------------------------------------------------*/
-if((uid = getuid()) != 0)
+if(uid != 0)
 	{
 	errorcount++;
 	fprintf(stderr, "%s must be run as root\n", basename(argv[0]));
 	rooterrorflag = true;
 	goto byebye;
-	}
-pwd = getpwuid(uid);
-strncpy(ftcname, pwd->pw_dir, PATH_MAX -10);
-strcat(ftcname, "/.hcxftc");
-if(ftcflag == true)
-	{
-	if((fd_fakeclock = open(ftcname, O_RDONLY)) > 0)
-		{
-		if(read(fd_fakeclock, &tspecakt, sizeof(struct timespec)) == sizeof(struct timespec)) printf("read timestamp: %ld\n", tspecakt.tv_sec);
-		clock_settime(CLOCK_REALTIME, &tspecakt);
-		close(fd_fakeclock);
-		}
 	}
 if(set_interface(interfacefrequencyflag, userfrequencylistname, userchannellistname) == false)
 	{
@@ -5122,9 +5117,9 @@ if(set_timer() == false)
 tspecifo.tv_sec = 5;
 tspecifo.tv_nsec = 0;
 fprintf(stdout, "\nThis is a highly experimental penetration testing tool!\n"
-		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n\n"
-		"Misuse within a network, without specific authorization,\n"
-		"may cause irreparable damage and result in significant consequences!\n"
+		"It is made to detect vulnerabilities in your NETWORK mercilessly!\n"
+		"Misuse within a network, without specific authorization, may cause\n"
+		"irreparable damage and result in significant consequences!\n"
 		"Not understanding what you were doing is not going to work as an excuse!\n\n");
 if(vmflag == false) fprintf(stdout, "Failed to set virtual MAC!\n");
 if(bpf.len == 0) fprintf(stderr, "BPF is unset! Make sure hcxdumptool is running in a 100%% controlled environment!\n\n");
@@ -5165,7 +5160,7 @@ fprintf(stdout, "\n\033[?25h");
 fprintf(stderr, "%u ERROR(s) during runtime\n", errorcount);
 fprintf(stdout, "%u Packet(s) captured by kernel\n", lStats.tp_packets);
 fprintf(stdout, "%u Packet(s) dropped by kernel\n", lStats.tp_drops);
-if(ftcflag == true)
+if((uid == 0) && (ftcflag == true))
 	{
 	clock_gettime(CLOCK_REALTIME, &tspecakt);
 	if((fd_fakeclock = open(ftcname, O_WRONLY | O_TRUNC | O_CREAT, 0777)) > 0)
