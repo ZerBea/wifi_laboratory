@@ -137,7 +137,6 @@ static u64 packetcount = 1;
 static size_t proberesponsetxindex = 0;
 static u32 proberesponsetxmax = PROBERESPONSETX_MAX;
 
-
 static u64 beacontimestamp = 1;
 
 static rth_t *rth = NULL;
@@ -895,12 +894,22 @@ if(pcapngoutname == NULL)
 	snprintf(pcapngname, PATH_MAX, "%s-%s.pcapng", timestring, ifaktname);
 	while(stat(pcapngname, &statinfo) == 0)
 		{
-		snprintf(pcapngname, PATH_MAX, "%s-%s-%02d.pcapng", timestring, ifaktname, c);
+		snprintf(pcapngname, PATH_MAX, "%s-%s.pcapng-%02d", timestring, ifaktname, c);
 		c++;
 		}
 	pcapngfilename = pcapngname;
 	}
-else pcapngfilename = pcapngoutname;
+else
+	{
+	c = 0;
+	snprintf(pcapngname, PATH_MAX -4, "%s", pcapngoutname);
+	while(stat(pcapngname, &statinfo) == 0)
+		{
+		snprintf(pcapngname, PATH_MAX -4, "%s-%02d", pcapngoutname, c);
+		c++;
+		}
+	pcapngfilename = pcapngname;
+	}
 umask(0);
 if((fd_pcapng = open(pcapngfilename, O_WRONLY | O_TRUNC | O_CREAT, 0777)) < 0) return false;
 if(writeshb() == false) return false;
@@ -4130,7 +4139,7 @@ strcat(ftcname, "/.hcxftc");
 clock_gettime(CLOCK_REALTIME, &tspecakt);
 if((fd_fakeclock = open(ftcname, O_WRONLY | O_TRUNC | O_CREAT, 0777)) > 0)
 	{
-	if(write(fd_fakeclock, &tspecakt, sizeof(struct timespec)) == sizeof(struct timespec)) printf("write timestamp: %ld\n", tspecakt.tv_sec);
+	if(write(fd_fakeclock, &tspecakt, sizeof(struct timespec)) != sizeof(struct timespec)) fprintf(stderr, "failed to write timestamp\n");
 	close(fd_fakeclock);
 	}
 return;
@@ -4149,7 +4158,6 @@ if((fd_fakeclock = open(ftcname, O_RDONLY)) > 0)
 	if(read(fd_fakeclock, &tssaved, sizeof(struct timespec)) == sizeof(struct timespec))
 		{
 		if(tspecakt.tv_sec < tssaved.tv_sec) clock_settime(CLOCK_REALTIME, &tspecakt);
-		printf("read timestamp: %ld\n", tspecakt.tv_sec);
 		}
 	close(fd_fakeclock);
 	}
@@ -4607,7 +4615,6 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                  default: first suitable INTERFACE\n"
 	"                  warning: %s changes the virtual MAC address of the INTERFACE\n"
 	"-w <outfile>   : write packets to a pcapng-format file named <outfile>\n"
-	"                  existing file will be overwritten\n" 
 	"                  default outfile name: yyyyddmmhhmmss-interfacename.pcapng\n"
 	"                  existing file will not be overwritten\n" 
 	"                  get more information: https://pcapng.com/\n"
@@ -5046,6 +5053,15 @@ if((gpiobutton + gpiostatusled) > 0)
 		errorcount++;
 		fprintf(stderr, "failed to initialize Raspberry Pi GPIO\n");
 		goto byebye;
+		}
+	if(gpiobutton > 0)
+		{
+		if(GET_GPIO(gpiobutton) > 0)
+			{
+			wanteventflag = EXIT_ON_SIGTERM;
+			if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
+			goto byebye;
+			}
 		}
 	}
 if(init_lists() == false)
