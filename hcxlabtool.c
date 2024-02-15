@@ -56,6 +56,9 @@ static bool vmflag = true;
 static bool disassociationflag = true;
 static bool ftcflag = false;
 
+static uid_t uid = 1000;
+static struct passwd *pwd = NULL;
+
 static u16 wanteventflag = 0;
 static u16 exiteapolpmkidflag = 0;
 static u16 exiteapolm2flag = 0;
@@ -76,6 +79,7 @@ static int fd_socket_rx = 0;
 static int fd_socket_tx = 0;
 static int fd_timer1 = 0;
 static int fd_pcapng = 0;
+static int fd_fakeclock = 0;
 
 #ifdef HCXDEBUG
 static FILE *fh_debug = NULL;
@@ -132,6 +136,7 @@ static int clientcountmax = CLIENTCOUNT_MAX;
 static u64 packetcount = 1;
 static size_t proberesponsetxindex = 0;
 static u32 proberesponsetxmax = PROBERESPONSETX_MAX;
+
 
 static u64 beacontimestamp = 1;
 
@@ -4115,6 +4120,42 @@ if(timerfd_settime(fd_timer1, 0, &tval1, NULL) == -1) return false;
 return true;
 }
 /*===========================================================================*/
+/* FTC */
+static void save_ftc(void)
+{
+static char ftcname[PATH_MAX] = { 0 };
+
+strncpy(ftcname, pwd->pw_dir, PATH_MAX -10);
+strcat(ftcname, "/.hcxftc");
+clock_gettime(CLOCK_REALTIME, &tspecakt);
+if((fd_fakeclock = open(ftcname, O_WRONLY | O_TRUNC | O_CREAT, 0777)) > 0)
+	{
+	if(write(fd_fakeclock, &tspecakt, sizeof(struct timespec)) == sizeof(struct timespec)) printf("write timestamp: %ld\n", tspecakt.tv_sec);
+	close(fd_fakeclock);
+	}
+return;
+}
+/*---------------------------------------------------------------------------*/
+static void set_ftc(void)
+{
+static struct timespec tssaved = { 0 };
+static char ftcname[PATH_MAX] = { 0 };
+
+clock_gettime(CLOCK_REALTIME, &tspecakt);
+strncpy(ftcname, pwd->pw_dir, PATH_MAX -10);
+strcat(ftcname, "/.hcxftc");
+if((fd_fakeclock = open(ftcname, O_RDONLY)) > 0)
+	{
+	if(read(fd_fakeclock, &tssaved, sizeof(struct timespec)) == sizeof(struct timespec))
+		{
+		if(tspecakt.tv_sec < tssaved.tv_sec) clock_settime(CLOCK_REALTIME, &tspecakt);
+		printf("read timestamp: %ld\n", tspecakt.tv_sec);
+		}
+	close(fd_fakeclock);
+	}
+return;
+}
+/*===========================================================================*/
 /* SIGNALHANDLER */
 static void signal_handler(int signum)
 {
@@ -4685,7 +4726,6 @@ int main(int argc, char *argv[])
 {
 static int auswahl = -1;
 static int index = 0;
-static int fd_fakeclock = 0;
 static u8 exiteapolflag = 0;
 static u8 exitsigtermflag = 0;
 static u8 exitgpiobuttonflag = 0;
@@ -4693,8 +4733,6 @@ static u8 exittotflag = 0;
 static u8 exitwatchdogflag = 0;
 static u8 exiterrorflag = 0;
 static struct timespec tspecifo, tspeciforem;
-static struct passwd *pwd = NULL;
-static uid_t uid = 1000;
 static struct tpacket_stats lStats = { 0 };
 static socklen_t lStatsLength = sizeof(lStats);
 static char *bpfname = NULL;
@@ -4719,7 +4757,6 @@ static char *nmeaoutname = NULL;
 static const char *rebootstring = "reboot";
 static const char *poweroffstring = "poweroff";
 static const char *short_options = "i:w:c:f:m:I:t:FLlAhHv";
-static char ftcname[PATH_MAX] = { 0 };
 static const struct option long_options[] =
 {
 	{"bpf",				required_argument,	NULL,	HCX_BPF},
@@ -4979,20 +5016,8 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 	}
 setbuf(stdout, NULL);
 uid = getuid();
-if((uid == 0) && (ftcflag == true))
-	{
-	pwd = getpwuid(uid);
-	strncpy(ftcname, pwd->pw_dir, PATH_MAX -10);
-	strcat(ftcname, "/.hcxftc");
-		{
-		if((fd_fakeclock = open(ftcname, O_RDONLY)) > 0)
-			{
-			if(read(fd_fakeclock, &tspecakt, sizeof(struct timespec)) == sizeof(struct timespec)) clock_settime(CLOCK_REALTIME, &tspecakt);
-			printf("read timestamp: %ld\n", tspecakt.tv_sec);
-			close(fd_fakeclock);
-			}
-		}
-	}
+pwd = getpwuid(uid);
+if((uid == 0) && (ftcflag == true)) set_ftc();
 hcxpid = getpid();
 #ifdef HCXDEBUG
 if((fh_debug = fopen("hcxerror.log", "a")) == NULL)
@@ -5161,15 +5186,7 @@ fprintf(stdout, "\n\033[?25h");
 fprintf(stderr, "%u ERROR(s) during runtime\n", errorcount);
 fprintf(stdout, "%u Packet(s) captured by kernel\n", lStats.tp_packets);
 fprintf(stdout, "%u Packet(s) dropped by kernel\n", lStats.tp_drops);
-if((uid == 0) && (ftcflag == true))
-	{
-	clock_gettime(CLOCK_REALTIME, &tspecakt);
-	if((fd_fakeclock = open(ftcname, O_WRONLY | O_TRUNC | O_CREAT, 0777)) > 0)
-		{
-		if(write(fd_fakeclock, &tspecakt, sizeof(struct timespec)) == sizeof(struct timespec)) printf("write timestamp: %ld\n", tspecakt.tv_sec);
-		close(fd_fakeclock);
-		}
-	}
+if((uid == 0) && (ftcflag == true)) save_ftc();
 if(exiteapolflag != 0)
 	{
 	if((wanteventflag & EXIT_ON_EAPOL_PMKID) == EXIT_ON_EAPOL_PMKID) fprintf(stdout, "exit on PMKID\n");
