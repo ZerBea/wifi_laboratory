@@ -4110,9 +4110,7 @@ for(i = 0; i < ifpresentlistcounter; i++)
 if(nl_get_interfacephylist() == false) return false;
 if(nl_get_interfacelist() == false) return false;
 if(rt_get_interfacelist() == false) return false;
-printf("ss %d\n", IFNAMSIZ);
 if(ifpresentlistcounter == 0) return false;
-
 qsort(ifpresentlist, ifpresentlistcounter, INTERFACELIST_SIZE, sort_interfacelist_by_wiphy);
 return true;
 }
