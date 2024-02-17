@@ -69,7 +69,7 @@
 #define TIMER1_INTERVAL_NSEC	0L
 #define EPOLL_EVENTS_MAX	5
 
-#define TIMEHOLD		6
+#define TIMEHOLD		7
 #define TSWAITEAPOLA		10000000UL
 #define TSSECOND1		1000000000ULL
 #define TSEAPOL1		50000000ULL
@@ -242,12 +242,10 @@ typedef struct __attribute__((__packed__))
 #define IF_HAS_NLMON		0x03
 #define IF_HAS_NLMON_ACTIVE	0x07
 #define IF_IS_SHARED		0x08
-
  u8	type;
 #define IF_STAT_MONITOR		0x01
 #define IF_STAT_UP		0x02
 #define IF_STAT_OK		0x03
-
  u8	status;
  u8	hwmac[6];
  u8	vimac[6];

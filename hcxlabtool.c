@@ -97,7 +97,7 @@ static aplist_t *aprglist = NULL;
 static calist_t *calist = NULL;
 
 static frequencylist_t *ifaktfrequencylist = NULL;
-static char ifaktname[IF_NAMESIZE] = { 0 };
+static char ifaktname[IF_NAMESIZE +1] = { 0 };
 static u8 ifakthwmac[ETH_ALEN] = { 0 };
 
 static u16 nlfamily = 0;
@@ -4941,7 +4941,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 			perror("failed to get interface index");
 			exit(EXIT_FAILURE);
 			}
-		strncpy(ifaktname, optarg, IF_NAMESIZE -1);
+		strncpy(ifaktname, optarg, IF_NAMESIZE);
 		break;
 
 		case HCX_BPF:
