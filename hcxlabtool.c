@@ -410,6 +410,7 @@ static void show_interfacelist_short(void)
 static size_t i;
 static const char *po = "N/A";
 static const char *mode = "-";
+static const char *unassigned = "unassigned";
 
 for(i = 0; i < ifpresentlistcounter; i++)
 	{
@@ -424,10 +425,14 @@ for(i = 0; i < ifpresentlistcounter; i++)
 		if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "S";
 		else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "s";
 		}
-	fprintf(stdout, "%3d\t%3d\t%02x%02x%02x%02x%02x%02x\t%02x%02x%02x%02x%02x%02x\t%s\t%-*s\t%s\t%s\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
+	if((ifpresentlist + i)->name[0] != 0) fprintf(stdout, "%3d\t%3d\t%02x%02x%02x%02x%02x%02x\t%02x%02x%02x%02x%02x%02x\t%s\t%-*s\t%s\t%s\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
 		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
 		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
 		mode, IF_NAMESIZE, (ifpresentlist + i)->name, (ifpresentlist + i)->driver, po);
+	else fprintf(stdout, "%3d\t%3d\t%02x%02x%02x%02x%02x%02x\t%02x%02x%02x%02x%02x%02x\t%s\t%-*s\t%s\t%s\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
+		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
+		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
+		mode, IF_NAMESIZE, unassigned, (ifpresentlist + i)->driver, po);
 	}
 return;
 }
@@ -437,8 +442,9 @@ static void show_interfacelist(void)
 static size_t i;
 static const char *po = "N/A";
 static const char *mode = "-";
+static const char *unassigned = "unassigned";
 
-fprintf(stdout, "available wlan devices:\n\nphy idx hw-mac       virtual-mac  m ifname           driver (protocol)\n"
+fprintf(stdout, "available physical wlan devices:\n\nphy idx hw-mac       virtual-mac  m ifname           driver (protocol)\n"
 		"---------------------------------------------------------------------------------------------\n");
 for(i = 0; i < ifpresentlistcounter; i++)
 	{
@@ -453,10 +459,15 @@ for(i = 0; i < ifpresentlistcounter; i++)
 		if(((ifpresentlist + i)->type & IFTYPEMONACT) == IFTYPEMONACT) mode = "S";
 		else if(((ifpresentlist + i)->type & IFTYPEMON) == IFTYPEMON) mode = "s";
 		}
-	fprintf(stdout, "%3d %3d %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %s %-*s %s (%s)\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
+	if((ifpresentlist + i)->name[0] != 0) fprintf(stdout, "%3d %3d %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %s %-*s %s (%s)\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
 		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
 		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
 		mode, IF_NAMESIZE, (ifpresentlist + i)->name, (ifpresentlist + i)->driver, po);
+	else fprintf(stdout, "%3d %3d %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %s %-*s %s (%s)\n", (ifpresentlist + i)->wiphy, (ifpresentlist + i)->index,
+		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
+		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
+		mode, IF_NAMESIZE, unassigned, (ifpresentlist + i)->driver, po);
+	
 	}
 fprintf(stdout, "\nmodes reported by the driver:\n"
 		"* active monitor mode available (do not trust it)\n"
@@ -2980,6 +2991,146 @@ while(nla_ok(pos, nestremlen))
 return 0;
 }
 /*---------------------------------------------------------------------------*/
+/*
+Linux Generic Netlink protocol
+    Netlink message header (type: 0x0025)
+    Command: NL80211_CMD_NEW_INTERFACE (7)
+    Family Version: 0
+    Reserved
+Linux 802.11 Netlink
+    Attribute: NL80211_ATTR_WIPHY
+        Len: 8
+        Type: 0x0001, NL80211_ATTR_WIPHY (1)
+        Attribute Value: 0x00000003 (3)
+    Attribute: NL80211_ATTR_IFNAME
+        Len: 12
+        Type: 0x0004, NL80211_ATTR_IFNAME (4)
+        Interface Name: hcxmon0
+    Attribute: NL80211_ATTR_IFTYPE
+        Len: 8
+        Type: 0x0005, NL80211_ATTR_IFTYPE (5)
+        Attribute Type: NL80211_IFTYPE_MONITOR (6)
+*/
+
+static inline bool nl_set_interface(void)
+{
+static size_t ii;
+static ssize_t i;
+static ssize_t msglen;
+static int nlremlen = 0;
+static struct nlmsghdr *nlh;
+static struct genlmsghdr *glh;
+static struct nlattr *nla;
+static struct nlmsgerr *nle;
+static u32 *wiphytmp;
+static u64 *wdevtmp;
+static u32 *ifidxtmp;
+static u8 *vimactmp;
+static char *ifnametmp;
+
+i = 0;
+nlh = (struct nlmsghdr*)nltxbuffer;
+nlh->nlmsg_type = nlfamily;
+nlh->nlmsg_flags = NLM_F_REQUEST | NLM_F_ACK;
+nlh->nlmsg_seq = nlseqcounter++;
+nlh->nlmsg_pid = hcxpid;
+i += sizeof(struct nlmsghdr);
+glh = (struct genlmsghdr*)(nltxbuffer + i);
+glh->cmd = NL80211_CMD_NEW_INTERFACE;
+glh->version = 1;
+glh->reserved = 0;
+i += sizeof(struct genlmsghdr);
+nla = (struct nlattr*)(nltxbuffer + i);
+nla->nla_len = 8;
+
+nla->nla_type = NL80211_ATTR_WIPHY;
+//*(u32*)nla_data(nla) = phyindex;
+i += 8;
+nla = (struct nlattr*)(nltxbuffer + i);
+nla->nla_len = 8;
+
+nla->nla_type = NL80211_ATTR_IFNAME;
+//memcpy(nla_data(nla), hcxname, hcxnamelen);
+i += 8;
+nla = (struct nlattr*)(nltxbuffer + i);
+nla->nla_len = 8;
+
+
+nla->nla_type = NL80211_ATTR_IFTYPE;
+*(u32*)nla_data(nla) = NL80211_IFTYPE_MONITOR;
+i += 8;
+if(((ifakttype & IFTYPEMONACT) == IFTYPEMONACT) && (activemonitorflag == true))
+	{
+	nla = (struct nlattr*)(nltxbuffer + i);
+	nla->nla_len = 8;
+	nla->nla_type = NL80211_ATTR_MNTR_FLAGS;
+	nla = (struct nlattr*)nla_data(nla);
+	nla->nla_len = 4;
+	nla->nla_type = NL80211_MNTR_FLAG_ACTIVE;
+	i += 8;
+	}
+nlh->nlmsg_len = i;
+if((write(fd_socket_nl, nltxbuffer, i)) != i) return false;
+
+while(1)
+	{
+	msglen = read(fd_socket_nl, &nlrxbuffer, NLRX_SIZE);
+	if(msglen == -1) break;
+	if(msglen == 0) break;
+	wiphytmp = NULL;
+	wdevtmp = NULL;
+	ifidxtmp = NULL;;
+	vimactmp = NULL;;
+	ifnametmp = NULL;
+	for(nlh = (struct nlmsghdr*)nlrxbuffer; NLMSG_OK(nlh, (u32)msglen); nlh = NLMSG_NEXT(nlh, msglen))
+		{
+		if(nlh->nlmsg_type == NLMSG_DONE) return true;
+		if(nlh->nlmsg_type == NLMSG_ERROR)
+			{
+			nle = (struct nlmsgerr*)(nlrxbuffer + sizeof(struct nlmsghdr));
+			if(nle->error == 0) return true;
+			errorcount++;
+			nlfamily = 0;
+			return false;
+			}
+		glh = (struct genlmsghdr*)NLMSG_DATA(nlh);
+		if(glh->cmd != NL80211_CMD_NEW_INTERFACE) continue;
+		nla = (struct nlattr*)((unsigned char*)NLMSG_DATA(nlh) + sizeof(struct genlmsghdr));
+		nlremlen = NLMSG_PAYLOAD(nlh, 0) -4;
+		while(nla_ok(nla, nlremlen))
+			{
+			if(nla->nla_type == NL80211_ATTR_WDEV) wdevtmp = nla_data(nla);
+			if(nla->nla_type == NL80211_ATTR_IFINDEX) ifidxtmp = nla_data(nla);
+			if(nla->nla_type == NL80211_ATTR_IFNAME) ifnametmp = nla_data(nla);
+			if(nla->nla_type == NL80211_ATTR_WIPHY) wiphytmp = nla_data(nla);
+			if(nla->nla_type == NL80211_ATTR_MAC)
+				{
+				if(nla->nla_len == 10) vimactmp = nla_data(nla);
+				}
+			nla = nla_next(nla, &nlremlen);
+			}
+		for(ii = 0; ii < ifpresentlistcounter; ii++)
+			{
+			if((ifpresentlist + ii)->wiphy == *(int*)wiphytmp)
+				{
+				if(ifidxtmp != NULL) (ifpresentlist + ii)->index = *(u32*)ifidxtmp;
+				if(wdevtmp != NULL)
+					{
+					if((ifpresentlist + ii)->wdev != 0)
+						{
+						if((ifpresentlist + ii)->wdev != *(u64*)wdevtmp) (ifpresentlist + ii)->type |= IF_IS_SHARED;
+						}
+					(ifpresentlist + ii)->wdev = *(u64*)wdevtmp;
+					}
+				if(vimactmp != NULL)memcpy((ifpresentlist + ii)->vimac, vimactmp, ETH_ALEN);
+				if(ifnametmp != NULL)strncpy((ifpresentlist + ii)->name, ifnametmp, IF_NAMESIZE);
+				}
+			}
+		}
+	}
+return false;
+}
+/*---------------------------------------------------------------------------*/
 static bool nl_get_interfacelist(void)
 {
 static size_t ii;
@@ -3728,9 +3879,6 @@ while(1)
 				}
 			}
 		}
-
-// memcpy(hwmac, rta_data(rta), ETH_ALEN);
-
 	}
 return false;
 }
@@ -3962,6 +4110,7 @@ for(i = 0; i < ifpresentlistcounter; i++)
 if(nl_get_interfacephylist() == false) return false;
 if(nl_get_interfacelist() == false) return false;
 if(rt_get_interfacelist() == false) return false;
+printf("ss %d\n", IFNAMSIZ);
 if(ifpresentlistcounter == 0) return false;
 
 qsort(ifpresentlist, ifpresentlistcounter, INTERFACELIST_SIZE, sort_interfacelist_by_wiphy);
@@ -4554,16 +4703,6 @@ fprintf(stdout, "Linux API headers (LINUX_VERSION_MAJOR) is not defined\n");
 fprintf(stdout, "compiled with GNU libc headers %d.%d\n", __GLIBC__, __GLIBC_MINOR__);
 #else
 fprintf(stdout, "glibc (__GLIBC_MINOR__) is not defined\n");
-#endif
-#ifdef HCXSTATUSOUT
-fprintf(stdout, "enabled REALTIME DISPLAY\n");
-#else
-fprintf(stdout, "disabled REALTIME DISPLAY\n");
-#endif
-#ifdef HCXNMEAOUT
-fprintf(stdout, "enabled GPS support\n");
-#else
-fprintf(stdout, "disabled GPS support\n");
 #endif
 #ifdef HCXWANTLIBPCAP
 fprintf(stdout, "enabled BPF compiler\n");
