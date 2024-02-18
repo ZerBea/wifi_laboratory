@@ -4812,7 +4812,7 @@ fprintf(stdout, "less common options:\n--------------------\n"
 	"                             to reject CLIENTs set 0\n"
 	"--associationmax=<digit>  : set maximum of attempts to associate with an AP\n"
 	"                             default: %d attempts\n"
-	"                             to disable association with an AP set 0\n",
+	"                             to disable association with an AP set 0\n"
 	"--disable_disassociation  : do not transmit DISASSOCIATION frames\n"
 	"--proberesponsetx=<digit> : transmit n PROBERESPONSEs from the ESSID ring buffer\n"
 	"                             default: %d\n"
@@ -4821,7 +4821,7 @@ fprintf(stdout, "less common options:\n--------------------\n"
 	"                             default: %d ERRORs\n"
 	"--watchdogmax=<seconds>   : set maximum TIMEOUT when no packets received\n"
 	"                             default: %d seconds\n",
-	PROBERESPONSETX_MAX, ERROR_MAX, WATCHDOG_MAX, CLIENTCOUNT_MAX, APCOUNT_MAX);
+	CLIENTCOUNT_MAX, APCOUNT_MAX, PROBERESPONSETX_MAX, ERROR_MAX, WATCHDOG_MAX);
 fprintf(stdout, "--tot=<digit>             : enable timeout timer in minutes\n"
 	"--exitoneapol=<type>      : exit on first EAPOL occurrence:\n"
 	"                             bitmask:\n"
