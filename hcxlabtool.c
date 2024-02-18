@@ -2885,13 +2885,13 @@ while(!wanteventflag)
 			{
 			if(read(fd_timer1, &timer1count, sizeof(u64)) == -1) errorcount++;
 			lifetime++;
-			if(lifetime == 5) show_realtime();
-			else if((lifetime % timehold) == 0)
+			if((lifetime % timehold) == 0)
 				{
 				show_realtime();
 				scanlistindex++;
 				if(nl_set_frequency() == false) errorcount++;
 				}
+			else if((lifetime % 5) == 0) show_realtime();
 			if((lifetime % 10) == 0)
 				{
 				if(gpiostatusled > 0)
