@@ -4786,7 +4786,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 #endif
 	"--bpf=<file>   : input Berkeley Packet Filter (BPF) code (maximum %d instructions) in tcpdump decimal numbers format\n"
 	"                  see --help for more information\n"
-	"--ftc          : enable fake fime clock\n"
+	"--ftc          : enable fake time clock\n"
 	"--rds=<digit>  : enable real time display\n"
 	"                  default = 0 (off)\n"
 	"                  1 = show all APs\n"
