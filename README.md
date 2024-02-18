@@ -7,7 +7,26 @@ Expect compiler warnings and ERRORs.
 
 Expect missing or incomplete functions.
 
-Do not reoport issues or feature requests.
+Do not report issues or feature requests.
+
+
+Rules
+------
+
+Form always follows function.
+
+Everything that can be done off line should be done off line.
+
+I have a clear (non-negotiable) priority when testing/adding new features:
+```
+1. performance (time response behavior when acting with targets and less destructive attack vector) 
+2. computing time (less CPU cycles)
+3. power consumption of the entire system
+...
+10. other features like GPS
+...
+9999. real time display
+```
 
 
 What Doesn't hcxlabtool Do?
