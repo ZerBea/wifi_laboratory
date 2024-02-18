@@ -534,7 +534,7 @@ if(rds == 1)
 			}
 		}
 	}
-if(rds == 2)
+else if(rds == 2)
 	{
 	for(i = 0; i < APLIST_MAX - 1; i++)
 		{
@@ -553,6 +553,41 @@ if(rds == 2)
 				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
 			if((ii += 1) > w.ws_row) break;
 			}
+		}
+	for(i = 0; i < CALIST_MAX - 1; i++)
+		{
+		if((calist + i)->tsakt == 0) break;
+		if((calist +i)->cadata->m2 == '+') 
+			{
+			tvlast = (calist +i)->tsakt / 1000000000ULL;
+			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
+				fprintf(stdout, "    %s p+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				(calist + i)->cadata->m2,
+				(calist + i)->cadata->macc[00], (calist + i)->cadata->macc[01], (calist + i)->cadata->macc[02],
+				(calist + i)->cadata->macc[03],	(calist + i)->cadata->macc[04], (calist + i)->cadata->macc[05],
+				(calist + i)->cadata->maca[00], (calist + i)->cadata->maca[01], (calist + i)->cadata->maca[02],
+				(calist + i)->cadata->maca[03],	(calist + i)->cadata->maca[04], (calist + i)->cadata->maca[05],
+				(calist + i)->cadata->essidlen, (calist + i)->cadata->essid);
+			if((ii += 1) > w.ws_row) break;
+			}
+		}
+	}
+else if(rds == 3)
+	{
+	for(i = 0; i < APLIST_MAX - 1; i++)
+		{
+		if((aplist + i)->tsakt == 0) break;
+		tvlast = (aplist +i)->tsakt / 1000000000ULL;
+		strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
+			fprintf(stdout, "%3u %s %c%c%c%c%c %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+			(aplist + i)->apdata->akmstat,
+			(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
+			(aplist + i)->apdata->macc[00], (aplist + i)->apdata->macc[01], (aplist + i)->apdata->macc[02],
+			(aplist + i)->apdata->macc[03],	(aplist + i)->apdata->macc[04], (aplist + i)->apdata->macc[05],
+			(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
+			(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
+			(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
+		if((ii += 1) > w.ws_row) break;
 		}
 	for(i = 0; i < CALIST_MAX - 1; i++)
 		{
@@ -1577,6 +1612,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	}
 (aplist + i)->tsakt = tsakt;
 memset((aplist + i)->apdata, 0, APDATA_SIZE);
+(aplist + i)->apdata->channel = (scanlist + scanlistindex)->channel;
 (aplist + i)->apdata->pmkid = ' ';
 (aplist + i)->apdata->m1 = ' ';
 (aplist + i)->apdata->m1m2 = ' ';
@@ -1631,6 +1667,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	}
 (aplist + i)->tsakt = tsakt;
 memset((aplist + i)->apdata, 0, APDATA_SIZE);
+(aplist + i)->apdata->channel = (scanlist + scanlistindex)->channel;
 (aplist + i)->apdata->pmkid = ' ';
 (aplist + i)->apdata->m1 = ' ';
 (aplist + i)->apdata->m1m2 = ' ';
@@ -2137,9 +2174,11 @@ if(auth->algorithm == OPEN_SYSTEM)
 				send_80211_associationrequest2((aplist + i)->apdata);
 				(aplist + i)->apdata->tsauthresponse = tsakt;
 				(aplist + i)->apdata->apcount -= 1;
+				return;
 				}
 			(aplist + i)->tsakt = tsakt;
 			memset((aplist + i)->apdata, 0, APDATA_SIZE);
+			(aplist + i)->apdata->channel = (scanlist + scanlistindex)->channel;
 			(aplist + i)->apdata->pmkid = ' ';
 			(aplist + i)->apdata->m1 = ' ';
 			(aplist + i)->apdata->m1m2 = ' ';
@@ -4789,8 +4828,9 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"--ftc          : enable fake time clock\n"
 	"--rds=<digit>  : enable real time display\n"
 	"                  default = 0 (off)\n"
-	"                  1 = show all APs\n"
-	"                  2 = show only APs with comfirmed M1M2, M1M2M3 or PMKID only\n"
+	"                  1 = show APs on current channel, show CLIENTs (M1M2ROGUE)\n"
+	"                  2 = show all APs (M1M2, M1M2M3 or PMKID), show CLIENTs (M1M2ROGUE)\n"
+	"                  3 = show all APs, show CLIENTs (M1M2ROGUE)\n"
 	"                  columns:\n"
 	"                   A = AKM (p)re-shared key\n"
 	"                   1 = received M1\n"
