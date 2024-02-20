@@ -5210,20 +5210,21 @@ hcxpid = getpid();
 if((fh_debug = fopen("hcxerror.log", "a")) == NULL)
 	{
 	fprintf(stdout, "error opening hcxerror.log: %s\n", strerror(errno));
-	exit(EXIT_FAILURE);
+	goto byebye;
 	}
 #endif
 #ifdef HCXWANTLIBPCAP
 if(bpfstring != NULL)
 	{
 	if(compile_bpf(bpfstring) == true) exit(EXIT_SUCCESS);
-	else exit(EXIT_SUCCESS);
+	else exit(EXIT_FAILURE);
 	}
 #endif
 if(set_signal_handler() == false)
 	{
 	errorcount++;
 	fprintf(stderr, "failed to initialize signal handler\n");
+	wanteventflag |= EXIT_ON_ERROR;
 	goto byebye;
 	}
 if((gpiobutton + gpiostatusled) > 0)
@@ -5232,6 +5233,7 @@ if((gpiobutton + gpiostatusled) > 0)
 		{
 		errorcount++;
 		fprintf(stderr, "failed to initialize Raspberry Pi GPIO\n");
+		wanteventflag |= EXIT_ON_ERROR;
 		goto byebye;
 		}
 	if(gpiobutton > 0)
@@ -5248,6 +5250,7 @@ if(init_lists() == false)
 	{
 	errorcount++;
 	fprintf(stderr, "failed to initialize lists\n");
+	wanteventflag |= EXIT_ON_ERROR;
 	goto byebye;
 	}
 init_values();
@@ -5256,12 +5259,14 @@ if(open_control_sockets() == false)
 	{
 	errorcount++;
 	fprintf(stderr, "failed to open control sockets\n");
+	wanteventflag |= EXIT_ON_ERROR;
 	goto byebye;
 	}
 if(get_interfacelist() == false)
 	{
 	errorcount++;
 	fprintf(stderr, "failed to get interface list\n");
+	wanteventflag |= EXIT_ON_ERROR;
 	goto byebye;
 	}
 if(interfacelistflag == true)
@@ -5290,6 +5295,7 @@ if(uid != 0)
 if(set_interface(interfacefrequencyflag, userfrequencylistname, userchannellistname) == false)
 	{
 	errorcount++;
+	wanteventflag |= EXIT_ON_ERROR;
 	fprintf(stderr, "failed to arm interface\n");
 	goto byebye;
 	}
@@ -5298,6 +5304,7 @@ if(monitormodeflag == true)
 	if(set_monitormode() == false)
 		{
 		errorcount++;
+		wanteventflag |= EXIT_ON_ERROR;
 		fprintf(stderr, "failed to set monitor mode\n");
 		}
 	if((userfrequencylistname != NULL) || (userchannellistname != 0))
@@ -5305,6 +5312,7 @@ if(monitormodeflag == true)
 		if(nl_set_frequency() == false)
 			{
 			errorcount++;
+			wanteventflag |= EXIT_ON_ERROR;
 			fprintf(stderr, "failed to set frequency\n");
 			}
 		}
@@ -5314,24 +5322,28 @@ if(essidlistname != NULL) read_essidlist(essidlistname);
 if(open_pcapng(pcapngoutname) == false)
 	{
 	errorcount++;
+	wanteventflag |= EXIT_ON_ERROR;
 	fprintf(stderr, "failed to open dump file\n");
 	goto byebye;
 	}
 if(open_socket_rx(bpfname) == false)
 	{
 	errorcount++;
+	wanteventflag |= EXIT_ON_ERROR;
 	fprintf(stderr, "failed to open raw packet socket\n");
 	goto byebye;
 	}
 if(open_socket_tx() == false)
 	{
 	errorcount++;
+	wanteventflag |= EXIT_ON_ERROR;
 	fprintf(stderr, "failed to open transmit socket\n");
 	goto byebye;
 	}
 if(set_timer() == false)
 	{
 	errorcount++;
+	wanteventflag |= EXIT_ON_ERROR;
 	fprintf(stderr, "failed to initialize timer\n");
 	goto byebye;
 	}
