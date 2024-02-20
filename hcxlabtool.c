@@ -2627,11 +2627,11 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		(aplist + i)->apdata->beacon = true;
 		writeepb();
 		}
-	if((tsakt - (aplist + i)->apdata->tsrequest) > TSHOUR1) (aplist + i)->apdata->apcount = apcountmax;
-	if((aplist + i)->apdata->apcount <= 0) return;
 	if((aplist + i)->apdata->m1m2m3 == '+') return; 
 	if((aplist + i)->apdata->pmkid == '+') return;
 	if((tsakt - (aplist + i)->apdata->tsrequest) < TSSECOND2) return;
+	if((tsakt - (aplist + i)->apdata->tsrequest) > TSHOUR1) (aplist + i)->apdata->apcount = apcountmax;
+	if((aplist + i)->apdata->apcount <= 0) return;
 	if((aplist + i)->apdata->essidlen != 0)
 		{
 		if(((aplist + i)->apdata->akm == AKMPSK) || ((aplist + i)->apdata->akm == AKMPSK256))
