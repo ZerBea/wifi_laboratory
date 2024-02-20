@@ -957,7 +957,7 @@ else
 	pcapngfilename = pcapngname;
 	}
 umask(0);
-if((fd_pcapng = open(pcapngfilename, O_WRONLY | O_TRUNC | O_CREAT, 0777)) < 0) return false;
+if((fd_pcapng = open(pcapngfilename, O_WRONLY | O_TRUNC | O_CREAT, 0666)) < 0) return false;
 if(writeshb() == false) return false;
 if(writeidb() == false) return false;
 if(writecb() == false) return false;
@@ -4326,7 +4326,7 @@ static char ftcname[PATH_MAX] = { 0 };
 strncpy(ftcname, pwd->pw_dir, PATH_MAX -10);
 strcat(ftcname, "/.hcxftc");
 clock_gettime(CLOCK_REALTIME, &tspecakt);
-if((fd_fakeclock = open(ftcname, O_WRONLY | O_TRUNC | O_CREAT, 0777)) > 0)
+if((fd_fakeclock = open(ftcname, O_WRONLY | O_TRUNC | O_CREAT, 0666)) > 0)
 	{
 	if(write(fd_fakeclock, &tspecakt, sizeof(struct timespec)) != sizeof(struct timespec)) fprintf(stderr, "failed to write timestamp\n");
 	close(fd_fakeclock);
