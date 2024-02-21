@@ -1120,6 +1120,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	(aplist + i)->tsakt = tsakt;
 	(aplist + i)->apdata->tsm1 = tsakt;
 	(aplist + i)->apdata->m1 = '+';
+	if(memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0) (aplist + i)->apdata->apcount = apcountmax;
 	memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
 	(aplist + i)->apdata->replaycount1 = __hcx64be(wpakey->replaycount);
 	memcpy((aplist + i)->apdata->nonce, &wpakey->nonce[28], 4);
@@ -1558,6 +1559,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(memcmp((aplist + i)->apdata->maca, macfrx->addr1, ETH_ALEN) == 0)
 		{
 		(aplist + i)->apdata->tsmacc = tsakt;
+		if(memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0) (aplist + i)->apdata->apcount = apcountmax;
 		memcpy((aplist + i)->apdata->macc, macfrx->addr2, ETH_ALEN);
 		return;
 		}
@@ -1568,6 +1570,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) == 0)
 		{
 		(aplist + i)->tsakt = tsakt;
+		if(memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0) (aplist + i)->apdata->apcount = apcountmax;
 		memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
 		return;
 		}
@@ -1593,6 +1596,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
 	(aplist + i)->tsakt = tsakt;
 	(aplist + i)->apdata->aid = __hcx16le(capa->aid);
+	if(memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0) (aplist + i)->apdata->apcount = apcountmax;
 	memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
 	if((aplist + i)->apdata->apcount <= 0) return;
 	if((aplist + i)->apdata->essidlen == 0) return;
@@ -1648,6 +1652,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
 	(aplist + i)->tsakt = tsakt;
 	(aplist + i)->apdata->aid = __hcx16le(capa->aid);
+	if(memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0) (aplist + i)->apdata->apcount = apcountmax;
 	memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
 	if((aplist + i)->apdata->apcount <= 0) return;
 	if((aplist + i)->apdata->essidlen == 0) return;
@@ -1724,6 +1729,7 @@ if(macfrx->from_ds == 1)
 			if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) == 0)
 				{
 				(aplist + i)->tsakt = tsakt;
+				if(memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0) (aplist + i)->apdata->apcount = apcountmax;
 				memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
 				return;
 				}
@@ -1787,6 +1793,7 @@ if(macfrx->from_ds == 1)
 			if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) == 0)
 				{
 				(aplist + i)->tsakt = tsakt;
+				if(memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0) (aplist + i)->apdata->apcount = apcountmax;
 				memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
 				return;
 				}
@@ -2164,6 +2171,7 @@ if(auth->algorithm == OPEN_SYSTEM)
 				memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 				(aplist + i)->tsakt = tsakt;
 				(aplist + i)->apdata->opensystem = 1;
+				if(memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0) (aplist + i)->apdata->apcount = apcountmax;
 				memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
 				if((aplist + i)->apdata->apcount <= 0) return;
 				if((aplist + i)->apdata->essidlen == 0) return;
