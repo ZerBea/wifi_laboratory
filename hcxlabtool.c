@@ -2825,7 +2825,12 @@ epi++;
 
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
-
+if(gpiostatusled > 0)
+	{
+	GPIO_SET = 1 << gpiostatusled;
+	nanosleep(&sleepled, NULL);
+	GPIO_CLR = 1 << gpiostatusled;
+	}
 if(nl_set_frequency() == false) errorcount++;
 while(!wanteventflag)
 	{
@@ -2908,6 +2913,12 @@ epi++;
 
 sleepled.tv_sec = 0;
 sleepled.tv_nsec = GPIO_LED_DELAY;
+if(gpiostatusled > 0)
+	{
+	GPIO_SET = 1 << gpiostatusled;
+	nanosleep(&sleepled, NULL);
+	GPIO_CLR = 1 << gpiostatusled;
+	}
 
 if(nl_set_frequency() == false) errorcount++;
 while(!wanteventflag)
