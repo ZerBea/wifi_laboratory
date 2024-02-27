@@ -1920,6 +1920,26 @@ while(0 < infolen)
 return NULL;
 }
 /*---------------------------------------------------------------------------*/
+static inline __attribute__((always_inline)) void get_tag_channel(apdata_t *apdata, int infolen, u8 *infostart)
+{
+static ieee80211_ietag_t *infoptr;
+
+apdata->channel = (scanlist + scanlistindex)->channel;
+while(0 < infolen)
+	{
+	infoptr = (ieee80211_ietag_t*)infostart;
+	if(infolen < (int)(infoptr->len + IEEE80211_IETAG_SIZE)) return;
+	if(infoptr->id == TAG_CHAN)
+		{
+		if(infoptr->len == 1) apdata->channel = (u8)infoptr->ie[0];
+		return;
+		}
+	infostart += infoptr->len + IEEE80211_IETAG_SIZE;
+	infolen -= infoptr->len + IEEE80211_IETAG_SIZE;
+	}
+return;
+}
+/*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void process80211reassociationrequest(void)
 {
 static size_t i;
@@ -2612,7 +2632,6 @@ static inline __attribute__((always_inline)) void process80211beacon(void)
 {
 static size_t i;
 static ieee80211_beacon_proberesponse_t *beacon;
-static ieee80211_ietag_t *iechan;
 static u16 beaconlen;
 
 beacon = (ieee80211_beacon_proberesponse_t*)payloadptr;
@@ -2621,18 +2640,15 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	{
 	if((aplist + i)->tsakt == 0) break;
 	if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
-	if((iechan = get_tag(TAG_CHAN, beaconlen, beacon->ie)) != NULL)
-		{
-		(aplist + i)->apdata->channel = (scanlist + scanlistindex)->channel;
-		if(iechan->len == 1) (aplist + i)->apdata->channel = (u8)iechan->ie[0];
-		}
+	if((aplist + i)->apdata->beacon == true) get_tag_channel((aplist + i)->apdata, beaconlen, beacon->ie);
+	else get_tags((aplist + i)->apdata, beaconlen, beacon->ie);
 	if((aplist + i)->apdata->channel != (scanlist + scanlistindex)->channel) return;
-	(aplist + i)->tsakt = tsakt;
 	if((aplist + i)->apdata->beacon == false)
 		{
 		(aplist + i)->apdata->beacon = true;
 		writeepb();
 		}
+	(aplist + i)->tsakt = tsakt;
 	if((aplist + i)->apdata->m1m2m3 == '+') return; 
 	if((aplist + i)->apdata->pmkid == '+') return;
 	if((tsakt - (aplist + i)->apdata->tsrequest) < TSSECOND2) return;
