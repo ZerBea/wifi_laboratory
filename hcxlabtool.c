@@ -2444,6 +2444,7 @@ static ieee80211_ietag_t *infoptr;
 static ieee80211_suite_t *rsn;
 static ieee80211_suite_t *wpa;
 
+apdata->channel = (scanlist + scanlistindex)->channel;
 while(0 < infolen)
 	{
 	infoptr = (ieee80211_ietag_t*)infostart;
@@ -2462,14 +2463,11 @@ while(0 < infolen)
 				}
 			}
 		}
-	if(infoptr->id == TAG_CHAN)
+	else if(infoptr->id == TAG_CHAN)
 		{
-		if(infoptr->len == 1)
-			{
-			if((apdata->channel = (u8)infoptr->ie[0]) == 0) apdata->channel = (scanlist + scanlistindex)->channel;
-			}
+		if(infoptr->len == 1) apdata->channel = (u8)infoptr->ie[0];
 		}
-	if(infoptr->id == TAG_RSN)
+	else if(infoptr->id == TAG_RSN)
 		{
 		if(infoptr->len >= RSNLEN_MIN)
 			{
@@ -2505,7 +2503,7 @@ while(0 < infolen)
 				}
 			}
 		}
-	if(infoptr->id == TAG_VENDOR)
+	else if(infoptr->id == TAG_VENDOR)
 		{
 		if(infoptr->len >= WPALEN_MIN)
 			{
