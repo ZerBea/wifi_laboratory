@@ -2230,7 +2230,7 @@ if(auth->algorithm == OPEN_SYSTEM)
 						}
 					}
 				}
-			if(i > APLIST_HALF) qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
+			qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 			writeepb();
 			return;
 			}
@@ -2515,6 +2515,11 @@ while(0 < infolen)
 							apdata->akm = infoptr->ie[tlen +3];
 							apdata->akmstat = 'p';
 							}
+						else if((apdata->akm == 0) && (memcmp(rsnpsk256, &infoptr->ie[tlen], 4) == 0))
+							{
+							apdata->akm = infoptr->ie[tlen +3];
+							apdata->akmstat = 'p';
+							}
 						tlen += 4;
 						if(tlen > infoptr->len) return;
 						}
@@ -2575,7 +2580,6 @@ static u16 proberesponselen;
 
 proberesponse = (ieee80211_beacon_proberesponse_t*)payloadptr;
 if((proberesponselen = payloadlen - IEEE80211_BEACON_SIZE) < IEEE80211_IETAG_SIZE) return;
-
 for(i = 0; i < APLIST_MAX - 1; i++)
 	{
 	if((aplist + i)->tsakt == 0) break;
@@ -2600,27 +2604,28 @@ memset((aplist + i)->apdata, 0, APDATA_SIZE);
 (aplist + i)->apdata->akmstat = ' ';
 (aplist + i)->apdata->apcount = apcountmax;
 (aplist + i)->apdata->proberesponse = true;
-(aplist + i)->apdata->beacon = false;
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 memcpy((aplist + i)->apdata->macc, macclientrg, ETH_ALEN);
 get_tags((aplist + i)->apdata, proberesponselen, proberesponse->ie);
-if((aplist + i)->apdata->channel != (scanlist + scanlistindex)->channel) return;
 if(apcountmax > 0)
 	{
-	if((aplist + i)->apdata->akm == AKMPSK)
+	if((aplist + i)->apdata->channel == (scanlist + scanlistindex)->channel)
 		{
-		if((aplist + i)->apdata->essidlen != 0)
+		if((aplist + i)->apdata->akm == AKMPSK)
 			{
-			send_80211_associationrequest2bc((aplist + i)->apdata);
+			if((aplist + i)->apdata->essidlen != 0)
+				{
+				send_80211_associationrequest2bc((aplist + i)->apdata);
+				(aplist + i)->apdata->tsrequest = tsakt;
+				(aplist + i)->apdata->apcount -= 1;
+				}
+			}
+		if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED))
+			{
+			send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
 			(aplist + i)->apdata->tsrequest = tsakt;
 			(aplist + i)->apdata->apcount -= 1;
 			}
-		}
-	if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED))
-		{
-		send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
-		(aplist + i)->apdata->tsrequest = tsakt;
-		(aplist + i)->apdata->apcount -= 1;
 		}
 	}
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
@@ -2707,27 +2712,28 @@ memset((aplist + i)->apdata, 0, APDATA_SIZE);
 (aplist + i)->apdata->akmstat = ' ';
 (aplist + i)->apdata->apcount = apcountmax;
 (aplist + i)->apdata->beacon = true;
-(aplist + i)->apdata->proberesponse = false;
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 memcpy((aplist + i)->apdata->macc, macclientrg, ETH_ALEN);
 get_tags((aplist + i)->apdata, beaconlen, beacon->ie);
-if((aplist + i)->apdata->channel != (scanlist + scanlistindex)->channel) return;
 if(apcountmax > 0)
 	{
-	if(((aplist + i)->apdata->akm == AKMPSK) || ((aplist + i)->apdata->akm == AKMPSK256))
+	if((aplist + i)->apdata->channel == (scanlist + scanlistindex)->channel)
 		{
-		if((aplist + i)->apdata->essidlen != 0)
+		if(((aplist + i)->apdata->akm == AKMPSK) || ((aplist + i)->apdata->akm == AKMPSK256))
 			{
-			send_80211_associationrequest2bc((aplist + i)->apdata);
+			if((aplist + i)->apdata->essidlen != 0)
+				{
+				send_80211_associationrequest2bc((aplist + i)->apdata);
+				(aplist + i)->apdata->tsrequest = tsakt;
+				(aplist + i)->apdata->apcount -= 1;
+				}
+			}
+		if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED))
+			{
+			send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
 			(aplist + i)->apdata->tsrequest = tsakt;
 			(aplist + i)->apdata->apcount -= 1;
 			}
-		}
-	if((disassociationflag == true) && (((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED))
-		{
-		send_80211_disassociationcaa(macfrx->addr1, macfrx->addr2);
-		(aplist + i)->apdata->tsrequest = tsakt;
-		(aplist + i)->apdata->apcount -= 1;
 		}
 	}
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
