@@ -2548,18 +2548,18 @@ while(0 < infolen)
 							else if((apdata->ucs == 0) && (memcmp(wpatkip, &infoptr->ie[tlen], 4) == 0)) apdata->ucs = infoptr->ie[tlen +3];
 							tlen += 4;
 							if(tlen > infoptr->len) return;
-							wpa = (ieee80211_suite_t*)&infoptr->ie[tlen];
-							tlen += 2;
-							for(i = 0; i < __hcx16le(wpa->count); i++)
+							}
+						wpa = (ieee80211_suite_t*)&infoptr->ie[tlen];
+						tlen += 2;
+						for(i = 0; i < __hcx16le(wpa->count); i++)
+							{
+							if(memcmp(wpapsk, &infoptr->ie[tlen], 4) == 0)
 								{
-								if(memcmp(wpapsk, &infoptr->ie[tlen], 4) == 0)
-									{
-									apdata->akm1 = infoptr->ie[tlen +3];
-									apdata->akmstat = 'p';
-									}
-								tlen += 4;
-								if(tlen > infoptr->len) return;
+								apdata->akm1 = infoptr->ie[tlen +3];
+								apdata->akmstat = 'p';
 								}
+							tlen += 4;
+							if(tlen > infoptr->len) return;
 							}
 						}
 					}
@@ -2647,13 +2647,13 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
 	if((aplist + i)->apdata->beacon == true) get_tag_channel((aplist + i)->apdata, beaconlen, beacon->ie);
 	else get_tags((aplist + i)->apdata, beaconlen, beacon->ie);
-	if((aplist + i)->apdata->channel != (scanlist + scanlistindex)->channel) return;
 	if((aplist + i)->apdata->beacon == false)
 		{
 		(aplist + i)->apdata->beacon = true;
 		writeepb();
 		}
 	(aplist + i)->tsakt = tsakt;
+	if((aplist + i)->apdata->channel != (scanlist + scanlistindex)->channel) return;
 	if((aplist + i)->apdata->m1m2m3 == '+') return; 
 	if((aplist + i)->apdata->pmkid == '+') return;
 	if((tsakt - (aplist + i)->apdata->tsrequest) < TSSECOND2) return;
