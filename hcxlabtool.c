@@ -4385,7 +4385,7 @@ if((fd_fakeclock = open(ftcname, O_RDONLY)) > 0)
 	{
 	if(read(fd_fakeclock, &tssaved, sizeof(struct timespec)) == sizeof(struct timespec))
 		{
-		if(tspecakt.tv_sec < tssaved.tv_sec) clock_settime(CLOCK_REALTIME, &tspecakt);
+		if(tspecakt.tv_sec < tssaved.tv_sec) clock_settime(CLOCK_REALTIME, &tssaved);
 		}
 	close(fd_fakeclock);
 	}
