@@ -2790,6 +2790,7 @@ else if(macfrx->type == IEEE80211_FTYPE_CTL)
 	else if(macfrx->subtype == IEEE80211_STYPE_BACK) process80211rata();
 	else if(macfrx->subtype == IEEE80211_STYPE_RTS) process80211rata();
 	else if(macfrx->subtype == IEEE80211_STYPE_VHT) process80211rata();
+	else if((macfrx->subtype == IEEE80211_STYPE_TRIGGER) && (memcmp(macbc, macfrx->addr1, 6) != 0)) process80211rata();
 //	else if(macfrx->subtype == IEEE80211_STYPE_PSPOLL) process80211pspoll();
 	}
 else if(macfrx->type == IEEE80211_FTYPE_DATA)
