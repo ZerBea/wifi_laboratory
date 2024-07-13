@@ -83,7 +83,10 @@ static int fd_fakeclock = 0;
 
 #ifdef HCXDEBUG
 static FILE *fh_debug = NULL;
+static clock_t debugtms;
+static double debugtmstaken;
 #endif
+
 static struct sock_fprog bpf = { 0 };
 
 static int ifaktindex = 0;
@@ -4189,9 +4192,37 @@ for(i = 0; i < ifpresentlistcounter; i++)
 	{
 	if(((ifpresentlist + i)->frequencylist = (frequencylist_t*)calloc(FREQUENCYLIST_MAX, FREQUENCYLIST_SIZE)) == NULL) return false;
 	}
+#ifdef HCXDEBUG
+debugtms = clock();
+#endif
 if(nl_get_interfacephylist() == false) return false;
+#ifdef HCXDEBUG
+debugtms = clock() - debugtms; 
+debugtmstaken = ((double)debugtms)/CLOCKS_PER_SEC;
+fprintf(fh_debug, "nl_get_interfacephylist took %f seconds to execute \n", debugtmstaken); 
+#endif
+
+#ifdef HCXDEBUG
+debugtms = clock();
+#endif
 if(nl_get_interfacelist() == false) return false;
+#ifdef HCXDEBUG
+debugtms = clock() - debugtms; 
+debugtmstaken = ((double)debugtms)/CLOCKS_PER_SEC;
+fprintf(fh_debug, "nl_get_interfacelist took %f seconds to execute \n", debugtmstaken); 
+#endif
+
+#ifdef HCXDEBUG
+debugtms = clock();
+#endif
 if(rt_get_interfacelist() == false) return false;
+#ifdef HCXDEBUG
+debugtms = clock() - debugtms; 
+debugtmstaken = ((double)debugtms)/CLOCKS_PER_SEC;
+fprintf(fh_debug, "rt_get_interfacelist took %f seconds to execute \n", debugtmstaken); 
+#endif
+
+
 if(ifpresentlistcounter == 0) return false;
 qsort(ifpresentlist, ifpresentlistcounter, INTERFACELIST_SIZE, sort_interfacelist_by_wiphy);
 return true;
