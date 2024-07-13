@@ -4832,7 +4832,10 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"most common options:\n--------------------\n"
 	"-i <INTERFACE> : name of INTERFACE to be used\n"
 	"                  default: first suitable INTERFACE\n"
-	"                  warning: %s changes the virtual MAC address of the INTERFACE\n"
+	"                  warning:\n"
+	"                   %s changes the mode of the INTERFACE\n"
+	"                   %s changes the virtual MAC address of the INTERFACE\n"
+	"                   %s changes the channel of the INTERFACE\n"
 	"-w <outfile>   : write packets to a pcapng-format file named <outfile>\n"
 	"                  default outfile name: yyyyddmmhhmmss-interfacename.pcapng\n"
 	"                  existing file will not be overwritten\n" 
@@ -4881,9 +4884,9 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"-v             : show version\n"
 	"\n",
 #ifdef HCXWANTLIBPCAP
-	eigenname, VERSION_TAG, VERSION_YEAR, eigenname, eigenname, TIMEHOLD, eigenname, BPF_MAXINSNS);
+	eigenname, VERSION_TAG, VERSION_YEAR, eigenname, eigenname, eigenname, eigenname, TIMEHOLD, eigenname, BPF_MAXINSNS);
 #else
-	eigenname, VERSION_TAG, VERSION_YEAR, eigenname, eigenname, TIMEHOLD, BPF_MAXINSNS);
+	eigenname, VERSION_TAG, VERSION_YEAR, eigenname, eigenname, eigenname, eigenname, TIMEHOLD, BPF_MAXINSNS);
 #endif
 fprintf(stdout, "less common options:\n--------------------\n"
 	"-m <INTERFACE>            : set monitor mode and terminate\n"
