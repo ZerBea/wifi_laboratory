@@ -5466,6 +5466,7 @@ if(rooterrorflag == true) exit(EXIT_FAILURE);
 if((monitormodeflag == true) || (interfacelistflag == true) || (interfaceinfoflag == true) || (interfacelistshortflag == true)) return EXIT_SUCCESS;
 fprintf(stdout, "\n\033[?25h");
 fprintf(stderr, "%u ERROR(s) during runtime\n", errorcount);
+fprintf(stderr, "%u TX ERROR(s) during runtime\n", errortxcount);
 fprintf(stdout, "%u Packet(s) captured by kernel\n", lStats.tp_packets);
 fprintf(stdout, "%u Packet(s) dropped by kernel\n", lStats.tp_drops);
 if((uid == 0) && (ftcflag == true)) save_ftc();
