@@ -196,7 +196,7 @@ typedef struct __attribute__((__packed__))
 #define TAG_VENDOR	0xdd
  u8 	len;
  u8	ie[1];
-#define RSNLEN_MIN	20
+#define RSNLEN_MIN	18
 #define WPALEN_MIN	22
 
 }ieee80211_ietag_t;
