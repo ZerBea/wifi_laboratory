@@ -22,6 +22,7 @@
 #define HCX_ON_ERROR			19
 #define HCX_ESSIDLIST			20
 #define HCX_RDS				21
+#define HCX_RCASCAN			22
 #define HCX_IFNAME			'i'
 #define HCX_PCAPNGNAME			'w'
 #define HCX_INTERFACE_INFO		'I'
@@ -59,6 +60,9 @@
 #define IFTYPENL		0x01
 #define IFTYPEMON		0x02
 #define IFTYPEMONACT		0x04
+
+#define RCASCAN_ACTIVE		0x01
+#define RCASCAN_PASSIVE		0x02
 
 #define ETHTOOL_STD_LEN		32
 

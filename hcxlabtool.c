@@ -3003,6 +3003,100 @@ while(!wanteventflag)
 	}
 return true;
 }
+/*---------------------------------------------------------------------------*/
+static bool nl_scanloop_rcascan(u8 rcascanmode)
+{
+static ssize_t i;
+static int fd_epoll = 0;
+static int epi = 0;
+static int epret = 0;
+static struct epoll_event ev, events[EPOLL_EVENTS_MAX];
+static size_t packetcountlast = 0;
+static u64 timer1count;
+static struct timespec sleepled;
+
+printf("\n\n****** not yet implemented ******\n\n");
+return false;
+
+if((fd_epoll= epoll_create(1)) < 0) return false;
+ev.data.fd = fd_socket_rx;
+ev.events = EPOLLIN;
+if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_socket_rx, &ev) < 0) return false;
+epi++;
+
+ev.data.fd = fd_timer1;
+ev.events = EPOLLIN;
+if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_timer1, &ev) < 0) return false;
+epi++;
+
+sleepled.tv_sec = 0;
+sleepled.tv_nsec = GPIO_LED_DELAY;
+if(gpiostatusled > 0)
+	{
+	GPIO_SET = 1 << gpiostatusled;
+	nanosleep(&sleepled, NULL);
+	GPIO_CLR = 1 << gpiostatusled;
+	}
+
+if(nl_set_frequency() == false) errorcount++;
+while(!wanteventflag)
+	{
+	if(errorcount > errorcountmax) wanteventflag |= EXIT_ON_ERROR;
+	epret = epoll_pwait(fd_epoll, events, epi, timerwaitnd, NULL);
+	if(epret == -1)
+		{
+		if(errno != EINTR)
+			{
+			#ifdef HCXDEBUG
+			fprintf(fh_debug, "epret failed: %s\n", strerror(errno));
+			#endif
+			errorcount++;
+			}
+		continue;
+		}
+	for(i = 0; i < epret; i++)
+		{
+		if(events[i].data.fd == fd_socket_rx) process_packet();
+		else if(events[i].data.fd == fd_timer1)
+			{
+			if(read(fd_timer1, &timer1count, sizeof(u64)) == -1) errorcount++;
+			lifetime++;
+			if((lifetime % timehold) == 0)
+				{
+				show_realtime();
+				scanlistindex++;
+				if(nl_set_frequency() == false) errorcount++;
+				}
+			else if((lifetime % 5) == 0) show_realtime();
+			if((lifetime % 10) == 0)
+				{
+				if(gpiostatusled > 0)
+					{
+					GPIO_SET = 1 << gpiostatusled;
+					nanosleep(&sleepled, NULL);
+					GPIO_CLR = 1 << gpiostatusled;
+					}
+				if(gpiobutton > 0)
+					{
+					if(GET_GPIO(gpiobutton) > 0)
+						{
+						wanteventflag |= EXIT_ON_GPIOBUTTON;
+						if(gpiostatusled > 0) GPIO_SET = 1 << gpiostatusled;
+						}
+					}
+				if(errortxcount > errorcountmax) wanteventflag |= EXIT_ON_ERROR;
+				}
+			if((tottime > 0) && (lifetime >= tottime)) wanteventflag |= EXIT_ON_TOT;
+			if((lifetime % timewatchdog) == 0)
+				{
+				if(packetcount == packetcountlast) wanteventflag |= EXIT_ON_WATCHDOG;
+				packetcountlast = packetcount;
+				}
+			}
+		}
+	}
+return true;
+}
 /*===========================================================================*/
 /*===========================================================================*/
 /* NETLINK */
@@ -4861,58 +4955,61 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"usage: %s <options>\n"
 	"\n"
 	"most common options:\n--------------------\n"
-	"-i <INTERFACE> : name of INTERFACE to be used\n"
-	"                  default: first suitable INTERFACE\n"
-	"                  warning:\n"
-	"                   %s changes the mode of the INTERFACE\n"
-	"                   %s changes the virtual MAC address of the INTERFACE\n"
-	"                   %s changes the channel of the INTERFACE\n"
-	"-w <outfile>   : write packets to a pcapng-format file named <outfile>\n"
-	"                  default outfile name: yyyyddmmhhmmss-interfacename.pcapng\n"
-	"                  existing file will not be overwritten\n" 
-	"                  get more information: https://pcapng.com/\n"
-	"-c <digit>     : set channel (1a,2a,36b,...)\n"
-	"                  default: 1a,6a,11a\n"
-	"                  important notice: channel numbers are not unique\n"
-	"                  it is mandatory to add band information to the channel number (e.g. 12a)\n"
-	"                   band a: NL80211_BAND_2GHZ\n"
-	"                   band b: NL80211_BAND_5GHZ\n"
+	"-i <INTERFACE>   : name of INTERFACE to be used\n"
+	"                    default: first suitable INTERFACE\n"
+	"                    warning:\n"
+	"                     %s changes the mode of the INTERFACE\n"
+	"                     %s changes the virtual MAC address of the INTERFACE\n"
+	"                     %s changes the channel of the INTERFACE\n"
+	"-w <outfile>     : write packets to a pcapng-format file named <outfile>\n"
+	"                    default outfile name: yyyyddmmhhmmss-interfacename.pcapng\n"
+	"                    existing file will not be overwritten\n" 
+	"                    get more information: https://pcapng.com/\n"
+	"-c <digit>       : set channel (1a,2a,36b,...)\n"
+	"                    default: 1a,6a,11a\n"
+	"                    important notice: channel numbers are not unique\n"
+	"                    it is mandatory to add band information to the channel number (e.g. 12a)\n"
+	"                     band a: NL80211_BAND_2GHZ\n"
+	"                     band b: NL80211_BAND_5GHZ\n"
 	#if(LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0))
-	"                   band c: NL80211_BAND_6GHZ\n"
-	"                   band d: NL80211_BAND_60GHZ\n"
-	"                   band e: NL80211_BAND_S1GHZ (902 MHz)\n"
+	"                     band c: NL80211_BAND_6GHZ\n"
+	"                     band d: NL80211_BAND_60GHZ\n"
+	"                     band e: NL80211_BAND_S1GHZ (902 MHz)\n"
 	#endif
-	"                  to disable frequency management, set this option to a single frequency/channel\n"
-	"-f <digit>     : set frequency (2412,2417,5180,...)\n"
-	"-F             : use all available frequencies from INTERFACE\n"
-	"-t <second>    : minimum stay time (will increase on new stations and/or authentications)\n"
-	"                  default %d seconds\n"
-	"-A             : ACK incoming frames\n"
-	"                  INTERFACE must support active monitor mode\n"
-	"-L             : show PHYSICAL INTERFACE list and terminate\n"
-	"-l             : show PHYSICAL INTERFACE list (tabulator separated and greppable) and terminate\n"
-	"-I <INTERFACE> : show detailed information about INTERFACE and terminate\n"
+	"                    to disable frequency management, set this option to a single frequency/channel\n"
+	"-f <digit>       : set frequency (2412,2417,5180,...)\n"
+	"-F               : use all available frequencies from INTERFACE\n"
+	"-t <second>      : minimum stay time (will increase on new stations and/or authentications)\n"
+	"                    default %d seconds\n"
+	"-A               : ACK incoming frames\n"
+	"                    INTERFACE must support active monitor mode\n"
+	"-L               : show PHYSICAL INTERFACE list and terminate\n"
+	"-l               : show PHYSICAL INTERFACE list (tabulator separated and greppable) and terminate\n"
+	"-I <INTERFACE>   : show detailed information about INTERFACE and terminate\n"
 #ifdef HCXWANTLIBPCAP
-	"--bpfc=<filter>: compile Berkeley Packet Filter (BPF) and exit\n"
-	"                  $ %s --bpfc=\"wlan addr3 112233445566\" > filter.bpf\n"
-	"                  see man pcap-filter\n"
+	"--bpfc=<filter>:   compile Berkeley Packet Filter (BPF) and exit\n"
+	"                    $ %s --bpfc=\"wlan addr3 112233445566\" > filter.bpf\n"
+	"                    see man pcap-filter\n"
 #endif
-	"--bpf=<file>   : input Berkeley Packet Filter (BPF) code (maximum %d instructions) in tcpdump decimal numbers format\n"
-	"                  see --help for more information\n"
-	"--ftc          : enable fake time clock\n"
-	"--rds=<digit>  : enable real time display\n"
-	"                  default = 0 (off)\n"
-	"                  1 = show APs on current channel, show CLIENTs (M1M2ROGUE)\n"
-	"                  2 = show all APs (M1M2, M1M2M3 or PMKID), show CLIENTs (M1M2ROGUE)\n"
-	"                  3 = show all APs, show CLIENTs (M1M2ROGUE)\n"
-	"                  columns:\n"
-	"                   A = AKM (p)re-shared key\n"
-	"                   1 = received M1\n"
-	"                   2 = received M1M2\n"
-	"                   3 = received M1M2M3\n"
-	"                   P = received PMKID\n"
-	"-h             : show this help\n"
-	"-v             : show version\n"
+	"--bpf=<file>     : input Berkeley Packet Filter (BPF) code (maximum %d instructions) in tcpdump decimal numbers format\n"
+	"                    see --help for more information\n"
+	"--ftc            : enable fake time clock\n"
+	"--rds=<digit>    : enable real time display\n"
+	"                    default = 0 (off)\n"
+	"                    1 = show APs on current channel, show CLIENTs (M1M2ROGUE)\n"
+	"                    2 = show all APs (M1M2, M1M2M3 or PMKID), show CLIENTs (M1M2ROGUE)\n"
+	"                    3 = show all APs, show CLIENTs (M1M2ROGUE)\n"
+	"                    columns:\n"
+	"                     A = AKM (p)re-shared key\n"
+	"                     1 = received M1\n"
+	"                     2 = received M1M2\n"
+	"                     3 = received M1M2M3\n"
+	"                     P = received PMKID\n"
+	"--rcascan=<mode> : radio channel assement scan\n"
+	"                    (a)ctive = activ scan (transmit PROBEREQUEST frames)\n"
+	"                    (p)assive = passive scan (listen only)\n"
+	"-h               : show this help\n"
+	"-v               : show version\n"
 	"\n",
 #ifdef HCXWANTLIBPCAP
 	eigenname, VERSION_TAG, VERSION_YEAR, eigenname, eigenname, eigenname, eigenname, TIMEHOLD, eigenname, BPF_MAXINSNS);
@@ -4993,6 +5090,7 @@ static u8 exitgpiobuttonflag = 0;
 static u8 exittotflag = 0;
 static u8 exitwatchdogflag = 0;
 static u8 exiterrorflag = 0;
+static u8 rcascanmode = 0;
 static struct timespec tspecifo, tspeciforem;
 static struct tpacket_stats lStats = { 0 };
 static socklen_t lStatsLength = sizeof(lStats);
@@ -5042,6 +5140,7 @@ static const struct option long_options[] =
 	{"gpio_button",			required_argument,	NULL,	HCX_GPIO_BUTTON},
 	{"gpio_statusled",		required_argument,	NULL,	HCX_GPIO_STATUSLED},
 	{"rds",				required_argument,	NULL,	HCX_RDS},
+	{"rcascan",			required_argument,	NULL,	HCX_RCASCAN},
 	{"version",			no_argument,		NULL,	HCX_VERSION},
 	{"help",			no_argument,		NULL,	HCX_HELP_ADDITIONAL},
 	{NULL,				0,			NULL,	0}
@@ -5255,6 +5354,16 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		rds = strtol(optarg, NULL, 10);
 		break;
 
+		case HCX_RCASCAN:
+		if(optarg[0] == 'a') rcascanmode = RCASCAN_ACTIVE;
+		else if(optarg[0] == 'p') rcascanmode = RCASCAN_PASSIVE;
+		else
+			{
+			fprintf(stderr, "only (a)ctive or (p)assive is allowed\n");
+			exit(EXIT_FAILURE);
+			}
+		break;
+
 		case HCX_HELP:
 		usage(basename(argv[0]));
 		break;
@@ -5433,7 +5542,16 @@ if(vmflag == false) fprintf(stdout, "Failed to set virtual MAC!\n");
 if(bpf.len == 0) fprintf(stderr, "BPF is unset! Make sure hcxdumptool is running in a 100%% controlled environment!\n\n");
 fprintf(stdout, "starting...\033[?25l\n");
 nanosleep(&tspecifo, &tspeciforem);
-if(rds == 0)
+
+if(rcascanmode > 0)
+	{
+	if(nl_scanloop_rcascan(rcascanmode) == false)
+		{
+		errorcount++;
+		fprintf(stderr, "failed to initialize rcascan scan loop\n");
+		}
+	}
+else if(rds == 0)
 	{
 	if(nl_scanloop() == false)
 		{
