@@ -94,6 +94,7 @@ static int ifaktwiphy = 0;
 static u8 ifaktstatus = 0;
 static u8 ifakttype = 0;
 static u8 rds = 0;
+static u8 rcascanmode = 0;
 
 static aplist_t *aplist = NULL;
 static aplist_t *aprglist = NULL;
@@ -3004,7 +3005,7 @@ while(!wanteventflag)
 return true;
 }
 /*---------------------------------------------------------------------------*/
-static bool nl_scanloop_rcascan(u8 rcascanmode)
+static bool nl_scanloop_rcascan()
 {
 static ssize_t i;
 static int fd_epoll = 0;
@@ -5090,7 +5091,6 @@ static u8 exitgpiobuttonflag = 0;
 static u8 exittotflag = 0;
 static u8 exitwatchdogflag = 0;
 static u8 exiterrorflag = 0;
-static u8 rcascanmode = 0;
 static struct timespec tspecifo, tspeciforem;
 static struct tpacket_stats lStats = { 0 };
 static socklen_t lStatsLength = sizeof(lStats);
