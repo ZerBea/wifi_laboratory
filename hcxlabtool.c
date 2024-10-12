@@ -5539,7 +5539,7 @@ fprintf(stdout, "\nThis is a highly experimental penetration testing tool!\n"
 		"irreparable damage and result in significant consequences!\n"
 		"Not understanding what you were doing is not going to work as an excuse!\n\n");
 if(vmflag == false) fprintf(stdout, "Failed to set virtual MAC!\n");
-if((bpf.len == 0) && rcascanmode == 0)) fprintf(stderr, "BPF is unset! Make sure hcxdumptool is running in a 100%% controlled environment!\n\n");
+if((bpf.len == 0) && (rcascanmode == 0)) fprintf(stderr, "BPF is unset! Make sure hcxdumptool is running in a 100%% controlled environment!\n\n");
 fprintf(stdout, "starting...\033[?25l\n");
 nanosleep(&tspecifo, &tspeciforem);
 
