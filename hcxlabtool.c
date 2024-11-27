@@ -490,10 +490,7 @@ struct winsize w;
 
 if(system("clear") != 0) errorcount++;
 w.ws_row = 12;
-if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1)
-	{
-	errorcount++;
-	}
+if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1) errorcount++;
 if(w.ws_row > 10) w.ws_row -= 4;
 ii = 0;
 qsort(aplist, APLIST_MAX, APLIST_SIZE, sort_aplist_by_tsakt);
