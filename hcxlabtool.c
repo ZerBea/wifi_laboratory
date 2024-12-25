@@ -1011,7 +1011,7 @@ if(write(fd_socket_tx, &wltxbuffer, ii) == ii)	{
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_eap_request_id failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_eap_request_id failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -1213,7 +1213,7 @@ if((write(fd_socket_tx, wltxbuffer, RTHTX_SIZE + MAC_SIZE_ACK)) == RTHTX_SIZE + 
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_ack failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_ack failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -1238,7 +1238,7 @@ if((write(fd_socket_tx, wltxbuffer, RTHTX_SIZE + MAC_SIZE_NORM +2)) == RTHTX_SIZ
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_null failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_null failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -1380,7 +1380,7 @@ if((write(fd_socket_tx, &wltxbuffer, RTHTX_SIZE + MAC_SIZE_NORM + AUTHENTICATION
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_authenticationrequest failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_authenticationrequest failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -1405,7 +1405,7 @@ if((write(fd_socket_tx, &wltxbuffer, RTHTX_SIZE + MAC_SIZE_NORM + AUTHENTICATION
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_authenticationrequest failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_authenticationrequest failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -1431,7 +1431,7 @@ if((write(fd_socket_tx, wltxbuffer, RTHTX_SIZE + MAC_SIZE_NORM +2)) == RTHTX_SIZ
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_disassociation121 failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_disassociation121 failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -1457,7 +1457,7 @@ if((write(fd_socket_tx, wltxbuffer, RTHTX_SIZE + MAC_SIZE_NORM +2)) == RTHTX_SIZ
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_disassociation211 failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_disassociation211 failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -1483,7 +1483,7 @@ if((write(fd_socket_tx, wltxbuffer, RTHTX_SIZE + MAC_SIZE_NORM + AUTHENTICATIONR
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_authenticationrequest212 failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_authenticationrequest212 failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -1514,7 +1514,7 @@ if(write(fd_socket_tx, wltxbuffer, ii) == ii)
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_eapol_m1_wpa1 failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_eapol_m1_wpa1 failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -1544,7 +1544,7 @@ if(write(fd_socket_tx, wltxbuffer, ii) == ii)
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_eapol_m1_wpa2 failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_eapol_m1_wpa2 failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -1849,7 +1849,7 @@ if(write(fd_socket_tx, wltxbuffer, ii) == ii)
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_reassociationresponse failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_reassociationresponse failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -2039,7 +2039,7 @@ if(write(fd_socket_tx, wltxbuffer, ii) == ii)
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_associationresponse failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_associationresponse failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -2133,7 +2133,7 @@ if((write(fd_socket_tx, wltxbuffer, RTHTX_SIZE + MAC_SIZE_NORM + AUTHENTICATIONR
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_authenticationresponse failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_authenticationresponse failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -2316,7 +2316,7 @@ if((write(fd_socket_tx, wltxbuffer, ii)) == ii)
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_probereresponse failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_probereresponse failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -2357,7 +2357,7 @@ if((write(fd_socket_tx, wltxbuffer, ii)) == ii)
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_probereresponse failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_probereresponse failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
@@ -2398,7 +2398,7 @@ if((write(fd_socket_tx, wltxbuffer, ii)) == ii)
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_probereresponse failed: %s\n", strerror(errno));
+fprintf(fh_debug, "write_80211_probereresponse failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
