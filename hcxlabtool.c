@@ -1457,7 +1457,7 @@ if((write(fd_socket_tx, wltxbuffer, RTHTX_SIZE + MAC_SIZE_NORM +2)) == RTHTX_SIZ
 	return;
 	}
 #ifdef HCXDEBUG
-fprintf(fh_debug, "send_80211_disassociation211failed: %s\n", strerror(errno));
+fprintf(fh_debug, "send_80211_disassociation211 failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
 return;
