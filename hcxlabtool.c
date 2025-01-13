@@ -5008,7 +5008,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                    default = 0\n"
 	"                    0 = compile BPF code as decimal numbers (readable by --bpf)\n"
 	"                    1 = compile BPF code as decimal numbers preceded with a count (readable by --bpf)\n"
-	"                    2 = compile BPF code as a C program fragment\n"
+	"                    2 = compile BPF code as a C program fragment (readable by --bpf)\n"
 	"                    3 = compile BPF code as a ASM program\n"
 	"                    see man pcap-filter\n"
 #endif
