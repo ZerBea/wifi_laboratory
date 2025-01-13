@@ -4744,7 +4744,7 @@ return true;
 }
 /*---------------------------------------------------------------------------*/
 #ifdef HCXWANTLIBPCAP
-static bool compile_bpf(char *bpfs)
+static bool compile_bpf(char *bpfs, int bpfmode)
 {
 static u16 i;
 static pcap_t *hpcap = NULL;
@@ -4761,8 +4761,15 @@ if(pcap_compile(hpcap, &bpfp, bpfs, 1, 0))
 	fprintf(stderr, "failed to compile BPF\n");
 	return false;
 	}
-bpfins = bpfp.bf_insns;
-for(i = 0; i < bpfp.bf_len; ++bpfins, ++ i) fprintf(stdout, "%u %u %u %u\n", bpfins->code, bpfins->jt, bpfins->jf, bpfins->k);
+
+if(bpfmode == BPFD_HCX)
+	{
+	bpfins = bpfp.bf_insns;
+	for(i = 0; i < bpfp.bf_len; ++bpfins, ++ i) fprintf(stdout, "%u %u %u %u\n", bpfins->code, bpfins->jt, bpfins->jf, bpfins->k);
+	}
+else if(bpfmode == BPFD_ASM) bpf_dump(&bpfp, 1);
+else if(bpfmode == BPFD_C) bpf_dump(&bpfp, 2);
+else if(bpfmode == BPFD_TCPDUMP) bpf_dump(&bpfp, 3);
 pcap_freecode(&bpfp);
 return true;
 }
@@ -4992,8 +4999,15 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"-l               : show PHYSICAL INTERFACE list (tabulator separated and greppable) and terminate\n"
 	"-I <INTERFACE>   : show detailed information about INTERFACE and terminate\n"
 #ifdef HCXWANTLIBPCAP
-	"--bpfc=<filter>:   compile Berkeley Packet Filter (BPF) and exit\n"
+	"--bpfc=<filter>  : compile Berkeley Packet Filter (BPF) and exit\n"
 	"                    $ %s --bpfc=\"wlan addr3 112233445566\" > filter.bpf\n"
+	"                    see man pcap-filter\n"
+	"--bpfd=<mode>    : set output mode for compiled Berkeley Packet Filter (BPF)\n"
+	"                    default = 0\n"
+	"                    0 = compile BPF code as decimal numbers (readable by --bpf)\n"
+	"                    1 = compile BPF code as decimal numbers preceded with a count (readable by --bpf)\n"
+	"                    2 = compile BPF code as a ASM program\n"
+	"                    3 = compile BPF code as a C program fragment\n"
 	"                    see man pcap-filter\n"
 #endif
 	"--bpf=<file>     : input Berkeley Packet Filter (BPF) code (maximum %d instructions) in tcpdump decimal numbers format\n"
@@ -5090,6 +5104,9 @@ int main(int argc, char *argv[])
 {
 static int auswahl = -1;
 static int index = 0;
+#ifdef HCXWANTLIBPCAP
+static int bpfdmode = 0;
+#endif
 static u8 exiteapolflag = 0;
 static u8 exitsigtermflag = 0;
 static u8 exitgpiobuttonflag = 0;
@@ -5126,6 +5143,7 @@ static const struct option long_options[] =
 	{"bpf",				required_argument,	NULL,	HCX_BPF},
 #ifdef HCXWANTLIBPCAP
 	{"bpfc",			required_argument,	NULL,	HCX_BPFC},
+	{"bpfd",			required_argument,	NULL,	HCX_BPFD},
 #endif
 	{"ftc",				no_argument,		NULL,	HCX_FTC},
 	{"disable_disassociation",	no_argument,		NULL,	HCX_DISABLE_DISASSOCIATION},
@@ -5175,6 +5193,15 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		if(strlen(bpfstring) < 2)
 			{
 			fprintf(stderr, "BPF ERROR\n");
+			exit(EXIT_FAILURE);
+			}
+		break;
+
+		case HCX_BPFD:
+		bpfdmode = atoi(optarg);
+		if(bpfdmode > BPFD_C)
+			{
+			fprintf(stderr, "BPF mode ERROR (allowed 0 to 3)\n");
 			exit(EXIT_FAILURE);
 			}
 		break;
@@ -5404,7 +5431,7 @@ if((fh_debug = fopen("hcxerror.log", "a")) == NULL)
 #ifdef HCXWANTLIBPCAP
 if(bpfstring != NULL)
 	{
-	if(compile_bpf(bpfstring) == true) exit(EXIT_SUCCESS);
+	if(compile_bpf(bpfstring, bpfdmode) == true) exit(EXIT_SUCCESS);
 	else exit(EXIT_FAILURE);
 	}
 #endif

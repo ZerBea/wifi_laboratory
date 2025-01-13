@@ -2,27 +2,28 @@
 #define HCX_BPF				1
 #ifdef HCXWANTLIBPCAP
 #define HCX_BPFC			2
+#define HCX_BPFD			3
 #endif
-#define HCX_FTC				3
-#define HCX_TX_MAX			4
-#define HCX_GPIO_BUTTON			5
-#define HCX_GPIO_STATUSLED		6
-#define HCX_TOT				7
-#define HCX_ERROR_MAX			8
-#define HCX_DISABLE_DISASSOCIATION	9
-#define HCX_WATCHDOG_MAX		10
-#define HCX_M1M2ROGUE_MAX		11
-#define HCX_APCOUNT_MAX			12
-#define HCX_PRTX_MAX			13
-#define HCX_ON_SIGTERM			14
-#define HCX_ON_TOT			15
-#define HCX_ON_GPIOBUTTON		16
-#define HCX_ON_WATCHDOG			17
-#define HCX_EXIT_ON_EAPOL		18
-#define HCX_ON_ERROR			19
-#define HCX_ESSIDLIST			20
-#define HCX_RDS				21
-#define HCX_RCASCAN			22
+#define HCX_FTC				4
+#define HCX_TX_MAX			5
+#define HCX_GPIO_BUTTON			6
+#define HCX_GPIO_STATUSLED		7
+#define HCX_TOT				8
+#define HCX_ERROR_MAX			9
+#define HCX_DISABLE_DISASSOCIATION	10
+#define HCX_WATCHDOG_MAX		11
+#define HCX_M1M2ROGUE_MAX		12
+#define HCX_APCOUNT_MAX			13
+#define HCX_PRTX_MAX			14
+#define HCX_ON_SIGTERM			15
+#define HCX_ON_TOT			16
+#define HCX_ON_GPIOBUTTON		17
+#define HCX_ON_WATCHDOG			18
+#define HCX_EXIT_ON_EAPOL		19
+#define HCX_ON_ERROR			20
+#define HCX_ESSIDLIST			21
+#define HCX_RDS				22
+#define HCX_RCASCAN			23
 #define HCX_IFNAME			'i'
 #define HCX_PCAPNGNAME			'w'
 #define HCX_INTERFACE_INFO		'I'
@@ -60,6 +61,11 @@
 #define IFTYPENL		0x01
 #define IFTYPEMON		0x02
 #define IFTYPEMONACT		0x04
+
+#define BPFD_HCX		0
+#define BPFD_TCPDUMP		1
+#define BPFD_ASM		2
+#define BPFD_C			3
 
 #define RCASCAN_ACTIVE		0x01
 #define RCASCAN_PASSIVE		0x02
