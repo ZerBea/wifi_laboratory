@@ -64,8 +64,8 @@
 
 #define BPFD_HCX		0
 #define BPFD_TCPDUMP		1
-#define BPFD_ASM		2
-#define BPFD_C			3
+#define BPFD_C			2
+#define BPFD_ASM		3
 
 #define RCASCAN_ACTIVE		0x01
 #define RCASCAN_PASSIVE		0x02

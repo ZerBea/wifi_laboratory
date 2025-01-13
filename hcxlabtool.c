@@ -4702,6 +4702,7 @@ return len;
 static bool read_bpf(char *bpfname)
 {
 static int len;
+static u16 bpflenr;
 static struct sock_filter *bpfptr;
 static FILE *fh_filter;
 static char linein[128];
@@ -4709,6 +4710,7 @@ static char linein[128];
 if((fh_filter = fopen(bpfname, "r")) == NULL) return false;
 bpf.filter = (struct sock_filter*)calloc(BPF_MAXINSNS, sizeof(struct sock_filter));
 bpf.len = 0;
+bpflenr = 0;
 bpfptr = bpf.filter;
 while(bpf.len < BPF_MAXINSNS +1)
 	{
@@ -5006,8 +5008,8 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                    default = 0\n"
 	"                    0 = compile BPF code as decimal numbers (readable by --bpf)\n"
 	"                    1 = compile BPF code as decimal numbers preceded with a count (readable by --bpf)\n"
-	"                    2 = compile BPF code as a ASM program\n"
-	"                    3 = compile BPF code as a C program fragment\n"
+	"                    2 = compile BPF code as a C program fragment\n"
+	"                    3 = compile BPF code as a ASM program\n"
 	"                    see man pcap-filter\n"
 #endif
 	"--bpf=<file>     : input Berkeley Packet Filter (BPF) code (maximum %d instructions) in tcpdump decimal numbers format\n"
@@ -5199,7 +5201,7 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 
 		case HCX_BPFD:
 		bpfdmode = atoi(optarg);
-		if(bpfdmode > BPFD_C)
+		if(bpfdmode > BPFD_ASM)
 			{
 			fprintf(stderr, "BPF mode ERROR (allowed 0 to 3)\n");
 			exit(EXIT_FAILURE);
