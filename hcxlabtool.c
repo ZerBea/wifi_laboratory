@@ -4770,6 +4770,13 @@ if(bpfmode == BPFD_HCX)
 else if(bpfmode == BPFD_ASM) bpf_dump(&bpfp, 1);
 else if(bpfmode == BPFD_C) bpf_dump(&bpfp, 2);
 else if(bpfmode == BPFD_TCPDUMP) bpf_dump(&bpfp, 3);
+else if(bpfmode == BPFD_DBG)
+	{
+	bpfins = bpfp.bf_insns;
+	fprintf(stdout, "%u", bpfp.bf_len);
+	for(i = 0; i < bpfp.bf_len; ++bpfins, ++ i) fprintf(stdout, ",%u %u %u %u", bpfins->code, bpfins->jt, bpfins->jf, bpfins->k);
+	fprintf(stdout, "\n");
+	}
 pcap_freecode(&bpfp);
 return true;
 }
@@ -5008,6 +5015,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                    1 = compile BPF code as decimal numbers preceded with a count (readable by --bpf)\n"
 	"                    2 = compile BPF code as a C program fragment (readable by --bpf)\n"
 	"                    3 = compile BPF code as a ASM program\n"
+	"                    4 = compile BPF code as bpf_debug style\n"
 	"                    see man pcap-filter\n"
 #endif
 	"--bpf=<file>     : input Berkeley Packet Filter (BPF) code (maximum %d instructions) in tcpdump decimal numbers format\n"
@@ -5199,9 +5207,9 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 
 		case HCX_BPFD:
 		bpfdmode = atoi(optarg);
-		if(bpfdmode > BPFD_ASM)
+		if(bpfdmode > BPFD_DBG)
 			{
-			fprintf(stderr, "BPF mode ERROR (allowed 0 to 3)\n");
+			fprintf(stderr, "BPF mode ERROR (allowed 0 to 4)\n");
 			exit(EXIT_FAILURE);
 			}
 		break;
