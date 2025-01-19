@@ -2821,6 +2821,45 @@ else if(macfrx->type == IEEE80211_FTYPE_DATA)
 return;
 }
 /*===========================================================================*/
+static inline __attribute__((always_inline)) void process_packet_rcascan(void)
+{
+if((packetlen = read(fd_socket_rx, packetptr, PCAPNG_SNAPLEN)) < RTHRX_SIZE)
+	{
+	if(packetlen == -1) errorcount++;
+	return;
+	}
+rth = (rth_t*)packetptr;
+if((__hcx32le(rth->it_present) & IEEE80211_RADIOTAP_DBM_ANTSIGNAL) == 0) return;
+if(__hcx16le(rth->it_len) > packetlen)
+	{
+	errorcount++;
+	return;
+	}
+ieee82011ptr = packetptr + __hcx16le(rth->it_len);
+ieee82011len = packetlen - __hcx16le(rth->it_len);
+if(ieee82011len <= MAC_SIZE_RTS) return;
+macfrx = (ieee80211_mac_t*)ieee82011ptr;
+if((macfrx->from_ds == 1) && (macfrx->to_ds == 1))
+	{
+	payloadptr = ieee82011ptr +MAC_SIZE_LONG;
+	payloadlen = ieee82011len -MAC_SIZE_LONG;
+	}
+else
+	{
+	payloadptr = ieee82011ptr +MAC_SIZE_NORM;
+	payloadlen = ieee82011len -MAC_SIZE_NORM;
+	}
+clock_gettime(CLOCK_REALTIME, &tspecakt);
+tsakt = ((u64)tspecakt.tv_sec * TSSECOND1) + tspecakt.tv_nsec;
+packetcount++;
+if(macfrx->type == IEEE80211_FTYPE_MGMT)
+	{
+	if(macfrx->subtype == IEEE80211_STYPE_BEACON) process80211beacon();
+	else if(macfrx->subtype == IEEE80211_STYPE_PROBE_RESP) process80211proberesponse();
+	}
+return;
+}
+/*===========================================================================*/
 /*===========================================================================*/
 /*SCAN LOOPs */
 static bool nl_scanloop(void)
@@ -3054,7 +3093,7 @@ while(!wanteventflag)
 		}
 	for(i = 0; i < epret; i++)
 		{
-		if(events[i].data.fd == fd_socket_rx) process_packet();
+		if(events[i].data.fd == fd_socket_rx) process_packet_rcascan();
 		else if(events[i].data.fd == fd_timer1)
 			{
 			if(read(fd_timer1, &timer1count, sizeof(u64)) == -1) errorcount++;
