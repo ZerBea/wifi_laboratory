@@ -222,27 +222,6 @@ static const u8 authenticationrequestdata[] =
 };
 #define AUTHENTICATIONREQUEST_SIZE sizeof(authenticationrequestdata)
 /*---------------------------------------------------------------------------*/
-static const u8 reassociationrequestdata[] =
-{
-/* Tag: Supported Rates 1(B), 2(B), 5.5(B), 11(B), 6(B), 9, 12(B), 18, [Mbit/sec] */
-0x01, 0x08, 0x82, 0x84, 0x8b, 0x96, 0x8c, 0x12, 0x98, 0x24,
-/* Tag: Extended Supported Rates 24(B), 36, 48, 54, [Mbit/sec] */
-0x32, 0x04, 0xb0, 0x48, 0x60, 0x6c,
-/* RSN information AES PSK (WPA2) */
-0x30, 0x14, 0x01, 0x00,
-0x00, 0x0f, 0xac, 0x04, /* group cipher */
-0x01, 0x00, /* count */
-0x00, 0x0f, 0xac, 0x04, /* pairwise cipher */
-0x01, 0x00, /* count */
-0x00, 0x0f, 0xac, 0x02, /* AKM */
-0x80, 0x00,
-/* RM Enabled Capabilities */
-0x46, 0x05, 0x7b, 0x00, 0x02, 0x00, 0x00,
-/* Supported Operating Classes */
-0x3b, 0x04, 0x51, 0x51, 0x53, 0x54
-};
-#define REASSOCIATIONREQUEST_SIZE sizeof(reassociationrequestdata)
-/*---------------------------------------------------------------------------*/
 static const u8 associationrequestcapa[] =
 {
 0x31, 0x04, 0x05, 0x00
@@ -5624,7 +5603,7 @@ nanosleep(&tspecifo, &tspeciforem);
 
 if(rcascanmode > 0)
 	{
-	if(nl_scanloop_rcascan(rcascanmode) == false)
+	if(nl_scanloop_rcascan() == false)
 		{
 		errorcount++;
 		fprintf(stderr, "failed to initialize rcascan scan loop\n");
