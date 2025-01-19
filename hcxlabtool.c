@@ -3109,6 +3109,7 @@ while(!wanteventflag)
 				show_realtime();
 				scanlistindex++;
 				if(nl_set_frequency() == false) errorcount++;
+				send_80211_proberequest_undirected();
 				}
 			else if((lifetime % 5) == 0) show_realtime();
 			if((lifetime % 10) == 0)
