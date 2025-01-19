@@ -2800,6 +2800,33 @@ else if(macfrx->type == IEEE80211_FTYPE_DATA)
 return;
 }
 /*===========================================================================*/
+
+/*---------------------------------------------------------------------------*/
+static inline __attribute__((always_inline)) void send_80211_proberequest_undirected(void)
+{
+macftx = (ieee80211_mac_t*)&wltxbuffer[RTHTX_SIZE];
+macftx->type = IEEE80211_FTYPE_MGMT;
+macftx->subtype = IEEE80211_STYPE_PROBE_REQ;
+wltxbuffer[RTHTX_SIZE + 1] = 0;
+macftx->duration = HCXTXDURATION;
+memcpy(macftx->addr1, macbc, ETH_ALEN);
+memcpy(macftx->addr2, macclientrg, ETH_ALEN);
+memcpy(macftx->addr3, macbc, ETH_ALEN);
+macftx->sequence = __hcx16le(seqcounter2++ << 4);
+if(seqcounter1 > 4095) seqcounter4 = 1;
+memcpy(&wltxbuffer[RTHTX_SIZE + MAC_SIZE_NORM], &proberequest_undirected_data, PROBEREQUEST_UNDIRECTED_SIZE);
+if((write(fd_socket_tx, &wltxbuffer, RTHTX_SIZE + MAC_SIZE_NORM + PROBEREQUEST_UNDIRECTED_SIZE)) == RTHTX_SIZE + MAC_SIZE_NORM + PROBEREQUEST_UNDIRECTED_SIZE)
+	{
+	errortxcount = 0;
+	return;
+	}
+#ifdef HCXDEBUG
+fprintf(fh_debug, "write_80211_proberequest_undirected failed: %s\n", strerror(errno));
+#endif
+errortxcount++;
+return;
+}
+/*===========================================================================*/
 static inline __attribute__((always_inline)) void process_packet_rcascan(void)
 {
 if((packetlen = read(fd_socket_rx, packetptr, PCAPNG_SNAPLEN)) < RTHRX_SIZE)
