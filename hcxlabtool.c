@@ -937,7 +937,7 @@ else
 	pcapngfilename = pcapngname;
 	}
 umask(0);
-if((fd_pcapng = open(pcapngfilename, O_WRONLY | O_TRUNC | O_CREAT, 0666)) < 0) return false;
+if((fd_pcapng = open(pcapngfilename, O_WRONLY | O_TRUNC | O_CREAT, 0644)) < 0) return false;
 if(writeshb() == false) return false;
 if(writeidb() == false) return false;
 if(writecb() == false) return false;
