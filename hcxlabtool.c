@@ -4542,7 +4542,7 @@ static char ftcname[PATH_MAX] = { 0 };
 strncpy(ftcname, pwd->pw_dir, PATH_MAX -10);
 strcat(ftcname, "/.hcxftc");
 clock_gettime(CLOCK_REALTIME, &tspecakt);
-if((fd_fakeclock = open(ftcname, O_WRONLY | O_TRUNC | O_CREAT, 0666)) > 0)
+if((fd_fakeclock = open(ftcname, O_WRONLY | O_TRUNC | O_CREAT, 0644)) > 0)
 	{
 	if(write(fd_fakeclock, &tspecakt, sizeof(struct timespec)) != sizeof(struct timespec)) fprintf(stderr, "failed to write timestamp\n");
 	close(fd_fakeclock);
@@ -4566,6 +4566,7 @@ if((fd_fakeclock = open(ftcname, O_RDONLY)) > 0)
 		}
 	close(fd_fakeclock);
 	}
+else save_ftc();
 return;
 }
 /*===========================================================================*/
