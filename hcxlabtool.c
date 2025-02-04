@@ -4566,7 +4566,7 @@ if((fd_fakeclock = open(ftcname, O_RDONLY)) > 0)
 		}
 	close(fd_fakeclock);
 	}
-else save_ftc();
+save_ftc();
 return;
 }
 /*===========================================================================*/
