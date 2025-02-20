@@ -453,11 +453,11 @@ for(i = 0; i < ifpresentlistcounter; i++)
 	
 	}
 fprintf(stdout, "\nmodes reported by the driver:\n"
-		"* active monitor mode available (do not trust it)\n"
-		"S active monitor mode available on shared interface (do not trust it)\n"
-		"+ monitor mode available\n"
-		"s monitor mode available on shared interface\n"
-		"- no monitor mode available\n");
+		"* active promiscuous mode available (do not trust it)\n"
+		"S active promiscuous mode available on shared interface (do not trust it)\n"
+		"+ promiscuous mode available\n"
+		"s promiscuous mode available on shared interface\n"
+		"- no promiscuous available\n");
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -5048,7 +5048,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"-t <second>      : minimum stay time (will increase on new stations and/or authentications)\n"
 	"                    default %d seconds\n"
 	"-A               : ACK incoming frames\n"
-	"                    INTERFACE must support active monitor mode\n"
+	"                    INTERFACE must support active promiscuous mode\n"
 	"-L               : show PHYSICAL INTERFACE list and terminate\n"
 	"-l               : show PHYSICAL INTERFACE list (tabulator separated and greppable) and terminate\n"
 	"-I <INTERFACE>   : show detailed information about INTERFACE and terminate\n"
@@ -5092,7 +5092,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	eigenname, VERSION_TAG, VERSION_YEAR, eigenname, eigenname, eigenname, eigenname, TIMEHOLD, BPF_MAXINSNS);
 #endif
 fprintf(stdout, "less common options:\n--------------------\n"
-	"-m <INTERFACE>            : set monitor mode and terminate\n"
+	"-m <INTERFACE>            : set promiscuous mode and terminate\n"
 	"--m2max=<digit>           : set maximum of received M1M2ROGUE\n"
 	"                             default: %d M1M2ROGUE\n"
 	"                             to reject CLIENTs set 0\n"
@@ -5575,7 +5575,7 @@ if(monitormodeflag == true)
 		{
 		errorcount++;
 		wanteventflag |= EXIT_ON_ERROR;
-		fprintf(stderr, "failed to set monitor mode\n");
+		fprintf(stderr, "failed to set promiscuous mode\n");
 		}
 	if((userfrequencylistname != NULL) || (userchannellistname != 0))
 		{
