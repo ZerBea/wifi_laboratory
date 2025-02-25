@@ -61,8 +61,9 @@ static struct passwd *pwd = NULL;
 
 static u16 wanteventflag = 0;
 static u16 exiteapolpmkidflag = 0;
-static u16 exiteapolm2flag = 0;
 static u16 exiteapolm3flag = 0;
+static u16 exiteapolm2flag = 0;
+static u16 exiteapolm2rgflag = 0;
 static u16 exiteapolm1flag = 0;
 
 static int gpiostatusled = 0;
@@ -1027,9 +1028,9 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(((aplist + i)->apdata->tsm3 - (aplist + i)->apdata->tsm2) > TSEAPOL1) break;
 	if(((aplist + i)->apdata->tsm3 - (aplist + i)->apdata->tsm1) > TSEAPOL2) break;
 	if(((aplist + i)->apdata->tsm2 - (aplist + i)->apdata->tsm1) > TSEAPOL1) break;
+	wanteventflag |= exiteapolm3flag;
 	(aplist + i)->apdata->m1m2m3 = '+';
 	writeepb();
-	wanteventflag |= exiteapolm3flag;
 	return;
 	}
 writeepb();
@@ -1055,10 +1056,10 @@ if(replaycountrg == replaycount)
 			memcpy((calist + i)->cadata->mic, wpakey->keymic, KEYMIC_MAX);
 			(calist + i)->cadata->clientcount -= 1;
 			(calist + i)->cadata->m2 = '+';
+			wanteventflag |= exiteapolm2rgflag;
 			if((calist + i)->cadata->akm == RSNPSK) writeepbm1wpa2();
 			else if((calist + i)->cadata->akm == WPAPSK) writeepbm1wpa1();
 			writeepb();
-			wanteventflag |= exiteapolm2flag;
 			}
 		if(i > CALIST_HALF) qsort(calist, i + 1, CALIST_SIZE, sort_calist_by_tsakt);
 		return;
@@ -1076,6 +1077,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if(((aplist + i)->apdata->replaycount1) != (aplist + i)->apdata->replaycount2) break;
 	if(((aplist + i)->apdata->tsm2 - (aplist + i)->apdata->tsm1) > TSEAPOL1) break;
 	(aplist + i)->apdata->m1m2 = '+';
+	wanteventflag |= exiteapolm2flag;
 	writeepb();
 	return;
 	}
@@ -1100,11 +1102,11 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	(aplist + i)->tsakt = tsakt;
 	(aplist + i)->apdata->tsm1 = tsakt;
 	(aplist + i)->apdata->m1 = '+';
+	wanteventflag |= exiteapolm1flag;
 	if(memcmp(macclientrg, (aplist + i)->apdata->macc, ETH_ALEN) == 0) (aplist + i)->apdata->apcount = apcountmax;
 	memcpy((aplist + i)->apdata->macc, macfrx->addr1, ETH_ALEN);
 	(aplist + i)->apdata->replaycount1 = __hcx64be(wpakey->replaycount);
 	memcpy((aplist + i)->apdata->nonce, &wpakey->nonce[28], 4);
-	wanteventflag |= exiteapolm1flag;
 	if(wpakey->wpadatalen >= IEEE80211_PMKID_SIZE)
 		{
 		pmkid = (ieee80211_pmkid_t*)wpakey->data;
@@ -5111,10 +5113,11 @@ fprintf(stdout, "less common options:\n--------------------\n"
 fprintf(stdout, "--tot=<digit>             : enable timeout timer in minutes\n"
 	"--exitoneapol=<type>      : exit on first EAPOL occurrence:\n"
 	"                             bitmask:\n"
-	"                              1 = PMKID (from AP)\n"
-	"                              2 = EAPOL M2M3 (authorized)\n"
-	"                              4 = EAPOL M1M2/M1M2ROGUE (not authorized)\n"
-	"                              8 = EAPOL M1\n"
+	"                               1 = PMKID (from AP)\n"
+	"                               2 = EAPOL M2M3 (authorized)\n"
+	"                               4 = EAPOL M1M2 (not authorized)\n"
+	"                               8 = EAPOL M1M2ROGUE (not authorized)\n"
+	"                              16 = EAPOL M1\n"
 	"                             target BPF filter is recommended\n"
 	"--onsigterm=<action>      : action when the program has been terminated (poweroff, reboot)\n"
 	"                             poweroff: power off system\n"
@@ -5337,8 +5340,8 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		case HCX_EXIT_ON_EAPOL:
 		exiteapolflag = (atoi(optarg) & 0x0f) << 4;
 		exiteapolpmkidflag |= exiteapolflag & EXIT_ON_EAPOL_PMKID;
-		exiteapolm2flag |= exiteapolflag & EXIT_ON_EAPOL_M2;
 		exiteapolm3flag |= exiteapolflag & EXIT_ON_EAPOL_M3;
+		exiteapolm2rgflag |= exiteapolflag & EXIT_ON_EAPOL_M2RG;
 		exiteapolm1flag |= exiteapolflag & EXIT_ON_EAPOL_M1;
 		break;
 
@@ -5680,6 +5683,7 @@ if(exiteapolflag != 0)
 	if((wanteventflag & EXIT_ON_EAPOL_PMKID) == EXIT_ON_EAPOL_PMKID) fprintf(stdout, "exit on PMKID\n");
 	if((wanteventflag & EXIT_ON_EAPOL_M3) == EXIT_ON_EAPOL_M3) fprintf(stdout, "exit on EAPOL M1M2M3\n");
 	if((wanteventflag & EXIT_ON_EAPOL_M2) == EXIT_ON_EAPOL_M2) fprintf(stdout, "exit on EAPOL M1M2\n");
+	if((wanteventflag & EXIT_ON_EAPOL_M2RG) == EXIT_ON_EAPOL_M2RG) fprintf(stdout, "exit on EAPOL M1M2ROGUE\n");
 	if((wanteventflag & EXIT_ON_EAPOL_M1) == EXIT_ON_EAPOL_M1) fprintf(stdout, "exit on EAPOL M1\n");
 	}
 if((wanteventflag & EXIT_ON_SIGTERM) == EXIT_ON_SIGTERM)
