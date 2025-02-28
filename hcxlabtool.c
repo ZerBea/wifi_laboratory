@@ -475,8 +475,8 @@ if(w.ws_row > 10) w.ws_row -= 4;
 ii = 0;
 qsort(aplist, APLIST_MAX, APLIST_SIZE, sort_aplist_by_tsakt);
 qsort(calist, CALIST_MAX, CALIST_SIZE, sort_calist_by_tsakt);
-fprintf(stdout, "CHA   LAST   A123P    MAC-CL       MAC-AP    ESSID            SCAN:%6u/%u\n"
-		"-----------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
+fprintf(stdout, "CHA   LAST   EA123P    MAC-CL       MAC-AP    ESSID            SCAN:%6u/%u\n"
+		"------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
 if(rds == 1)
 	{
 	for(i = 0; i < APLIST_MAX - 1; i++)
@@ -486,7 +486,8 @@ if(rds == 1)
 			{
 			tvlast = (aplist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "%3u %s %c%c%c%c%c %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+				fprintf(stdout, "%3u %s %c%c%c%c%c%c %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+				(aplist + i)->apdata->privacy,
 				(aplist + i)->apdata->akmstat,
 				(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
 				(aplist + i)->apdata->macc[00], (aplist + i)->apdata->macc[01], (aplist + i)->apdata->macc[02],
@@ -504,7 +505,7 @@ if(rds == 1)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s p+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "    %s ep+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->macc[00], (calist + i)->cadata->macc[01], (calist + i)->cadata->macc[02],
 				(calist + i)->cadata->macc[03],	(calist + i)->cadata->macc[04], (calist + i)->cadata->macc[05],
@@ -524,7 +525,8 @@ else if(rds == 2)
 			{
 			tvlast = (aplist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "%3u %s %c%c%c%c%c %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+				fprintf(stdout, "%3u %s %c%c%c%c%c%c %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+				(aplist + i)->apdata->privacy,
 				(aplist + i)->apdata->akmstat,
 				(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
 				(aplist + i)->apdata->macc[00], (aplist + i)->apdata->macc[01], (aplist + i)->apdata->macc[02],
@@ -542,7 +544,7 @@ else if(rds == 2)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s p+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "    %s ep+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->macc[00], (calist + i)->cadata->macc[01], (calist + i)->cadata->macc[02],
 				(calist + i)->cadata->macc[03],	(calist + i)->cadata->macc[04], (calist + i)->cadata->macc[05],
@@ -560,7 +562,8 @@ else if(rds == 3)
 		if((aplist + i)->tsakt == 0) break;
 		tvlast = (aplist +i)->tsakt / 1000000000ULL;
 		strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-			fprintf(stdout, "%3u %s %c%c%c%c%c %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+			fprintf(stdout, "%3u %s %c%c%c%c%c%c %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+			(aplist + i)->apdata->privacy,
 			(aplist + i)->apdata->akmstat,
 			(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
 			(aplist + i)->apdata->macc[00], (aplist + i)->apdata->macc[01], (aplist + i)->apdata->macc[02],
@@ -577,7 +580,7 @@ else if(rds == 3)
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s p+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "    %s ep+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->macc[00], (calist + i)->cadata->macc[01], (calist + i)->cadata->macc[02],
 				(calist + i)->cadata->macc[03],	(calist + i)->cadata->macc[04], (calist + i)->cadata->macc[05],
@@ -2572,6 +2575,8 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		(aplist + i)->apdata->proberesponse = true;
 		writeepb();
 		}
+	if(__hcx16le(proberesponse->capability) &  WLAN_CAPABILITY_PRIVACY) (aplist + i)->apdata->privacy = 'e';
+	else (aplist + i)->apdata->privacy = 'o';
 	get_tags((aplist + i)->apdata, proberesponselen, proberesponse->ie);
 	if(i > APLIST_HALF) qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 	return;
@@ -2588,6 +2593,8 @@ memset((aplist + i)->apdata, 0, APDATA_SIZE);
 (aplist + i)->apdata->proberesponse = true;
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 memcpy((aplist + i)->apdata->macc, macclientrg, ETH_ALEN);
+if(__hcx16le(proberesponse->capability) &  WLAN_CAPABILITY_PRIVACY) (aplist + i)->apdata->privacy = 'e';
+else (aplist + i)->apdata->privacy = 'o';
 get_tags((aplist + i)->apdata, proberesponselen, proberesponse->ie);
 if(apcountmax > 0)
 	{
@@ -2696,6 +2703,8 @@ memset((aplist + i)->apdata, 0, APDATA_SIZE);
 (aplist + i)->apdata->beacon = true;
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
 memcpy((aplist + i)->apdata->macc, macclientrg, ETH_ALEN);
+if(__hcx16le(beacon->capability) &  WLAN_CAPABILITY_PRIVACY) (aplist + i)->apdata->privacy = 'e';
+else (aplist + i)->apdata->privacy = 'o';
 get_tags((aplist + i)->apdata, beaconlen, beacon->ie);
 if(apcountmax > 0)
 	{
@@ -5076,6 +5085,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                    2 = show all APs (M1M2, M1M2M3 or PMKID), show CLIENTs (M1M2ROGUE)\n"
 	"                    3 = show all APs, show CLIENTs (M1M2ROGUE)\n"
 	"                    columns:\n"
+	"                     E = encryption (e)ncrypted / (o)pen\n"
 	"                     A = AKM (p)re-shared key\n"
 	"                     1 = received M1\n"
 	"                     2 = received M1M2\n"
