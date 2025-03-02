@@ -464,6 +464,20 @@ fprintf(stdout, "\nmodes reported by the driver:\n"
 return;
 }
 /*---------------------------------------------------------------------------*/
+static inline void show_realtime_rca(void)
+{
+struct winsize w;
+
+if(system("clear") != 0) errorcount++;
+w.ws_row = 12;
+if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1) errorcount++;
+if(w.ws_row > 10) w.ws_row -= 4;
+qsort(aplist, APLIST_MAX, APLIST_SIZE, sort_aplist_by_tsakt);
+
+
+return;
+}
+/*---------------------------------------------------------------------------*/
 static inline void show_realtime(void)
 {
 static size_t i, ii;
