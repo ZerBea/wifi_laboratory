@@ -2557,6 +2557,11 @@ while(0 < infolen)
 return;
 }
 /*---------------------------------------------------------------------------*/
+static inline __attribute__((always_inline)) void process80211proberesponse_rcascan(void)
+{
+return;
+}
+/*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void process80211proberesponse(void)
 {
 static size_t i;
@@ -2619,6 +2624,11 @@ if(apcountmax > 0)
 	}
 qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 writeepb();
+return;
+}
+/*---------------------------------------------------------------------------*/
+static inline __attribute__((always_inline)) void process80211beacon_rcascan(void)
+{
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -2871,8 +2881,8 @@ tsakt = ((u64)tspecakt.tv_sec * TSSECOND1) + tspecakt.tv_nsec;
 packetcount++;
 if(macfrx->type == IEEE80211_FTYPE_MGMT)
 	{
-	if(macfrx->subtype == IEEE80211_STYPE_BEACON) process80211beacon();
-	else if(macfrx->subtype == IEEE80211_STYPE_PROBE_RESP) process80211proberesponse();
+	if(macfrx->subtype == IEEE80211_STYPE_BEACON) process80211beacon_rcascan();
+	else if(macfrx->subtype == IEEE80211_STYPE_PROBE_RESP) process80211proberesponse_rcascan();
 	}
 return;
 }
@@ -3069,9 +3079,6 @@ static size_t packetcountlast = 0;
 static u64 timer1count;
 static struct timespec sleepled;
 
-printf("\n\n****** not yet implemented ******\n\n");
-return false;
-
 if((fd_epoll= epoll_create(1)) < 0) return false;
 ev.data.fd = fd_socket_rx;
 ev.events = EPOLLIN;
@@ -3120,7 +3127,7 @@ while(!wanteventflag)
 				show_realtime();
 				scanlistindex++;
 				if(nl_set_frequency() == false) errorcount++;
-				send_80211_proberequest_undirected();
+				if(rcascanmode == RCASCAN_ACTIVE) send_80211_proberequest_undirected();
 				}
 			else if((lifetime % 5) == 0) show_realtime();
 			if((lifetime % 10) == 0)
