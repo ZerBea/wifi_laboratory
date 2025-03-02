@@ -163,6 +163,8 @@ static u8 *eapolplptr = NULL;
 static ieee80211_wpakey_t *wpakey;
 static u16 keyinfo = 0;
 static u8 kdv = 0;
+static u16 rtfrequency = 0;
+static u8 rtrssi = 0;
 
 static enhanced_packet_block_t *epbhdr = NULL;
 
@@ -2559,6 +2561,8 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void process80211proberesponse_rcascan(void)
 {
+
+
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -2629,6 +2633,27 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void process80211beacon_rcascan(void)
 {
+static size_t i;
+static ieee80211_beacon_proberesponse_t *beacon;
+static u16 beaconlen;
+
+beacon = (ieee80211_beacon_proberesponse_t*)payloadptr;
+if((beaconlen = payloadlen - IEEE80211_BEACON_SIZE) < IEEE80211_IETAG_SIZE) return;
+for(i = 0; i < APLIST_MAX - 1; i++)
+	{
+	if((aplist + i)->tsakt == 0) break;
+	if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
+	get_tags((aplist + i)->apdata, beaconlen, beacon->ie);
+	if(i > APLIST_HALF) qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
+	return;
+	}
+(aplist + i)->tsakt = tsakt;
+memset((aplist + i)->apdata, 0, APDATA_SIZE);
+memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
+if(__hcx16le(beacon->capability) &  WLAN_CAPABILITY_PRIVACY) (aplist + i)->apdata->privacy = 'e';
+else (aplist + i)->apdata->privacy = 'o';
+get_tags((aplist + i)->apdata, beaconlen, beacon->ie);
+qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -2821,8 +2846,6 @@ else if(macfrx->type == IEEE80211_FTYPE_DATA)
 return;
 }
 /*===========================================================================*/
-
-/*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void send_80211_proberequest_undirected(void)
 {
 macftx = (ieee80211_mac_t*)&wltxbuffer[RTHTX_SIZE];
@@ -2845,6 +2868,57 @@ if((write(fd_socket_tx, &wltxbuffer, RTHTX_SIZE + MAC_SIZE_NORM + PROBEREQUEST_U
 fprintf(fh_debug, "write_80211_proberequest_undirected failed: %s\n", strerror(errno));
 #endif
 errortxcount++;
+return;
+}
+/*---------------------------------------------------------------------------*/
+static void get_radiotapfield(uint16_t rthlen)
+{
+static int i;
+static uint16_t pf;
+static rth_t *rth;
+static uint32_t *pp;
+
+rth = (rth_t*)packetptr;
+pf = RTHRX_SIZE;
+rtfrequency = 0;
+rtrssi = 0;
+if((rth->it_present & IEEE80211_RADIOTAP_EXT) == IEEE80211_RADIOTAP_EXT)
+	{
+	pp = (uint32_t*)packetptr;
+	for(i = 2; i < rthlen /4; i++)
+		{
+		#ifdef BIG_ENDIAN_HOST
+		pp[i] = byte_swap_32(pp[i]);
+		#endif
+		pf += 4;
+		if((pp[i] & IEEE80211_RADIOTAP_EXT) != IEEE80211_RADIOTAP_EXT) break;
+		}
+	}
+if((rth->it_present & IEEE80211_RADIOTAP_TSFT) == IEEE80211_RADIOTAP_TSFT)
+	{
+	if(pf > rthlen) return;
+	if((pf %8) != 0) pf += 4;
+	pf += 8;
+	}
+if((rth->it_present & IEEE80211_RADIOTAP_FLAGS) == IEEE80211_RADIOTAP_FLAGS)
+	{
+	if(pf > rthlen) return;
+	pf += 1;
+	}
+if((rth->it_present & IEEE80211_RADIOTAP_RATE) == IEEE80211_RADIOTAP_RATE) pf += 1;
+if((rth->it_present & IEEE80211_RADIOTAP_CHANNEL) == IEEE80211_RADIOTAP_CHANNEL)
+	{
+	if(pf > rthlen) return;
+	if((pf %2) != 0) pf += 1;
+	rtfrequency = (packetptr[pf +1] << 8) + packetptr[pf];
+	pf += 4;
+	}
+if((rth->it_present & IEEE80211_RADIOTAP_FHSS) == IEEE80211_RADIOTAP_FHSS)
+		{
+		if((pf %2) != 0) pf += 1;
+		pf += 2;
+		}
+if((rth->it_present & IEEE80211_RADIOTAP_DBM_ANTSIGNAL) == IEEE80211_RADIOTAP_DBM_ANTSIGNAL) rtrssi = packetptr[pf];
 return;
 }
 /*===========================================================================*/
@@ -2881,8 +2955,16 @@ tsakt = ((u64)tspecakt.tv_sec * TSSECOND1) + tspecakt.tv_nsec;
 packetcount++;
 if(macfrx->type == IEEE80211_FTYPE_MGMT)
 	{
-	if(macfrx->subtype == IEEE80211_STYPE_BEACON) process80211beacon_rcascan();
-	else if(macfrx->subtype == IEEE80211_STYPE_PROBE_RESP) process80211proberesponse_rcascan();
+	if(macfrx->subtype == IEEE80211_STYPE_BEACON)
+		{
+		get_radiotapfield(__hcx16le(rth->it_len));
+		process80211beacon_rcascan();
+		}
+	else if(macfrx->subtype == IEEE80211_STYPE_PROBE_RESP)
+		{
+		get_radiotapfield(__hcx16le(rth->it_len));
+		process80211proberesponse_rcascan();
+		}
 	}
 return;
 }
