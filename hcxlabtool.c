@@ -333,6 +333,7 @@ static u8 anoncerg[32] = { 0 };
 static u8 snoncerg[32] = { 0 };
 static char weakcandidate[PSK_MAX];
 static char timestring[TIMESTRING_LEN];
+static char timestringresponse[TIMESTRING_LEN];
 
 static char country[3];
 
@@ -453,7 +454,7 @@ for(i = 0; i < ifpresentlistcounter; i++)
 		(ifpresentlist + i)->hwmac[0], (ifpresentlist + i)->hwmac[1], (ifpresentlist + i)->hwmac[2], (ifpresentlist + i)->hwmac[3], (ifpresentlist + i)->hwmac[4], (ifpresentlist + i)->hwmac[5],
 		(ifpresentlist + i)->vimac[0], (ifpresentlist + i)->vimac[1], (ifpresentlist + i)->vimac[2], (ifpresentlist + i)->vimac[3], (ifpresentlist + i)->vimac[4], (ifpresentlist + i)->vimac[5],
 		mode, IF_NAMESIZE, unassigned, (ifpresentlist + i)->driver, po);
-	
+
 	}
 fprintf(stdout, "\nmodes reported by the driver:\n"
 		"* active monitor mode available (do not trust it)\n"
@@ -466,15 +467,111 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline void show_realtime_rca(void)
 {
+static size_t i;
+static time_t tvlast;
 struct winsize w;
 
 if(system("clear") != 0) errorcount++;
 w.ws_row = 12;
 if(ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1) errorcount++;
 if(w.ws_row > 10) w.ws_row -= 4;
+fprintf(stdout, "CHA  BEACON  RESPONSE RSSI    MAC-AP    ESSID                  SCAN:%6u/%u\n"
+		"------------------------------------------------------------------------------\n", (scanlist + scanlistindex)->frequency, (scanlist + scanlistindex)->channel);
+if(rds == 0)
+	{
+	qsort(aplist, APLIST_MAX, APLIST_SIZE, sort_aplist_by_tsakt);
+	for(i = 0; i < APLIST_MAX - 1; i++)
+		{
+		if((aplist + i)->tsakt == 0) return;
+		if((scanlist + scanlistindex)->channel == (aplist + i)->apdata->channel)
+			{
+			tvlast = (aplist +i)->tsakt / 1000000000ULL;
+			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
+			if((aplist + i)->apdata->tsresponse > 0)
+				{
+				tvlast = (aplist + i)->apdata->tsresponse / 1000000000ULL;
+				strftime(timestringresponse, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
+				fprintf(stdout, "%3u %s %s %4d %02x%02x%02x%02x%02x%02x %.*s\n",
+				(aplist + i)->apdata->channel, timestring, timestringresponse, (s8)(aplist + i)->apdata->rtrssi,
+				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
+				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
+				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
+				}
+			else
+				{
+				fprintf(stdout, "%3u %s          %4d %02x%02x%02x%02x%02x%02x %.*s\n",
+				(aplist + i)->apdata->channel, timestring, (s8)(aplist + i)->apdata->rtrssi,
+				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
+				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
+				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
+				}
+			}
+		}
+	return;
+	}
+else if(rds == 1)
+	{
+	qsort(aplist, APLIST_MAX, APLIST_SIZE, sort_aplist_by_tsresponse);
+	for(i = 0; i < APLIST_MAX - 1; i++)
+		{
+		if((aplist + i)->tsakt == 0) break;
+		if((scanlist + scanlistindex)->channel == (aplist + i)->apdata->channel)
+			{
+			tvlast = (aplist +i)->tsakt / 1000000000ULL;
+			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
+			if((aplist + i)->apdata->tsresponse > 0)
+				{
+				tvlast = (aplist + i)->apdata->tsresponse / 1000000000ULL;
+				strftime(timestringresponse, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
+				fprintf(stdout, "%3u %s %s %4d %02x%02x%02x%02x%02x%02x %.*s\n",
+				(aplist + i)->apdata->channel, timestring, timestringresponse, (s8)(aplist + i)->apdata->rtrssi,
+				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
+				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
+				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
+				}
+			else
+				{
+				fprintf(stdout, "%3u %s          %4d %02x%02x%02x%02x%02x%02x %.*s\n",
+				(aplist + i)->apdata->channel, timestring, (s8)(aplist + i)->apdata->rtrssi,
+				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
+				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
+				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
+				}
+			}
+		}
+	}
+else if(rds == 2)
+	{
+	qsort(aplist, APLIST_MAX, APLIST_SIZE, sort_aplist_by_rtrssi);
+	for(i = 0; i < APLIST_MAX - 1; i++)
+		{
+		if((aplist + i)->tsakt == 0) break;
+		if((scanlist + scanlistindex)->channel == (aplist + i)->apdata->channel)
+			{
+			tvlast = (aplist +i)->tsakt / 1000000000ULL;
+			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
+			if((aplist + i)->apdata->tsresponse > 0)
+				{
+				tvlast = (aplist + i)->apdata->tsresponse / 1000000000ULL;
+				strftime(timestringresponse, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
+				fprintf(stdout, "%3u %s %s %4d %02x%02x%02x%02x%02x%02x %.*s\n",
+				(aplist + i)->apdata->channel, timestring, timestringresponse, (s8)(aplist + i)->apdata->rtrssi,
+				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
+				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
+				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
+				}
+			else
+				{
+				fprintf(stdout, "%3u %s          %4d %02x%02x%02x%02x%02x%02x %.*s\n",
+				(aplist + i)->apdata->channel, timestring, (s8)(aplist + i)->apdata->rtrssi,
+				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
+				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
+				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
+				}
+			}
+		}
+	}
 qsort(aplist, APLIST_MAX, APLIST_SIZE, sort_aplist_by_tsakt);
-
-
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -502,26 +599,28 @@ if(rds == 1)
 			{
 			tvlast = (aplist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "%3u %s %c%c%c%c%c%c %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
-				(aplist + i)->apdata->privacy,
-				(aplist + i)->apdata->akmstat,
-				(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
-				(aplist + i)->apdata->macc[00], (aplist + i)->apdata->macc[01], (aplist + i)->apdata->macc[02],
-				(aplist + i)->apdata->macc[03],	(aplist + i)->apdata->macc[04], (aplist + i)->apdata->macc[05],
-				(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
-				(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
-				(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
+			fprintf(stdout, "%3u %s %c%c%c%c%c%c %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (aplist + i)->apdata->channel, timestring,
+			(aplist + i)->apdata->privacy,
+			(aplist + i)->apdata->akmstat,
+			(aplist + i)->apdata->m1, (aplist + i)->apdata->m1m2, (aplist + i)->apdata->m1m2m3, (aplist + i)->apdata->pmkid,
+			(aplist + i)->apdata->macc[00], (aplist + i)->apdata->macc[01], (aplist + i)->apdata->macc[02],
+			(aplist + i)->apdata->macc[03],	(aplist + i)->apdata->macc[04], (aplist + i)->apdata->macc[05],
+			(aplist + i)->apdata->maca[00], (aplist + i)->apdata->maca[01], (aplist + i)->apdata->maca[02],
+			(aplist + i)->apdata->maca[03],	(aplist + i)->apdata->maca[04], (aplist + i)->apdata->maca[05],
+			(aplist + i)->apdata->essidlen, (aplist + i)->apdata->essid);
 			if((ii += 1) > w.ws_row) break;
 			}
 		}
 	for(i = 0; i < CALIST_MAX - 1; i++)
 		{
 		if((calist + i)->tsakt == 0) break;
-		if((calist +i)->cadata->m2 == '+') 
+		if((scanlist + scanlistindex)->channel == (calist + i)->cadata->channel)
+
+		if((calist +i)->cadata->m2 == '+')
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s ep+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "%3u %s ep+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (calist + i)->cadata->channel, timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->macc[00], (calist + i)->cadata->macc[01], (calist + i)->cadata->macc[02],
 				(calist + i)->cadata->macc[03],	(calist + i)->cadata->macc[04], (calist + i)->cadata->macc[05],
@@ -556,11 +655,11 @@ else if(rds == 2)
 	for(i = 0; i < CALIST_MAX - 1; i++)
 		{
 		if((calist + i)->tsakt == 0) break;
-		if((calist +i)->cadata->m2 == '+') 
+		if((calist +i)->cadata->m2 == '+')
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s ep+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "%3u %s ep+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (calist + i)->cadata->channel, timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->macc[00], (calist + i)->cadata->macc[01], (calist + i)->cadata->macc[02],
 				(calist + i)->cadata->macc[03],	(calist + i)->cadata->macc[04], (calist + i)->cadata->macc[05],
@@ -592,11 +691,11 @@ else if(rds == 3)
 	for(i = 0; i < CALIST_MAX - 1; i++)
 		{
 		if((calist + i)->tsakt == 0) break;
-		if((calist +i)->cadata->m2 == '+') 
+		if((calist +i)->cadata->m2 == '+')
 			{
 			tvlast = (calist +i)->tsakt / 1000000000ULL;
 			strftime(timestring, TIMESTRING_LEN, "%H:%M:%S", localtime(&tvlast));
-				fprintf(stdout, "    %s ep+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", timestring,
+				fprintf(stdout, "%3u %s ep+%c   %02x%02x%02x%02x%02x%02x %02x%02x%02x%02x%02x%02x %.*s\n", (calist + i)->cadata->channel, timestring,
 				(calist + i)->cadata->m2,
 				(calist + i)->cadata->macc[00], (calist + i)->cadata->macc[01], (calist + i)->cadata->macc[02],
 				(calist + i)->cadata->macc[03],	(calist + i)->cadata->macc[04], (calist + i)->cadata->macc[05],
@@ -660,6 +759,8 @@ static u16 addoption(u8 *posopt, u16 optioncode, u16 optionlen, char *option)
 {
 static u16 padding;
 static option_header_t *optionhdr;
+
+if (optionlen == 0) return 0;
 
 optionhdr = (option_header_t*)posopt;
 optionhdr->option_code = optioncode;
@@ -746,7 +847,7 @@ epbhdr->org_len = ii;
 tsm1 = tsakt - 1;
 epbhdr->timestamp_high = tsm1 >> 32;
 epbhdr->timestamp_low = (u32)tsm1 & 0xffffffff;
-padding = (4 -(epbhdr->cap_len % 4)) % 4;
+padding = 4 -(epbhdr->cap_len % 4);
 epblen += ii;
 memset(epbown + epblen, 0, padding);
 epblen += padding;
@@ -790,7 +891,7 @@ epbhdr->org_len = ii;
 tsm1 = tsakt - 1;
 epbhdr->timestamp_high = tsm1 >> 32;
 epbhdr->timestamp_low = (u32)tsm1 & 0xffffffff;
-padding = (4 -(epbhdr->cap_len % 4)) % 4;
+padding = 4 -(epbhdr->cap_len % 4);
 epblen += ii;
 memset(epbown + epblen, 0, padding);
 epblen += padding;
@@ -827,7 +928,7 @@ epblen += TOTAL_SIZE;
 epbhdr->total_length = epblen;
 totallength->total_length = epblen;
 if(write(fd_pcapng, epb, epblen) != epblen) errorcount++;
-return;	
+return;
 }
 /*---------------------------------------------------------------------------*/
 static bool writeshb(void)
@@ -1075,6 +1176,7 @@ if(replaycountrg == replaycount)
 			memcpy((calist + i)->cadata->mic, wpakey->keymic, KEYMIC_MAX);
 			(calist + i)->cadata->clientcount -= 1;
 			(calist + i)->cadata->m2 = '+';
+			(calist + i)->cadata->channel = (scanlist + scanlistindex)->channel;
 			wanteventflag |= exiteapolm2rgflag;
 			if((calist + i)->cadata->akm == RSNPSK) writeepbm1wpa2();
 			else if((calist + i)->cadata->akm == WPAPSK) writeepbm1wpa1();
@@ -1707,6 +1809,7 @@ if((macfrx->to_ds == 1) && (macfrx->power == 0))
 			{
 			if((tsakt - (calist + i)->cadata->tsassoc) > TSSECOND2) break;
 			(calist + i)->cadata->tsnull = tsakt;
+			(calist + i)->cadata->channel = (scanlist + scanlistindex)->channel;
 			if((calist + i)->cadata->akm == RSNPSK)
 				{
 				send_80211_ack();
@@ -1767,6 +1870,7 @@ if((macfrx->to_ds == 1) && (macfrx->power == 0))
 		if(memcmp((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN) != 0) continue;
 		if(memcmp((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN) != 0) continue;
 		(calist + i)->tsakt = tsakt;
+		(calist + i)->cadata->channel = (scanlist + scanlistindex)->channel;
 		if((calist + i)->cadata->clientcount <= 0) return;
 		if((tsakt - (calist + i)->cadata->tsnull) <= TSSECOND1) return;
 		if((tsakt - (calist + i)->cadata->tsnull) > TSSECOND2) break;
@@ -1955,6 +2059,7 @@ for(i = 0; i < CALIST_MAX - 1; i++)
 	if(memcmp((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN) != 0) continue;
 	if(memcmp((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN) != 0) continue;
 	(calist + i)->tsakt = tsakt;
+	(calist + i)->cadata->channel = (scanlist + scanlistindex)->channel;
 	if((calist + i)->cadata->clientcount <= 0) return;
 	if((tsakt - (calist + i)->cadata->tsreassoc) < TSSECOND1) return;
 	(calist + i)->cadata->akm = get_akm((calist + i)->cadata, reassociationrequestlen, reassociationrequest->ie);
@@ -1980,6 +2085,7 @@ for(i = 0; i < CALIST_MAX - 1; i++)
 	}
 (calist + i)->tsakt = tsakt;
 memset((calist + i)->cadata, 0, CADATA_SIZE);
+(calist + i)->cadata->channel = (scanlist + scanlistindex)->channel;
 (calist + i)->cadata->m2 = ' ';
 (calist + i)->cadata->clientcount = clientcountmax;
 memcpy((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN);
@@ -2059,6 +2165,7 @@ for(i = 0; i < CALIST_MAX - 1; i++)
 	if(memcmp((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN) != 0) continue;
 	if(memcmp((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN) != 0) continue;
 	(calist + i)->tsakt = tsakt;
+	(calist + i)->cadata->channel = (scanlist + scanlistindex)->channel;
 	if((calist + i)->cadata->clientcount <= 0) return;
 	if((tsakt - (calist + i)->cadata->tsassoc) < TSSECOND1) return;
 	(calist + i)->cadata->akm = get_akm((calist + i)->cadata, associationrequestlen, associationrequest->ie);
@@ -2085,6 +2192,7 @@ for(i = 0; i < CALIST_MAX - 1; i++)
 (calist + i)->tsakt = tsakt;
 memset((calist + i)->cadata, 0, CADATA_SIZE);
 (calist + i)->cadata->m2 = ' ';
+(calist + i)->cadata->channel = (scanlist + scanlistindex)->channel;
 (calist + i)->cadata->clientcount = clientcountmax;
 memcpy((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN);
 memcpy((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN);
@@ -2156,6 +2264,7 @@ if(auth->algorithm == OPEN_SYSTEM)
 			if(memcmp((calist + i)->cadata->maca, macfrx->addr1, ETH_ALEN) != 0) continue;
 			if(memcmp((calist + i)->cadata->macc, macfrx->addr2, ETH_ALEN) != 0) continue;
 			(calist + i)->tsakt = tsakt;
+			(calist + i)->cadata->channel = (scanlist + scanlistindex)->channel;
 			if((calist + i)->cadata->clientcount <= 0) return;
 			if((tsakt - (calist + i)->cadata->tsauth) < TSSECOND1) return;
 				{
@@ -2474,13 +2583,10 @@ while(0 < infolen)
 		{
 		if((infoptr->len > 0) && (infoptr->len <= ESSID_MAX))
 			{
-			if((infoptr->len > 0) && (infoptr->len <= ESSID_MAX))
+			if(infoptr->ie[0] != 0)
 				{
-				if(infoptr->ie[0] != 0)
-					{
-					apdata->essidlen = infoptr->len;
-					memcpy(apdata->essid, infoptr->ie, apdata->essidlen);
-					}
+				apdata->essidlen = infoptr->len;
+				memcpy(apdata->essid, infoptr->ie, apdata->essidlen);
 				}
 			}
 		}
@@ -2575,8 +2681,36 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void process80211proberesponse_rcascan(void)
 {
+static size_t i;
+static ieee80211_beacon_proberesponse_t *proberesponse;
+static u16 proberesponselen;
 
-
+proberesponse = (ieee80211_beacon_proberesponse_t*)payloadptr;
+if((proberesponselen = payloadlen - IEEE80211_BEACON_SIZE) < IEEE80211_IETAG_SIZE) return;
+for(i = 0; i < APLIST_MAX - 1; i++)
+	{
+	if((aplist + i)->tsakt == 0) break;
+	if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
+	(aplist + i)->tsakt = tsakt;
+	if(memcmp(macclientrg, macfrx->addr1, ETH_ALEN) != 0) (aplist + i)->apdata->tsresponse = tsakt;
+	(aplist + i)->apdata->rtfrequency = rtfrequency;
+	(aplist + i)->apdata->rtrssi = rtrssi;
+	if(__hcx16le(proberesponse->capability) &  WLAN_CAPABILITY_PRIVACY) (aplist + i)->apdata->privacy = 'e';
+	else (aplist + i)->apdata->privacy = 'o';
+	get_tags((aplist + i)->apdata, proberesponselen, proberesponse->ie);
+	if(i > APLIST_HALF) qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
+	return;
+	}
+(aplist + i)->tsakt = tsakt;
+memset((aplist + i)->apdata, 0, APDATA_SIZE);
+memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
+if(memcmp(macclientrg, macfrx->addr1, ETH_ALEN) != 0) (aplist + i)->apdata->tsresponse = tsakt;
+(aplist + i)->apdata->rtfrequency = rtfrequency;
+(aplist + i)->apdata->rtrssi = rtrssi;
+if(__hcx16le(proberesponse->capability) &  WLAN_CAPABILITY_PRIVACY) (aplist + i)->apdata->privacy = 'e';
+else (aplist + i)->apdata->privacy = 'o';
+get_tags((aplist + i)->apdata, proberesponselen, proberesponse->ie);
+qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -2657,6 +2791,11 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	{
 	if((aplist + i)->tsakt == 0) break;
 	if(memcmp((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN) != 0) continue;
+	(aplist + i)->tsakt = tsakt;
+	(aplist + i)->apdata->rtfrequency = rtfrequency;
+	(aplist + i)->apdata->rtrssi = rtrssi;
+	if(__hcx16le(beacon->capability) &  WLAN_CAPABILITY_PRIVACY) (aplist + i)->apdata->privacy = 'e';
+	else (aplist + i)->apdata->privacy = 'o';
 	get_tags((aplist + i)->apdata, beaconlen, beacon->ie);
 	if(i > APLIST_HALF) qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_tsakt);
 	return;
@@ -2664,6 +2803,8 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 (aplist + i)->tsakt = tsakt;
 memset((aplist + i)->apdata, 0, APDATA_SIZE);
 memcpy((aplist + i)->apdata->maca, macfrx->addr2, ETH_ALEN);
+(aplist + i)->apdata->rtfrequency = rtfrequency;
+(aplist + i)->apdata->rtrssi = rtrssi;
 if(__hcx16le(beacon->capability) &  WLAN_CAPABILITY_PRIVACY) (aplist + i)->apdata->privacy = 'e';
 else (aplist + i)->apdata->privacy = 'o';
 get_tags((aplist + i)->apdata, beaconlen, beacon->ie);
@@ -2692,7 +2833,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 		}
 	(aplist + i)->tsakt = tsakt;
 	if((aplist + i)->apdata->channel != (scanlist + scanlistindex)->channel) return;
-	if((aplist + i)->apdata->m1m2m3 == '+') return; 
+	if((aplist + i)->apdata->m1m2m3 == '+') return;
 	if((aplist + i)->apdata->pmkid == '+') return;
 	if((tsakt - (aplist + i)->apdata->tsrequest) < TSSECOND2) return;
 	if((tsakt - (aplist + i)->apdata->tsrequest) > TSHOUR1) (aplist + i)->apdata->apcount = apcountmax;
@@ -2719,7 +2860,7 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 				}
 			}
 		}
-	if(disassociationflag == true) 
+	if(disassociationflag == true)
 		{
 		if(((aplist + i)->apdata->mfp & MFP_REQUIRED) != MFP_REQUIRED)
 			{
@@ -3218,14 +3359,13 @@ while(!wanteventflag)
 			{
 			if(read(fd_timer1, &timer1count, sizeof(u64)) == -1) errorcount++;
 			lifetime++;
-			if((lifetime % timehold) == 0)
+			if((lifetime % 5) == 0)
 				{
-				show_realtime();
+				show_realtime_rca();
 				scanlistindex++;
 				if(nl_set_frequency() == false) errorcount++;
 				if(rcascanmode == RCASCAN_ACTIVE) send_80211_proberequest_undirected();
 				}
-			else if((lifetime % 5) == 0) show_realtime();
 			if((lifetime % 10) == 0)
 				{
 				if(gpiostatusled > 0)
@@ -4269,7 +4409,6 @@ while(1)
 			}
 		glh = (struct genlmsghdr*)NLMSG_DATA(nlh);
 		nla = (struct nlattr*)((unsigned char*)NLMSG_DATA(nlh) + sizeof(struct genlmsghdr));
-		nlremlen = 0;
 		nlremlen = NLMSG_PAYLOAD(nlh, 0) -4;
 		while(nla_ok(nla, nlremlen))
 			{
@@ -4449,9 +4588,9 @@ debugtms = clock();
 #endif
 if(nl_get_interfacephylist() == false) return false;
 #ifdef HCXDEBUG
-debugtms = clock() - debugtms; 
+debugtms = clock() - debugtms;
 debugtmstaken = ((double)debugtms)/CLOCKS_PER_SEC;
-fprintf(fh_debug, "nl_get_interfacephylist took %f seconds to execute \n", debugtmstaken); 
+fprintf(fh_debug, "nl_get_interfacephylist took %f seconds to execute \n", debugtmstaken);
 #endif
 
 #ifdef HCXDEBUG
@@ -4459,9 +4598,9 @@ debugtms = clock();
 #endif
 if(nl_get_interfacelist() == false) return false;
 #ifdef HCXDEBUG
-debugtms = clock() - debugtms; 
+debugtms = clock() - debugtms;
 debugtmstaken = ((double)debugtms)/CLOCKS_PER_SEC;
-fprintf(fh_debug, "nl_get_interfacelist took %f seconds to execute \n", debugtmstaken); 
+fprintf(fh_debug, "nl_get_interfacelist took %f seconds to execute \n", debugtmstaken);
 #endif
 
 #ifdef HCXDEBUG
@@ -4469,9 +4608,9 @@ debugtms = clock();
 #endif
 if(rt_get_interfacelist() == false) return false;
 #ifdef HCXDEBUG
-debugtms = clock() - debugtms; 
+debugtms = clock() - debugtms;
 debugtmstaken = ((double)debugtms)/CLOCKS_PER_SEC;
-fprintf(fh_debug, "rt_get_interfacelist took %f seconds to execute \n", debugtmstaken); 
+fprintf(fh_debug, "rt_get_interfacelist took %f seconds to execute \n", debugtmstaken);
 #endif
 
 
@@ -4496,7 +4635,7 @@ mrq.mr_type = PACKET_MR_PROMISC;
 if(setsockopt(fd_socket_tx, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mrq, sizeof(mrq)) < 0) return false;
 priolen = sizeof(prioval);
 prioval = 20;
-if(setsockopt(fd_socket_rx, SOL_SOCKET, SO_PRIORITY, &prioval, priolen) < 0) return false;
+if(setsockopt(fd_socket_tx, SOL_SOCKET, SO_PRIORITY, &prioval, priolen) < 0) return false;
 memset(&saddr, 0, sizeof(saddr));
 saddr.sll_family = AF_PACKET;
 saddr.sll_ifindex = ifaktindex;
@@ -4869,6 +5008,7 @@ static char linein[128];
 
 if((fh_filter = fopen(bpfname, "r")) == NULL) return false;
 bpf.filter = (struct sock_filter*)calloc(BPF_MAXINSNS, sizeof(struct sock_filter));
+if (bpf.filter == NULL) return false;
 bpf.len = 0;
 bpfptr = bpf.filter;
 while(bpf.len < BPF_MAXINSNS +1)
@@ -4914,7 +5054,7 @@ struct bpf_insn *bpfins;
 
 if((hpcap = pcap_open_dead(DLT_IEEE802_11_RADIO, PCAPNG_SNAPLEN)) == NULL)
 	{
-	fprintf(stderr, "to 0pen libpcap\n");
+	fprintf(stderr, "failed to open libpcap\n");
 	return false;
 	}
 if(pcap_compile(hpcap, &bpfp, bpfs, 1, 0))
@@ -5007,7 +5147,7 @@ if((procinfo = fopen("/proc/cpuinfo", "r")) != NULL)
 			{
 			if(strstr(linein, "Serial") != NULL)
 				{
-				if(len > 8) seed += strtoul(&linein[len - 6], NULL, 16);
+				seed += strtoul(&linein[len - 6], NULL, 16);
 				}
 			}
 		}
@@ -5143,7 +5283,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                     %s changes the channel of the INTERFACE\n"
 	"-w <outfile>     : write packets to a pcapng-format file named <outfile>\n"
 	"                    default outfile name: yyyyddmmhhmmss-interfacename.pcapng\n"
-	"                    existing file will not be overwritten\n" 
+	"                    existing file will not be overwritten\n"
 	"                    get more information: https://pcapng.com/\n"
 	"-c <digit>       : set channel (1a,2a,36b,...)\n"
 	"                    default: 1a,6a,11a\n"
@@ -5183,19 +5323,24 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"                    see --help for more information\n"
 	"--ftc            : enable fake time clock\n"
 	"--rds=<digit>    : enable real time display\n"
-	"                    default = 0 (off)\n"
-	"                    1 = show APs on current channel, show CLIENTs (M1M2ROGUE)\n"
-	"                    2 = show all APs (M1M2, M1M2M3 or PMKID), show CLIENTs (M1M2ROGUE)\n"
-	"                    3 = show all APs, show CLIENTs (M1M2ROGUE)\n"
-	"                    columns:\n"
-	"                     E = encryption (e)ncrypted / (o)pen\n"
-	"                     A = AKM (p)re-shared key\n"
-	"                     1 = received M1\n"
-	"                     2 = received M1M2\n"
-	"                     3 = received M1M2M3\n"
-	"                     P = received PMKID\n"
+	"                    attack mode:\n"
+	"                     0 = off(default)\n"
+	"                     1 = show APs on current channel, show CLIENTs (M1M2ROGUE)\n"
+	"                     2 = show all APs (M1M2, M1M2M3 or PMKID), show CLIENTs (M1M2ROGUE)\n"
+	"                     3 = show all APs, show CLIENTs (M1M2ROGUE)\n"
+	"                     columns:\n"
+	"                      E = encryption (e)ncrypted / (o)pen\n"
+	"                      A = AKM (p)re-shared key\n"
+	"                      1 = received M1\n"
+	"                      2 = received M1M2\n"
+	"                      3 = received M1M2M3\n"
+	"                      P = received PMKID\n"
+	"                    rcascan mode\n"
+	"                     0 = show APs on current channel sorted by BEACON timestamp\n"
+	"                     1 = show APs on current channel sorted by PROBERESPONSE timestamp\n"
+	"                     2 = show APs on current channel sorted by RSSI\n"
 	"--rcascan=<mode> : radio channel assement scan\n"
-	"                    (a)ctive = activ scan (transmit PROBEREQUEST frames)\n"
+	"                    (a)ctive = activ scan (transmit undirected PROBEREQUEST frames)\n"
 	"                     no PROBERESPONSE, AP is out of RANGE, packet injection is broken\n"
 	"                    (p)assive = passive scan (listen only)\n"
 	"-h               : show this help\n"
@@ -5705,12 +5850,15 @@ if(monitormodeflag == true)
 	goto byebye;
 	}
 if(essidlistname != NULL) read_essidlist(essidlistname);
-if(open_pcapng(pcapngoutname) == false)
+if(rcascanmode == 0)
 	{
-	errorcount++;
-	wanteventflag |= EXIT_ON_ERROR;
-	fprintf(stderr, "failed to open dump file\n");
-	goto byebye;
+	if(open_pcapng(pcapngoutname) == false)
+		{
+		errorcount++;
+		wanteventflag |= EXIT_ON_ERROR;
+		fprintf(stderr, "failed to open dump file\n");
+		goto byebye;
+		}
 	}
 if(open_socket_rx(bpfname) == false)
 	{
