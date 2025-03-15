@@ -144,6 +144,7 @@ typedef struct __attribute__((__packed__))
  u8	macc[ETH_ALEN];
  u8	maca[ETH_ALEN];
  int	clientcount;
+ u16	channel;
  u8	mic[16];
  u8	essid[ESSID_MAX];
  u8	essidlen;
@@ -179,12 +180,15 @@ typedef struct __attribute__((__packed__))
  u64	tsm1;
  u64	tsm2;
  u64	tsm3;
+ u64	tsresponse;
  u64	replaycount1;
  u64	replaycount2;
  u64	replaycount3;
  int	apcount;
  u16	channel;
  u16	aid;
+ u16	rtfrequency;
+ u8	rtrssi;
  u8	nonce[4];
  u8	rsnpmkid[PMKID_MAX];
  u8	maca[ETH_ALEN];
@@ -227,6 +231,26 @@ const aplist_t *bi = (const aplist_t *)b;
 
 if(ai->tsakt < bi->tsakt) return 1;
 else if(ai->tsakt > bi->tsakt) return -1;
+return 0;
+}
+/*---------------------------------------------------------------------------*/
+static int sort_aplist_by_tsresponse(const void *a, const void *b)
+{
+const aplist_t *ai = (const aplist_t *)a;
+const aplist_t *bi = (const aplist_t *)b;
+
+if(ai->apdata->tsresponse < bi->apdata->tsresponse) return 1;
+else if(ai->apdata->tsresponse > bi->apdata->tsresponse) return -1;
+return 0;
+}
+/*---------------------------------------------------------------------------*/
+static int sort_aplist_by_rtrssi(const void *a, const void *b)
+{
+const aplist_t *ai = (const aplist_t *)a;
+const aplist_t *bi = (const aplist_t *)b;
+
+if(ai->apdata->rtrssi < bi->apdata->rtrssi) return 1;
+else if(ai->apdata->rtrssi > bi->apdata->rtrssi) return -1;
 return 0;
 }
 /*+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
