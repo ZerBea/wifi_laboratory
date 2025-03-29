@@ -168,7 +168,7 @@ static const u32 frequencies[] =
 
 static const char *preinitessid[] =
 {
-"FRITZ!Box 7490", "FRITZ!Box 6490 Cable", "AP_7272"
+"AP_7272"
 };
 
 static struct tpacket_stats lStats = { 0 };
