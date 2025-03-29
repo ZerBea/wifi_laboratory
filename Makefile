@@ -17,14 +17,7 @@ HOSTOS		:= $(shell uname -s)
 CC		?= gcc
 CFLAGS		?= -O3 -Wall -Wextra -Wpedantic
 CFLAGS		+= -std=gnu99
-# uncomment to enable DEBUG symbols
-#CFLAGS		+= -ggdb -fsanitize=address
 DEFS		= -DVERSION_TAG=\"$(VERSION_TAG)\" -DVERSION_YEAR=\"$(VERSION_YEAR)\"
-# uncomment to enable BPF compiler
-DEFS		+= -DHCXWANTLIBPCAP
-LDFLAGS	+= -lpcap
-# uncomment to enable DEBUG log
-#DEFS		+= -DHCXDEBUG
 
 INSTALL		?= install
 INSTFLAGS	=
