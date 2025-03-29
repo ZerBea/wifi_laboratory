@@ -3107,9 +3107,6 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		usageerror(basename(argv[0]));
 		}
 	}
-
-printf("%04x\n", sizeof(tx_eapolm1_wpa2));
-
 if((uid = getuid()) != 0)
 	{
 	fprintf(stdout, "%s must be run as root\n", basename(argv[0]));
