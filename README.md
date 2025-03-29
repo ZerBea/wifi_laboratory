@@ -7,6 +7,8 @@ Expect compiler warnings and ERRORs.
 
 Expect missing or incomplete functions.
 
+Hardware modification (GPIO push button and GPIO LED is mandatory)
+
 Do not report issues or feature requests.
 
 
@@ -25,8 +27,6 @@ I have a clear (non-negotiable) priority when testing/adding new features:
 ...
 10. other features like GPS
 ...
-9999. real time display
-```
 
 
 What Doesn't hcxlabtool Do?
