@@ -1348,13 +1348,17 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	(aplist + i)->sec = tsakt.tv_sec;
 	if(((aplist + i)->apdata->status & AP_BEACON) != AP_BEACON)
 		{
+		(aplist + i)->apdata->seclastbeacon = tsakt.tv_sec;
 		(aplist + i)->apdata->status |= AP_BEACON;
 		writeepb();
+		return;
 		}
 	if((tsakt.tv_sec - (aplist + i)->apdata->seclastbeacon) > ONEHOUR)
 		{
 		(aplist + i)->apdata->seclastbeacon = tsakt.tv_sec;
+		(aplist + i)->apdata->status |= AP_BEACON;
 		writeepb();
+		return;
 		}
 	if(i > APLIST_HALF) qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_sec);
 	return;
