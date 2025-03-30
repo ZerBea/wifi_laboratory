@@ -648,13 +648,22 @@ static size_t i;
 
 if(macfrx->to_ds == 1)
 	{
-	printf("debug data to ds ");
-	for(int x = 0; x < 6; x++) printf("%02x", macfrx->addr1[x]);
-	printf(" ");
-	for(int x = 0; x < 6; x++) printf("%02x", macfrx->addr2[x]);
-	printf(" ");
-	for(int x = 0; x < 6; x++) printf("%02x", macfrx->addr3[x]);
-	printf("\n");
+	for(i = 0; i < CONLIST_MAX - 1; i++)
+		{
+		if(memcmp((conlist + i)->condata->maccl, macfrx->addr2, ETH_ALEN) != 0) continue;
+		if(memcmp((conlist + i)->condata->macap, macfrx->addr1, ETH_ALEN) != 0) continue;
+		(conlist + i)->sec = tsakt.tv_sec;
+		(conlist + i)->condata->frequency = (frequencylist + fi)->frequency;
+		return;
+		}
+	send_authenticationrequest(macfrx->addr2, macfrx->addr1);
+	(conlist + i)->sec = tsakt.tv_sec;
+	memset((conlist + i)->condata, 0, CONDATA_SIZE);
+	(conlist + i)->condata->secfirst = tsakt.tv_sec;
+	(conlist + i)->condata->frequency = (frequencylist + fi)->frequency;
+	memcpy((conlist + i)->condata->maccl, macfrx->addr2, ETH_ALEN);
+	memcpy((conlist + i)->condata->macap, macfrx->addr1, ETH_ALEN);
+	qsort(conlist, i +1, CONLIST_SIZE, sort_conlist_by_sec);
 	}
 return;
 }
