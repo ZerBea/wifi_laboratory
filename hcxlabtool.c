@@ -1143,7 +1143,7 @@ if(__hcx16le(auth->sequence) == 1)
 			if((conlist + i)->condata->m12rgcount > M12RGMAX) return;
 			if((conlist + i)->condata->seqauthreq == macfrx->sequence) return;
 			(conlist + i)->condata->seqauthreq = macfrx->sequence;
-			printf("auth request 1 %ld %04x\n", (conlist + i)->condata->seclastauthreq, macfrx->sequence);
+			printf("debug auth request 1 %ld %04x\n", (conlist + i)->condata->seclastauthreq, macfrx->sequence);
 			(conlist + i)->condata->seclastauthreq = tsakt.tv_sec;
 			send_authenticationresponse(macfrx->addr2, macfrx->addr3);
 			}
@@ -1199,23 +1199,27 @@ for(i = 0; i < APLIST_MAX - 1; i++)
 	if((aplist + i)->sec == 0) break;
 	if(memcmp((aplist + i)->apdata->macap, macfrx->addr2, ETH_ALEN) != 0) continue;
 	(aplist + i)->sec = tsakt.tv_sec;
-	if(((aplist + i)->apdata->status & AP_PROBERESPONSE) != AP_PROBERESPONSE)
+	if((((aplist + i)->apdata->status & AP_PROBERESPONSE) != AP_PROBERESPONSE) || ((aplist + i)->apdata->seclastproberesponse == 0))
 		{
 		(aplist + i)->apdata->status |= AP_PROBERESPONSE;
+		(aplist + i)->apdata->seclastproberesponse = tsakt.tv_sec;
 		writeepb();
+		return;
 		}
 	if((tsakt.tv_sec - (aplist + i)->apdata->seclastproberesponse) > ONEHOUR)
 		{
+		(aplist + i)->apdata->status |= AP_PROBERESPONSE;
 		(aplist + i)->apdata->seclastproberesponse = tsakt.tv_sec;
 		writeepb();
+		return;
 		}
 	if(i > APLIST_HALF) qsort(aplist, i + 1, APLIST_SIZE, sort_aplist_by_sec);
 	return;
 	}
 (aplist + i)->sec = tsakt.tv_sec;
 memset((aplist + i)->apdata, 0, APDATA_SIZE);
-(aplist + i)->apdata->seclastproberesponse = tsakt.tv_sec;
 (aplist + i)->apdata->status = AP_PROBERESPONSE;
+(aplist + i)->apdata->seclastproberesponse = tsakt.tv_sec;
 memcpy((aplist + i)->apdata->macap, macfrx->addr2, ETH_ALEN);
 //if(__hcx16le(beacon->capability) & WLAN_CAPABILITY_PRIVACY) send_disassociation7(macbc, macfrx->addr2);
 //send_deauthentication6(macbc, macfrx->addr2);
