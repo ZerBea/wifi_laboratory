@@ -205,6 +205,30 @@ typedef struct __attribute__((__packed__))
 /*---------------------------------------------------------------------------*/
 typedef struct __attribute__((__packed__))
 {
+ u16	version;
+ u8	gcs[4]:
+ u16	pcscount;
+ u8	pcs[4];
+ u16	akmcount;
+ u8	akm[4];
+ u16	rsncapa; 
+}ieee80211_rsnassoctag_t;
+#define IEEE80211_RSNASSOC_SIZE sizeof(ieee80211_rsnassoctag_t)
+/*---------------------------------------------------------------------------*/
+typedef struct __attribute__((__packed__))
+{
+ u8	ouitype[4];
+ u8	version;
+ u8	mcs[4];
+ u16	ucscount;
+ u8	ucs[4];
+ u16	akmcount;
+ u8	akm[4];
+}ieee80211_wpaassoctag_t;
+#define IEEE80211_WPAASSOC_SIZE sizeof(ieee80211_wpaassoctag_t)
+/*---------------------------------------------------------------------------*/
+typedef struct __attribute__((__packed__))
+{
  u8	control;
  u8	flags;
 }ieee80211_qos_t;
