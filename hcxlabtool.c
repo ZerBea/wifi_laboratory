@@ -1021,35 +1021,6 @@ qsort(conlist, i +1, CONLIST_SIZE, sort_conlist_by_sec);
 return;
 }
 /*---------------------------------------------------------------------------*/
-static inline __attribute__((always_inline)) void process80211reassociationrequest(void)
-{
-size_t i;
-
-holdfrequencyflag = true;
-for(i = 0; i < CONLIST_MAX - 1; i++)
-	{
-	if(memcmp((conlist + i)->condata->maccl, macfrx->addr2, ETH_ALEN) != 0) continue;
-	if(memcmp((conlist + i)->condata->macap, macfrx->addr3, ETH_ALEN) != 0) continue;
-	(conlist + i)->sec = tsakt.tv_sec;
-	(conlist + i)->condata->status |= CON_ASSOCREQ;
-	(conlist + i)->condata->frequency = (frequencylist + fi)->frequency;
-	(conlist + i)->condata->seqreassocreq = macfrx->sequence;
-	writeepb();
-	return;
-	}
-(conlist + i)->sec = tsakt.tv_sec;
-memset((conlist + i)->condata, 0, CONDATA_SIZE);
-(conlist + i)->condata->secfirst = tsakt.tv_sec;
-(conlist + i)->condata->status |= CON_ASSOCREQ;
-(conlist + i)->condata->frequency = (frequencylist + fi)->frequency;
-memcpy((conlist + i)->condata->maccl, macfrx->addr2, ETH_ALEN);
-memcpy((conlist + i)->condata->macap, macfrx->addr3, ETH_ALEN);
-(conlist + i)->condata->seqreassocreq = macfrx->sequence;
-qsort(conlist, i +1, CONLIST_SIZE, sort_conlist_by_sec);
-writeepb();
-return;
-}
-/*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void process80211associationresponse(void)
 {
 size_t i;
@@ -1079,6 +1050,66 @@ memcpy((conlist + i)->condata->macap, macfrx->addr3, ETH_ALEN);
 /* aid */
 
 qsort(conlist, i +1, CONLIST_SIZE, sort_conlist_by_sec);
+return;
+}
+/*---------------------------------------------------------------------------*/
+static inline __attribute__((always_inline)) void get_tags_assoc(apdata_t *apdata, int infolen, u8 *infostart)
+{
+static ieee80211_ietag_t *infoptr;
+
+while(0 < infolen)
+	{
+	infoptr = (ieee80211_ietag_t*)infostart;
+	if(infolen < (int)(infoptr->len + IEEE80211_IETAG_SIZE)) return;
+	else if(infoptr->id == TAG_RSN)
+		{
+		if(infoptr->len >= RSNLEN_MIN)
+			{
+
+			return;
+			}
+		}
+	else if(infoptr->id == TAG_VENDOR)
+		{
+		if(infoptr->len >= WPALEN_MIN)
+			{
+
+
+			return;
+			}
+		}
+	infostart += infoptr->len + IEEE80211_IETAG_SIZE;
+	infolen -= infoptr->len + IEEE80211_IETAG_SIZE;
+	}
+return;
+}
+/*---------------------------------------------------------------------------*/
+static inline __attribute__((always_inline)) void process80211reassociationrequest(void)
+{
+size_t i;
+
+holdfrequencyflag = true;
+for(i = 0; i < CONLIST_MAX - 1; i++)
+	{
+	if(memcmp((conlist + i)->condata->maccl, macfrx->addr2, ETH_ALEN) != 0) continue;
+	if(memcmp((conlist + i)->condata->macap, macfrx->addr3, ETH_ALEN) != 0) continue;
+	(conlist + i)->sec = tsakt.tv_sec;
+	(conlist + i)->condata->status |= CON_ASSOCREQ;
+	(conlist + i)->condata->frequency = (frequencylist + fi)->frequency;
+	(conlist + i)->condata->seqreassocreq = macfrx->sequence;
+	writeepb();
+	return;
+	}
+(conlist + i)->sec = tsakt.tv_sec;
+memset((conlist + i)->condata, 0, CONDATA_SIZE);
+(conlist + i)->condata->secfirst = tsakt.tv_sec;
+(conlist + i)->condata->status |= CON_ASSOCREQ;
+(conlist + i)->condata->frequency = (frequencylist + fi)->frequency;
+memcpy((conlist + i)->condata->maccl, macfrx->addr2, ETH_ALEN);
+memcpy((conlist + i)->condata->macap, macfrx->addr3, ETH_ALEN);
+(conlist + i)->condata->seqreassocreq = macfrx->sequence;
+qsort(conlist, i +1, CONLIST_SIZE, sort_conlist_by_sec);
+writeepb();
 return;
 }
 /*---------------------------------------------------------------------------*/
