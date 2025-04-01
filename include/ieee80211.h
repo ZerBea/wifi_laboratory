@@ -205,6 +205,7 @@ typedef struct __attribute__((__packed__))
 /*---------------------------------------------------------------------------*/
 typedef struct __attribute__((__packed__))
 {
+#define RSN1		1
  u16	version;
  u8	gcs[4];
  u16	pcscount;
@@ -212,8 +213,8 @@ typedef struct __attribute__((__packed__))
  u16	akmcount;
  u8	akm[4];
  u16	rsncapa; 
-}ieee80211_rsnassoctag_t;
-#define IEEE80211_RSNASSOC_SIZE sizeof(ieee80211_rsnassoctag_t)
+}ieee80211_rsnsectag_t;
+#define IEEE80211_RSNSEC_SIZE sizeof(ieee80211_rsnsectag_t)
 /*---------------------------------------------------------------------------*/
 typedef struct __attribute__((__packed__))
 {
@@ -224,8 +225,8 @@ typedef struct __attribute__((__packed__))
  u8	ucs[4];
  u16	akmcount;
  u8	akm[4];
-}ieee80211_wpaassoctag_t;
-#define IEEE80211_WPAASSOC_SIZE sizeof(ieee80211_wpaassoctag_t)
+}ieee80211_wpasectag_t;
+#define IEEE80211_WPASEC_SIZE sizeof(ieee80211_wpasectag_t)
 /*---------------------------------------------------------------------------*/
 typedef struct __attribute__((__packed__))
 {
@@ -389,6 +390,13 @@ static u8 macbc[] =
 #define AKMPSK256	6
 
 #define SUITE_SIZE	4
+#define OUI_SIZE	3
+
+static const u8 rsnoui[OUI_SIZE] =
+{
+0x00, 0x0f, 0xac
+};
+
 static const u8 rsnpmkid[SUITE_SIZE] =
 {
 0x00, 0x0f, 0xac, 0x04
