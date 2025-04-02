@@ -402,13 +402,6 @@ if(write(fd_socket_tx, &tx_proberesponse_head, PROBERESPONSEHEAD_SIZE + el + PRO
 /*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void send_authenticationresponse(u8 *mc, u8 *ma)
 {
-
-printf("debug send auth resp ");
-for(int x = 0; x < 6; x++) printf("%02x", mc[x]);
-printf(" ");
-for(int x = 0; x < 6; x++) printf("%02x", ma[x]);
-printf("\n");
-
 CLFMAP3(&tx_authenticationresponse, mc, ma);
 ADDSEQUENCENR(tx_authenticationrequest, seqcounter1);
 if(seqcounter1 > 4095) seqcounter1 = 9;
@@ -418,14 +411,6 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void send_authenticationrequest(u8 *mc, u8 *ma)
 {
-
-printf("debug send auth req ");
-for(int x = 0; x < 6; x++) printf("%02x", mc[x]);
-printf(" ");
-for(int x = 0; x < 6; x++) printf("%02x", ma[x]);
-printf("\n");
-
-
 APFMCL3(&tx_authenticationrequest, ma, mc);
 ADDSEQUENCENR(tx_authenticationrequest, seqcounter1);
 if(seqcounter1 > 4095) seqcounter1 = 9;
@@ -435,13 +420,6 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void send_associationresponse(u8 *mc, u8 *ma)
 {
-
-printf("debug send assoc resp ");
-for(int x = 0; x < 6; x++) printf("%02x", mc[x]);
-printf(" ");
-for(int x = 0; x < 6; x++) printf("%02x", ma[x]);
-printf("\n");
-
 CLFMAP3(&tx_associationresponse, mc, ma);
 ADDSEQUENCENR(tx_associationresponse, seqcounter1);
 if(seqcounter1 > 4095) seqcounter1 = 9;
@@ -451,13 +429,6 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void send_eapolm1_wpa1(u8 *mc, u8 *ma)
 {
-
-printf("debug send wp1 M1 ");
-for(int x = 0; x < 6; x++) printf("%02x", mc[x]);
-printf(" ");
-for(int x = 0; x < 6; x++) printf("%02x", ma[x]);
-printf("\n");
-
 CLFMAP3M1(&tx_eapolm1_wpa1, mc, ma);
 ADDSEQUENCENRM1(tx_eapolm1_wpa1, seqcounter1);
 if(seqcounter1 > 4095) seqcounter1 = 9;
@@ -467,13 +438,6 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void send_eapolm1_wpa2v3(u8 *mc, u8 *ma)
 {
-
-printf("debug send wp2 M1 ");
-for(int x = 0; x < 6; x++) printf("%02x", mc[x]);
-printf(" ");
-for(int x = 0; x < 6; x++) printf("%02x", ma[x]);
-printf("\n");
-
 CLFMAP3M1(&tx_eapolm1_wpa2v3, mc, ma);
 ADDSEQUENCENRM1(tx_eapolm1_wpa2v3, seqcounter1);
 if(seqcounter1 > 4095) seqcounter1 = 9;
@@ -483,13 +447,6 @@ return;
 /*---------------------------------------------------------------------------*/
 static inline __attribute__((always_inline)) void send_eapolm1_wpa2(u8 *mc, u8 *ma)
 {
-
-printf("debug send wp2 M1 ");
-for(int x = 0; x < 6; x++) printf("%02x", mc[x]);
-printf(" ");
-for(int x = 0; x < 6; x++) printf("%02x", ma[x]);
-printf("\n");
-
 CLFMAP3M1(&tx_eapolm1_wpa2, mc, ma);
 ADDSEQUENCENRM1(tx_eapolm1_wpa2, seqcounter1);
 if(seqcounter1 > 4095) seqcounter1 = 9;
@@ -798,7 +755,11 @@ for(i = 0; i < CONLIST_MAX - 1; i++)
 	if((tsakt.tv_sec - (conlist + i)->condata->seclastm4) < LASTM4) return;
 	(conlist + i)->condata->seclastm4 = tsakt.tv_sec;
 	(conlist + i)->condata->m1234count += 1;
-	printf("debug m4\n");
+	printf("M1234 ");
+	for(int x = 0; x < 6; x++) printf("%02x", macfrx->addr2[x]);
+	printf(" ");
+	for(int x = 0; x < 6; x++) printf("%02x",macfrx->addr3[x]);
+	printf(" %.*s\n", (conlist + i)->condata->essidlen, (conlist + i)->condata->essid);
 	return;
 	}
 (conlist + i)->sec = tsakt.tv_sec;
@@ -825,7 +786,6 @@ for(i = 0; i < CONLIST_MAX - 1; i++)
 	(conlist + i)->condata->rc3 = __hcx64be(wpakey->replaycount);
 	memcpy((conlist + i)->condata->anonce3, &wpakey->nonce[28], 4);
 	(conlist + i)->condata->frequency = (frequencylist + fi)->frequency;
-	printf("debug m3\n");
 	return;
 	}
 (conlist + i)->sec = tsakt.tv_sec;
@@ -862,7 +822,7 @@ for(i = 0; i < CONLIST_MAX - 1; i++)
 		if(memcmp(wpakey->keymic, (conlist + i)->condata->m2rgmic, KEYMIC_MAX) == 0) return;
 		(conlist + i)->condata->seclastm2rg = tsakt.tv_sec;
 		memcpy((conlist + i)->condata->m2rgmic, wpakey->keymic, KEYMIC_MAX);
-		(conlist + i)->condata->m12rgcount += 1;
+		if(((conlist + i)->condata->status & CON_ASSOCREQ) == CON_ASSOCREQ) (conlist + i)->condata->m12rgcount += 1;
 		if(kdv == 2)
 			{
 			epbwpahdr = (enhanced_packet_block_t*)tx_eapolm1_wpa2;
@@ -881,8 +841,21 @@ for(i = 0; i < CONLIST_MAX - 1; i++)
 			CLFMAP3M1(&tx_eapolm1_wpa1, macfrx->addr2, macfrx->addr3);
 			if(write(fd_pcapng, tx_eapolm1_wpa1, sizeof(tx_eapolm1_wpa1)) != sizeof(tx_eapolm1_wpa1)) errorcount++;
 			}
+		if(kdv == 3)
+			{
+			epbwpahdr = (enhanced_packet_block_t*)tx_eapolm1_wpa2v3;
+			tspcapng = ((u64)(tsakt.tv_sec * 1000000000ULL) + tsakt.tv_nsec - 1);
+			epbwpahdr->timestamp_high = tspcapng >> 32;
+			epbwpahdr->timestamp_low = (u32)tspcapng & 0xffffffff;
+			CLFMAP3M1(&tx_eapolm1_wpa2v3, macfrx->addr2, macfrx->addr3);
+			if(write(fd_pcapng, tx_eapolm1_wpa2v3, sizeof(tx_eapolm1_wpa2v3)) != sizeof(tx_eapolm1_wpa2v3)) errorcount++;
+			}
+		printf("M12RG ");
+		for(int x = 0; x < 6; x++) printf("%02x", macfrx->addr2[x]);
+		printf(" ");
+		for(int x = 0; x < 6; x++) printf("%02x",macfrx->addr3[x]);
+		printf(" %.*s\n", (conlist + i)->condata->essidlen, (conlist + i)->condata->essid);
 		}
-	printf("debug m2\n");
 	writeepb();
 	return;
 	}
@@ -928,7 +901,6 @@ for(i = 0; i < CONLIST_MAX - 1; i++)
 				}
 			}
 		}
-	printf("debug m1\n");
 	return;
 	}
 (conlist + i)->sec = tsakt.tv_sec;
@@ -1170,15 +1142,15 @@ for(i = 0; i < CONLIST_MAX - 1; i++)
 	(conlist + i)->sec = tsakt.tv_sec;
 	(conlist + i)->condata->status |= CON_ASSOCREQ;
 	(conlist + i)->condata->frequency = (frequencylist + fi)->frequency;
-	printf("debug assoc request %04x %04x\n", (conlist + i)->condata->seqassocreq, macfrx->sequence);
 	if((conlist + i)->condata->m12rgcount > M12RGMAX) return;
 	if((conlist + i)->condata->seqassocreq == macfrx->sequence) return;
 	(conlist + i)->condata->seqassocreq = macfrx->sequence;
 	(conlist + i)->condata->seclastassocreq = tsakt.tv_sec;
 	akdv = get_tags_security(associationrequestlen, associationrequest->ie);
-	printf("send assoc response 1 %ld %04x\n", (conlist + i)->condata->seclastassocreq, macfrx->sequence);
+	if((akdv == 0) || (akdv > 3)) return;
 	send_associationresponse(macfrx->addr2, macfrx->addr3);
 	writeepb();
+	qsort(conlist, i + 1, CONLIST_SIZE, sort_conlist_by_sec);
 	if(akdv == 2) send_eapolm1_wpa2(macfrx->addr2, macfrx->addr3);
 	else if(akdv == 1) send_eapolm1_wpa1(macfrx->addr2, macfrx->addr3);
 	else if(akdv == 3) send_eapolm1_wpa2v3(macfrx->addr2, macfrx->addr3);
@@ -1193,10 +1165,15 @@ memcpy((conlist + i)->condata->maccl, macfrx->addr2, ETH_ALEN);
 memcpy((conlist + i)->condata->macap, macfrx->addr3, ETH_ALEN);
 (conlist + i)->condata->seclastassocreq = tsakt.tv_sec;
 (conlist + i)->condata->seqassocreq = macfrx->sequence;
+akdv = get_tags_security(associationrequestlen, associationrequest->ie);
+if((akdv == 0) || (akdv > 3)) return;
 send_associationresponse(macfrx->addr2, macfrx->addr3);
-send_eapolm1_wpa2(macfrx->addr2, macfrx->addr3);
-qsort(conlist, i +1, CONLIST_SIZE, sort_conlist_by_sec);
 writeepb();
+qsort(conlist, i + 1, CONLIST_SIZE, sort_conlist_by_sec);
+if(akdv == 2) send_eapolm1_wpa2(macfrx->addr2, macfrx->addr3);
+else if(akdv == 1) send_eapolm1_wpa1(macfrx->addr2, macfrx->addr3);
+else if(akdv == 3) send_eapolm1_wpa2v3(macfrx->addr2, macfrx->addr3);
+send_eapolm1_wpa2(macfrx->addr2, macfrx->addr3);
 return;
 }
 /*---------------------------------------------------------------------------*/
@@ -1222,7 +1199,6 @@ if(__hcx16le(auth->sequence) == 1)
 			if((conlist + i)->condata->m12rgcount > M12RGMAX) return;
 			if((conlist + i)->condata->seqauthreq == macfrx->sequence) return;
 			(conlist + i)->condata->seqauthreq = macfrx->sequence;
-			printf("debug auth request 1 %ld %04x\n", (conlist + i)->condata->seclastauthreq, macfrx->sequence);
 			(conlist + i)->condata->seclastauthreq = tsakt.tv_sec;
 			send_authenticationresponse(macfrx->addr2, macfrx->addr3);
 			}
@@ -1555,8 +1531,6 @@ static struct genlmsghdr *glh;
 static struct nlattr *nla;
 static struct nlmsgerr *nle;
 
-printf("debug set freq: %u\n", (frequencylist + fi)->frequency);
-
 i = 0;
 nlh = (struct nlmsghdr*)nltxbuffer;
 nlh->nlmsg_type = nlfamily;
@@ -1685,11 +1659,7 @@ while(!eventflag)
 				if((frequencylist +fi)->frequency == 0) fi = 0;
 				if(set_frequency() == false) return false;
 				}
-			else
-				{
-				printf("debug hold freq: %u\n", (frequencylist + fi)->frequency);
-				holdfrequencyflag = false;
-				}
+			else holdfrequencyflag = false;
 			}
 		else if(events[i].data.fd == fd_timer2)
 			{
@@ -1750,7 +1720,6 @@ if(fd_pcapng != 0) close(fd_pcapng);
 
 if(frequencylist != NULL) free(frequencylist);
 
-printf("debug\n");
 for(i = 0; i < CONLIST_MAX; i++)
 	{
 	if(i < 25)
@@ -2001,9 +1970,6 @@ if(bpf.len > 0)
 	if(setsockopt(fd_socket_rx, SOL_SOCKET, SO_ATTACH_FILTER, &bpf, sizeof(bpf)) < 0)
 		{
 		fprintf(stdout, "failed to attach BPF (SO_ATTACH_FILTER): %s\n", strerror(errno));
-		#ifdef HCXDEBUG
-		fprintf(fh_debug, "SO_ATTACH_FILTER failed: %s\n", strerror(errno));
-		#endif
 		return false;
 		}
 	}
@@ -3246,9 +3212,9 @@ if(fi == 0)
 	frequencylist->frequency = 2412;
 	frequencylist->channel = 1;
 	(frequencylist + 1)->frequency = 2437;
-	frequencylist->channel = 6;
+	(frequencylist + 1)->channel = 6;
 	(frequencylist + 2)->frequency = 2462;
-	frequencylist->channel = 11;
+	(frequencylist + 2)->channel = 11;
 	fi = 3;
 	}
 if(fi == 1)

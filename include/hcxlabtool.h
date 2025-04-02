@@ -35,8 +35,8 @@
 #define LASTM4			10
 #define LASTM12RG		10
 #define LASTAUTHREQ		2
-#define M12RGMAX		5
-#define M4MAX			5
+#define M12RGMAX		4
+#define M4MAX			4
 #define ONEHOUR			3600
 
 #define EPOLL_EVENTS_MAX	10
