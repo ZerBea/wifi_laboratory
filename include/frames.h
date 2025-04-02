@@ -10,6 +10,28 @@
 
 #define ADDCHANNEL(a,b)		{a[12] = (uint8_t)b;}
 
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define ADDTIMESTAMP		{tx_proberesponse_head[36] = prtimestamp & 0xff; \
+				tx_proberesponse_head[37] = (prtimestamp >> 8) & 0xff; \
+				tx_proberesponse_head[38] = (prtimestamp >> 16) & 0xff; \
+				tx_proberesponse_head[39] = (prtimestamp >> 24) & 0xff; \
+				tx_proberesponse_head[40] = (prtimestamp >> 32) & 0xff; \
+				tx_proberesponse_head[41] = (prtimestamp >> 40) & 0xff; \
+				tx_proberesponse_head[42] = (prtimestamp >> 48) & 0xff; \
+				tx_proberesponse_head[43] = (prtimestamp >> 56) & 0xff; \
+				prtimestamp += 1;}
+#elif __BYTE_ORDER == __BIG_ENDIAN
+#define ADDTIMESTAMP		{tx_proberesponse_head[43] = prtimestamp & 0xff; \
+				tx_proberesponse_head[42] = (prtimestamp >> 8) & 0xff; \
+				tx_proberesponse_head[41] = (prtimestamp >> 16) & 0xff; \
+				tx_proberesponse_head[40] = (prtimestamp >> 24) & 0xff; \
+				tx_proberesponse_head[39] = (prtimestamp >> 32) & 0xff; \
+				tx_proberesponse_head[38] = (prtimestamp >> 40) & 0xff; \
+				tx_proberesponse_head[37] = (prtimestamp >> 48) & 0xff; \
+				tx_proberesponse_head[36] = (prtimestamp >> 56) & 0xff; \
+				prtimestamp += 1;}
+#endif
+
 #define APFMCL3(a,b,c)		{memcpy(a[16], b, 6); \
 				memcpy(a[22], c, 6); \
 				memcpy(a[28], b, 6);}

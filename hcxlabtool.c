@@ -109,6 +109,8 @@ static ratalist_t *ratalist = NULL;
 static aplist_t *aprglist = NULL;
 static aplist_t *aplist = NULL;
 
+static u64 prtimestamp = 1;
+
 static u16 seqcounter1 = 0; /* authentication / association */
 static u16 seqcounter2 = 0; /* disassociation */
 static u16 seqcounter3 = 0; /* deauthentication */
@@ -396,6 +398,7 @@ tx_proberesponse_head[49] = el;
 memcpy(&tx_proberesponse_head[50], es, el);
 ADDSEQUENCENR(tx_proberesponse_head, seqcounter5);
 ADDCHANNEL(tx_proberesponse_wpa12_short, (frequencylist + fi)->channel);
+ADDTIMESTAMP
 memcpy(&tx_proberesponse_head[PROBERESPONSEHEAD_SIZE + el], tx_proberesponse_wpa12_short, PROBERESPONSE_WAP12_SHORT_SIZE);
 if(write(fd_socket_tx, &tx_proberesponse_head, PROBERESPONSEHEAD_SIZE + el + PROBERESPONSE_WAP12_SHORT_SIZE) != (PROBERESPONSEHEAD_SIZE + el + PROBERESPONSE_WAP12_SHORT_SIZE)) errortxcount++;
 }
