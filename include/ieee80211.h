@@ -219,7 +219,7 @@ typedef struct __attribute__((__packed__))
 typedef struct __attribute__((__packed__))
 {
  u8	ouitype[4];
- u8	version;
+ u16	version;
  u8	mcs[4];
  u16	ucscount;
  u8	ucs[4];
