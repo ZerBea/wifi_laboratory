@@ -116,16 +116,17 @@ typedef struct
 #define COUNT_M123MAX		4
 #define COUNT_NULL_MAX		100
 #define COUNT_DATA1_MAX		100
-
+#define COUNT_ACTION2_MAX	100
 typedef struct
 {
-#define CON_ESSID	0x0001
-#define CON_AUTHREQ	0x0002
-#define CON_ASSOCREQ	0x0004
-#define CON_REASSOCREQ	0x0008
-#define CON_M1		0x0010
-#define CON_M2		0x0020
-#define CON_M2RG	0x0040
+#define CON_ESSID		0x0001
+#define CON_ACTION_ESSID	0x0002
+#define CON_AUTHREQ		0x0004
+#define CON_ASSOCREQ		0x0008
+#define CON_REASSOCREQ		0x0010
+#define CON_M1			0x0020
+#define CON_M2			0x0040
+#define CON_M2RG		0x0080
  time_t		secm1;
  time_t		secm2;
  long int	nsecm1;
@@ -136,7 +137,8 @@ typedef struct
  u16		seqauthreq;
  u16		seqassocreq;
  u16		seqreassocreq;
- u16		seqaction;
+ u16		seqaction1;
+ u16		seqaction2;
  u16		countm2rg;
  u16		countm3;
  u16		countauth;
@@ -145,6 +147,7 @@ typedef struct
  u16		countnull;
  u16		countdata1;
  u16		countdata2;
+ u16		countaction2;
  u8		akdv;
  u8		macap[ETH_ALEN];
  u8		maccl[ETH_ALEN];

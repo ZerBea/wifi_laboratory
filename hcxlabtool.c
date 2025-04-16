@@ -161,7 +161,7 @@ static const u32 frequencies[] =
 
 static const char *preinitessid[] =
 {
-"home", "Home", "Internet"
+"FRITZ!Box 7490"
 };
 
 static struct tpacket_stats lStats = { 0 };
@@ -771,7 +771,7 @@ if(macfrx->from_ds == 1)
 		if(deauthflag == false)
 			{
 			if((conlist + i)->condata->countdata1 > COUNT_DATA1_MAX) return;
-			if(((conlist + i)->condata->countdata1 & 10) == 0) send_authenticationrequest(macfrx->addr1, macfrx->addr2);
+			if(((conlist + i)->condata->countdata1 % 10) == 0) send_authenticationrequest(macfrx->addr1, macfrx->addr2);
 			}
 		return;
 		}
@@ -797,7 +797,7 @@ if(macfrx->to_ds == 1)
 		if(deauthflag == false)
 			{
 			if((conlist + i)->condata->countdata1 > COUNT_DATA1_MAX) return;
-			if(((conlist + i)->condata->countdata1 & 10) == 0) send_disassociation1(macfrx->addr2, macfrx->addr1);
+			if(((conlist + i)->condata->countdata1 % 10) == 0) send_disassociation1(macfrx->addr2, macfrx->addr1);
 			}
 		return;
 		}
@@ -827,7 +827,7 @@ for(i = 0; i < CONLIST_MAX - 1; i++)
 	if(deauthflag == false)
 		{
 		if((conlist + i)->condata->countnull > COUNT_NULL_MAX) return;
-		if(((conlist + i)->condata->countnull & 10) == 0) send_authenticationrequest(macfrx->addr2, macfrx->addr3);
+		if(((conlist + i)->condata->countnull % 10) == 0) send_authenticationrequest(macfrx->addr2, macfrx->addr3);
 		}
 	return;
 	}
@@ -846,7 +846,6 @@ static inline __attribute__((always_inline)) void process80211action(void)
 static size_t i;
 static ieee80211_action_t *action;
 
-if(macfrx->prot == 1) return;
 
 if(payloadlen < IEEE80211_ACTION_SIZE) return;
 if(memcmp(macfrx->addr1, macfrx->addr3, ETH_ALEN) == 0)
@@ -857,11 +856,16 @@ if(memcmp(macfrx->addr1, macfrx->addr3, ETH_ALEN) == 0)
 		if(memcmp((conlist + i)->condata->maccl, macfrx->addr2, ETH_ALEN) != 0) continue;
 		if(memcmp((conlist + i)->condata->macap, macfrx->addr3, ETH_ALEN) != 0) continue;
 		(conlist + i)->sec = tsakt.tv_sec;
-		if((conlist + i)->condata->seqaction == macfrx->sequence) return;
-		(conlist + i)->condata->seqaction = macfrx->sequence;
+		if((conlist + i)->condata->seqaction1 == macfrx->sequence) return;
+		(conlist + i)->condata->seqaction1 = macfrx->sequence;
 		if(payloadlen > (IEEE80211_ACTION_SIZE + IEEE80211_IETAG_SIZE))
 			{
-			if((action->category == RADIO_MEASUREMENT) && (action->code == NEIGHBOR_REPORT_REQUEST)) writeepb();
+			if((macfrx->prot == 0) && (action->category == RADIO_MEASUREMENT) && (action->code == NEIGHBOR_REPORT_REQUEST))
+				{
+				if(((conlist + i)->condata->status & CON_ACTION_ESSID) == CON_ACTION_ESSID) return;
+				(conlist + i)->condata->status |= CON_ACTION_ESSID;
+				writeepb();
+				}
 			}
 		return;
 		}
@@ -869,10 +873,14 @@ if(memcmp(macfrx->addr1, macfrx->addr3, ETH_ALEN) == 0)
 	memset((conlist + i)->condata, 0, CONDATA_SIZE);
 	memcpy((conlist + i)->condata->maccl, macfrx->addr2, ETH_ALEN);
 	memcpy((conlist + i)->condata->macap, macfrx->addr3, ETH_ALEN);
-	(conlist + i)->condata->seqaction = macfrx->sequence;
+	(conlist + i)->condata->seqaction1 = macfrx->sequence;
 	if(payloadlen > (IEEE80211_ACTION_SIZE + IEEE80211_IETAG_SIZE))
 		{
-		if((action->category == RADIO_MEASUREMENT) && (action->code == NEIGHBOR_REPORT_REQUEST)) writeepb();
+		if((macfrx->prot == 0) && (action->category == RADIO_MEASUREMENT) && (action->code == NEIGHBOR_REPORT_REQUEST))
+			{
+			(conlist + i)->condata->status = CON_ACTION_ESSID;
+			writeepb();
+			}
 		}
 	qsort(conlist, i + 1, CONLIST_SIZE, sort_conlist_by_sec);
 	return;
@@ -883,16 +891,25 @@ for(i = 0; i < CONLIST_MAX - 1; i++)
 	if(memcmp((conlist + i)->condata->maccl, macfrx->addr1, ETH_ALEN) != 0) continue;
 	if(memcmp((conlist + i)->condata->macap, macfrx->addr3, ETH_ALEN) != 0) continue;
 	(conlist + i)->sec = tsakt.tv_sec;
-	if((conlist + i)->condata->seqaction == macfrx->sequence) return;
-	(conlist + i)->condata->seqaction = macfrx->sequence;
+	if((conlist + i)->condata->countm3 > COUNT_M123MAX) return;
+	if((conlist + i)->condata->seqaction2 == macfrx->sequence) return;
+	(conlist + i)->condata->seqaction2 = macfrx->sequence;
+	(conlist + i)->condata->countaction2 += 1;
+	if(deauthflag == false)
+		{
+		if((conlist + i)->condata->countaction2 > COUNT_ACTION2_MAX) return;
+		if(((conlist + i)->condata->countaction2 % 10) == 0) send_authenticationrequest(macfrx->addr1, macfrx->addr3);
+		}
 	return;
 	}
 (conlist + i)->sec = tsakt.tv_sec;
 memset((conlist + i)->condata, 0, CONDATA_SIZE);
 memcpy((conlist + i)->condata->maccl, macfrx->addr1, ETH_ALEN);
 memcpy((conlist + i)->condata->macap, macfrx->addr3, ETH_ALEN);
-(conlist + i)->condata->seqaction = macfrx->sequence;
+(conlist + i)->condata->seqaction2 = macfrx->sequence;
+(conlist + i)->condata->countaction2 += 1;
 qsort(conlist, i + 1, CONLIST_SIZE, sort_conlist_by_sec);
+if(deauthflag == false) send_disassociation1(macfrx->addr1, macfrx->addr3);
 return;
 }
 /*---------------------------------------------------------------------------*/
