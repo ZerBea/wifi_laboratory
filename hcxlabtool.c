@@ -2040,9 +2040,9 @@ while(1)
 			if(nla->nla_type == NL80211_ATTR_IFINDEX) (interfacelist + ifc)->ifindex = *(u32*)nla_data(nla);
 			if(nla->nla_type == NL80211_ATTR_IFTYPE)
 				{
+				(interfacelist + ifc)->iftype = *(u32*)nla_data(nla);
 				if(*((u32*)nla_data(nla)) == NL80211_IFTYPE_MONITOR) (interfacelist + ifc)->modeakt = MODE_MONITOR;
 				}
-			 (interfacelist + ifc)->iftype = *(u32*)nla_data(nla);
 			if((nla->nla_type == NL80211_ATTR_IFNAME) && (nla->nla_len <= IFNAMSIZ + 4))
 					{
 					(interfacelist + ifc)->ifnamlen = nla->nla_len - 4;
@@ -2508,7 +2508,8 @@ if((ifc = nl_get_interfacelist(interfacelist)) != 0)
 	{
 	for(c = 0; c < ifc; c++)
 		{
-		if(nl_del_interface((interfacelist +c)->ifindex) == false)
+		fprintf(stdout, "removing phy: %2u ifindex: %2u ifname: %.*s\n", (interfacelist + c)->wiphy, (interfacelist + c)->ifindex, (int)(interfacelist + c)->ifnamlen, (interfacelist + c)->ifnam);
+		if(nl_del_interface((interfacelist + c)->ifindex) == false)
 			{
 			free(interfacelist);
 			return false;
@@ -2567,6 +2568,7 @@ if(interfacelist->flags != IFF_UP)
 	}
 memcpy(interfaceakt.hwmac, (interfacelist)->hwmac, ETH_ALEN);
 if(interfacelist != NULL) free(interfacelist);
+fprintf(stdout, "using    phy: %2u ifindex: %2u ifname: %s\n", interfaceakt.wiphy, interfaceakt.ifindex, interfaceakt.ifnam);
 return true;
 }
 /*===========================================================================*/
@@ -3061,7 +3063,6 @@ fprintf(stdout, "init scanlist done\n");
 
 if(essidlistname != NULL) read_essidlist(essidlistname); 
 fprintf(stdout, "init essidlist done\n");
-
 if(init_interface_rogue1(phyidx) == false)
 	{
 	fprintf(stdout, "initialization of Interface failed\n");
