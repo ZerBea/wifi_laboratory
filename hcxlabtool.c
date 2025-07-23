@@ -1139,7 +1139,7 @@ static u16 proberequestlen;
 static ieee80211_proberequest_t *proberequest;
 static ieee80211_ietag_t * essidtag;
 
-if((proberequestlen = payloadlen - IEEE80211_PROBERESPONSE_SIZE) < IEEE80211_IETAG_SIZE) return;
+if((proberequestlen = payloadlen - IEEE80211_PROBEREQUEST_SIZE) < IEEE80211_IETAG_SIZE) return;
 proberequest = (ieee80211_proberequest_t*)payloadptr;
 essidtag = (ieee80211_ietag_t*)proberequest->ie;
 if(essidtag->len > ESSID_MAX) return;
@@ -1749,7 +1749,6 @@ if(bpf.len > 0)
 	if(setsockopt(fd_socket_rx, SOL_SOCKET, SO_ATTACH_FILTER, &bpf, sizeof(bpf)) < 0)
 		{
 		fprintf(stdout, "failed to attach BPF (SO_ATTACH_FILTER): %s\n", strerror(errno));
-		return false;
 		}
 	}
 memset(&saddr, 0, sizeof(saddr));
@@ -3015,7 +3014,7 @@ if(init_signal_handler() == false)
 	fprintf(stdout, "failed to initialize signal handler\n");
 	goto byebye;
 	}
-fprintf(stdout, "init signal handle3 done\n");
+fprintf(stdout, "init signal handle done\n");
 if((rpi = init_rpi()) == true)
 	{
 	set_ftc();
