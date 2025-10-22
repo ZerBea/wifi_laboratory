@@ -351,35 +351,6 @@ totallength->total_length = epblen;
 if(write(fd_pcapng, epb, epblen) != epblen) errorcount += 1;
 return;
 }
-/*---------------------------------------------------------------------------*/
-static inline __attribute__((always_inline)) void writeepb_wpa2_m1(void)
-{
-static ssize_t epblen;
-static u16 padding;
-static total_length_t *totallength;
-static u64 tspcapng;
-
-epbhdr = (enhanced_packet_block_t*)epb;
-epblen = EPB_SIZE;
-epbhdr->block_type = EPBID;
-epbhdr->interface_id = 0;
-epbhdr->cap_len = packetlen;
-epbhdr->org_len = packetlen;
-tspcapng = ((u64)tsakt.tv_sec * 1000000000ULL) + tsakt.tv_nsec;
-epbhdr->timestamp_high = tspcapng >> 32;
-epbhdr->timestamp_low = (u32)tspcapng & 0xffffffff;
-padding = (4 - (epbhdr->cap_len % 4)) % 4;
-epblen += packetlen;
-memset(epb + epblen, 0, padding);
-epblen += padding;
-epblen += addoption(epb + epblen, SHB_EOC, 0, NULL);
-totallength = (total_length_t*)(epb + epblen);
-epblen += TOTAL_SIZE;
-epbhdr->total_length = epblen;
-totallength->total_length = epblen;
-if(write(fd_pcapng, epb, epblen) != epblen) errorcount += 1;
-return;
-}
 /*===========================================================================*/
 static inline __attribute__((always_inline)) void send_deauthentication6(u8 *mc, u8 *ma)
 {
@@ -2647,7 +2618,7 @@ while((spos = strsep(&sres, ",")) != NULL)
 return;
 }
 /*===========================================================================*/
-static bool open_dumpfile()
+static bool open_dumpfile(void)
 {
 static struct timespec tsakt = { 0 };
 static struct stat statinfo;
