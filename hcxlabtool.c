@@ -2837,7 +2837,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"l <seconds>   : status LED interval\n"
 	"f <digit>     : frequency or channel & band\n"
 	"e <file>      : ESSID list\n"
-	"D             : disable DEUTHENTICATION, DISASSOCIATION and AUTHENTICATIONREQUEST\n"
+	"D             : disable DEAUTHENTICATION, DISASSOCIATION and AUTHENTICATIONREQUEST\n"
 	"S             : show very limited realtime display\n"
 	"\n",
 	eigenname, VERSION_TAG, VERSION_YEAR, eigenname);
