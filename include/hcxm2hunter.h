@@ -43,28 +43,34 @@
 #define TIMER_HOLD		10
 #define EPOLL_EVENTS_MAX	10
 /* staytime on frequency */
-#define TIMER1_VSEC		5
-#define TIMER1_VNSEC		0
-#define TIMER1_ISEC		5
-#define TIMER1_INSEC		0
+#define TIMER1_VSEC		5L
+#define TIMER1_VNSEC		0L
+#define TIMER1_ISEC		5L
+#define TIMER1_INSEC		0L
 
 /* watchdog */
-#define TIMER2_VSEC		600
-#define TIMER2_VNSEC		0
-#define TIMER2_ISEC		600
-#define TIMER2_INSEC		0
+#define TIMER2_VSEC		600L
+#define TIMER2_VNSEC		0L
+#define TIMER2_ISEC		600L
+#define TIMER2_INSEC		0L
 
 /* tot */
-#define TIMER3_VSEC		0
-#define TIMER3_VNSEC		0
-#define TIMER3_ISEC		0
-#define TIMER3_INSEC		0
+#define TIMER3_VSEC		0L
+#define TIMER3_VNSEC		0L
+#define TIMER3_ISEC		0L
+#define TIMER3_INSEC		0L
 
-/* LED */
-#define TIMER4_VSEC		0
-#define TIMER4_VNSEC		0
-#define TIMER4_ISEC		0
-#define TIMER4_INSEC		0
+/* LED on */
+#define TIMER4_VSEC		0L
+#define TIMER4_VNSEC		0L
+#define TIMER4_ISEC		0L
+#define TIMER4_INSEC		0L
+
+/* LED off */
+#define TIMER5_VSEC		0L
+#define TIMER5_VNSEC		500000000L
+#define TIMER5_ISEC		0L
+#define TIMER5_INSEC		0L
 
 /*===========================================================================*/
 #define ENTRIES(entries) (int)(sizeof(entries) / sizeof(*entries))

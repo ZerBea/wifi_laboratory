@@ -1423,10 +1423,10 @@ while(!eventflag)
 			if(read(fd_timer4, &tc4, sizeof(u64)) != sizeof(u64)) return false;
 			if(GET_GPIO(GPIO_BUTTON) > 0) eventflag |= EVENT_GPIO_BUTTON;
 			GPIO_SET = 1 << GPIO_LED;
-			tm5.it_value.tv_sec = 0;
-			tm5.it_value.tv_nsec = 500000000;
-			tm5.it_interval.tv_sec = 0;
-			tm5.it_interval.tv_nsec = 0;
+			tm5.it_value.tv_sec = TIMER5_VSEC;
+			tm5.it_value.tv_nsec = TIMER5_VNSEC;
+			tm5.it_interval.tv_sec = TIMER5_ISEC;
+			tm5.it_interval.tv_nsec = TIMER5_INSEC;
 			if(timerfd_settime(fd_timer5, 0, &tm5, NULL) == -1) return false;
 			}
 		else if(events[i].data.fd == fd_timer5)
@@ -1462,7 +1462,11 @@ if(fd_socket_tx != 0) close(fd_socket_tx);
 if(fd_socket_nl != 0) close(fd_socket_nl);
 if(fd_socket_rt != 0) close(fd_socket_rt);
 
-if(fd_pcapng != 0) close(fd_pcapng);
+if(fd_pcapng != 0)
+	{
+	fsync(fd_pcapng);
+	close(fd_pcapng);
+	}
 
 if(frequencylist != NULL) free(frequencylist);
 
