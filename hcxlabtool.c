@@ -46,6 +46,7 @@
 
 static uid_t uid = 1000;
 static pid_t pid = 0;
+static pid_t sid = 0;
 static size_t proberesponsetxindex = 0;
 static unsigned int seed = 3;
 
@@ -1457,6 +1458,7 @@ if(bpf.filter != NULL)
 	if(fd_socket_rx > 0) setsockopt(fd_socket_rx, SOL_SOCKET, SO_DETACH_FILTER, &bpf, sizeof(bpf));
 	free(bpf.filter);
 	}
+
 if(fd_socket_rx != 0) close(fd_socket_rx);
 if(fd_socket_tx != 0) close(fd_socket_tx);
 if(fd_socket_nl != 0) close(fd_socket_nl);
@@ -2461,6 +2463,7 @@ clock_gettime(CLOCK_REALTIME, &tsakt);
 if((fd_fakeclock = open("/home/.hcxftc", O_WRONLY | O_TRUNC | O_CREAT, 0644)) > 0)
 	{
 	if(write(fd_fakeclock, &tsakt, sizeof(struct timespec)) != sizeof(struct timespec)) fprintf(stdout, "failed to write timestamp\n");
+	fsync(fd_fakeclock);
 	close(fd_fakeclock);
 	}
 return;
@@ -2635,7 +2638,6 @@ while(stat(dumpname, &statinfo) == 0)
 	tsakt.tv_sec += 1;
 	snprintf(dumpname, PATH_MAX, "%lld.pcapng", (long long int)tsakt.tv_sec);
 	}
-umask(0);
 if((fd_pcapng = open(dumpname, O_WRONLY | O_TRUNC | O_CREAT, 0666)) < 0) return false;
 if(writeshb() == false) return false;
 if(writeidb() == false) return false;
@@ -2843,6 +2845,7 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"e <file>      : ESSID list\n"
 	"D             : disable DEAUTHENTICATION, DISASSOCIATION and AUTHENTICATIONREQUEST\n"
 	"S             : show very limited realtime display\n"
+	"d             : deamonize\n"
 	"\n",
 	eigenname, VERSION_TAG, VERSION_YEAR, eigenname);
 fprintf(stdout, "less common options:\n--------------------\n"
@@ -2874,6 +2877,7 @@ static struct timespec slp = { 0 };
 static u32 phyidx = 0xffffffff;
 
 static bool rpi = false;
+static bool deamon = false;
 static char *bpfname = NULL;
 static char *scanlist = NULL;
 static char *exitwatchdog = NULL;
@@ -2882,7 +2886,7 @@ static char *exiterror = NULL;
 static char *exitiniterror = NULL;
 static char *essidlistname = NULL;
 
-static const char *short_options = "p:b:s:t:T:w:W:E:I:l:f:e:DShv";
+static const char *short_options = "p:b:s:t:T:w:W:E:I:l:f:e:DSdhv";
 static const struct option long_options[] =
 {
 	{"version",			no_argument,		NULL,	HCX_VERSION},
@@ -2955,6 +2959,9 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		rdsflag = true;
 		break;
 
+		case HCX_DEAMON:
+		deamon = true;
+		break;
 
 		case HCX_HELP:
 		usage(basename(argv[0]));
@@ -2977,7 +2984,29 @@ if((uid = getuid()) != 0)
 	fprintf(stdout, "%s must be run as root\n", basename(argv[0]));
 	return EXIT_FAILURE;
 	}
-pid = getpid();
+if(deamon == true)
+	{
+	if((pid = fork()) < 0)
+		{
+		fprintf(stdout, "failed to deamonize %s\n", basename(argv[0]));
+		return EXIT_FAILURE;
+		}
+	if(pid > 0)
+		{
+		fprintf(stdout, "deamonize %s (pid: %d)\n", basename(argv[0]), pid);
+		return EXIT_SUCCESS;
+		}
+	if((sid = setsid()) < 0)
+		{
+		fprintf(stdout, "failed to deamonize %s\n", basename(argv[0]));
+		return EXIT_FAILURE;
+		}
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	close(STDERR_FILENO);
+	}
+else pid = getpid();
+umask(0);
 slp.tv_sec = 10;
 if(nanosleep(&slp, NULL) == -1) 
 	{

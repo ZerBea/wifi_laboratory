@@ -13,6 +13,7 @@
 #define HCX_ESSID_LIST		'e'
 #define HCX_DISABLE_DE_AUTH	'D'
 #define HCX_RDS			'S'
+#define HCX_DEAMON		'd'
 #define HCX_HELP		'h'
 #define HCX_VERSION		'v'
 
