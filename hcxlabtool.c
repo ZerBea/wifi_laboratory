@@ -2845,9 +2845,11 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"e <file>      : ESSID list\n"
 	"D             : disable DEAUTHENTICATION, DISASSOCIATION and AUTHENTICATIONREQUEST\n"
 	"S             : show very limited realtime display\n"
-	"d             : deamonize\n"
+	"d             : daemonize\n"
+	"                 to terminate %s send SIGTERM to its PID\n"
+	"                 or press push button (modified Raspberry Pi)\n"
 	"\n",
-	eigenname, VERSION_TAG, VERSION_YEAR, eigenname);
+	eigenname, VERSION_TAG, VERSION_YEAR, eigenname, eigenname);
 fprintf(stdout, "less common options:\n--------------------\n"
 	"--help        : show additional help (example and trouble shooting)\n"
 	"--version     : show version\n\n");
@@ -2877,7 +2879,7 @@ static struct timespec slp = { 0 };
 static u32 phyidx = 0xffffffff;
 
 static bool rpi = false;
-static bool deamon = false;
+static bool daemon = false;
 static char *bpfname = NULL;
 static char *scanlist = NULL;
 static char *exitwatchdog = NULL;
@@ -2959,8 +2961,8 @@ while((auswahl = getopt_long(argc, argv, short_options, long_options, &index)) !
 		rdsflag = true;
 		break;
 
-		case HCX_DEAMON:
-		deamon = true;
+		case HCX_DAEMON:
+		daemon = true;
 		break;
 
 		case HCX_HELP:
@@ -2984,21 +2986,21 @@ if((uid = getuid()) != 0)
 	fprintf(stdout, "%s must be run as root\n", basename(argv[0]));
 	return EXIT_FAILURE;
 	}
-if(deamon == true)
+if(daemon == true)
 	{
 	if((pid = fork()) < 0)
 		{
-		fprintf(stdout, "failed to deamonize %s\n", basename(argv[0]));
+		fprintf(stdout, "failed to daemonize %s\n", basename(argv[0]));
 		return EXIT_FAILURE;
 		}
 	if(pid > 0)
 		{
-		fprintf(stdout, "deamonize %s (pid: %d)\n", basename(argv[0]), pid);
+		fprintf(stdout, "daemonize %s (pid: %d)\n", basename(argv[0]), pid);
 		return EXIT_SUCCESS;
 		}
 	if((sid = setsid()) < 0)
 		{
-		fprintf(stdout, "failed to deamonize %s\n", basename(argv[0]));
+		fprintf(stdout, "failed to daemonize %s\n", basename(argv[0]));
 		return EXIT_FAILURE;
 		}
 	close(STDIN_FILENO);
@@ -3007,18 +3009,6 @@ if(deamon == true)
 	}
 else pid = getpid();
 umask(0);
-slp.tv_sec = 10;
-if(nanosleep(&slp, NULL) == -1) 
-	{
-	fprintf(stdout, "nanosleep failed\n");
-	return EXIT_FAILURE;
-	}
-if(init_signal_handler() == false)
-	{
-	fprintf(stdout, "failed to initialize signal handler\n");
-	goto byebye;
-	}
-fprintf(stdout, "init signal handle done\n");
 if((rpi = init_rpi()) == true)
 	{
 	set_ftc();
@@ -3033,10 +3023,13 @@ if((rpi = init_rpi()) == true)
 		goto byebye;
 		}
 	}
-else
+else fprintf(stdout, "Raspberry Pi not detected\n");
+if(init_signal_handler() == false)
 	{
-	fprintf(stdout, "Raspberry Pi not detected\n");
+	fprintf(stdout, "failed to initialize signal handler\n");
+	goto byebye;
 	}
+fprintf(stdout, "init signal handle done\n");
 if(init_values() == false)
 	{
 	fprintf(stdout, "initialization of lists and values failed\n");
@@ -3063,9 +3056,15 @@ if(fi == 1)
 	timer1_insec = 0;
 	}
 fprintf(stdout, "init scanlist done\n");
-
 if(essidlistname != NULL) read_essidlist(essidlistname); 
-fprintf(stdout, "init essidlist done\n");
+fprintf(stdout, "init essidlist done\nwaiting 10 seconds for interface to be ready\n");
+slp.tv_sec = 10;
+if(nanosleep(&slp, NULL) == -1) 
+	{
+	fprintf(stdout, "nanosleep failed\n");
+	eventflag |= EVENT_INIT_ERROR;
+	goto byebye;
+	}
 if(init_interface_rogue1(phyidx) == false)
 	{
 	fprintf(stdout, "initialization of Interface failed\n");
