@@ -2986,6 +2986,22 @@ if((uid = getuid()) != 0)
 	fprintf(stdout, "%s must be run as root\n", basename(argv[0]));
 	return EXIT_FAILURE;
 	}
+if((rpi = init_rpi()) == true)
+	{
+	set_ftc();
+	sync();
+	if(GET_GPIO(GPIO_BUTTON) > 0)
+		{
+		GPIO_SET = 1 << GPIO_LED;
+		return EXIT_SUCCESS;
+		}
+	if(chdir("/home/dumpfiles/") != 0)
+		{
+		eventflag |= EVENT_INIT_ERROR;
+		goto byebye;
+		}
+	}
+else fprintf(stdout, "Raspberry Pi not detected\n");
 if(daemon == true)
 	{
 	if((pid = fork()) < 0)
@@ -3009,21 +3025,6 @@ if(daemon == true)
 	}
 else pid = getpid();
 umask(0);
-if((rpi = init_rpi()) == true)
-	{
-	set_ftc();
-	if(GET_GPIO(GPIO_BUTTON) > 0)
-		{
-		GPIO_SET = 1 << GPIO_LED;
-		return EXIT_SUCCESS;
-		}
-	if(chdir("/home/dumpfiles/") != 0)
-		{
-		eventflag |= EVENT_INIT_ERROR;
-		goto byebye;
-		}
-	}
-else fprintf(stdout, "Raspberry Pi not detected\n");
 if(init_signal_handler() == false)
 	{
 	fprintf(stdout, "failed to initialize signal handler\n");
