@@ -311,7 +311,7 @@ if(uname(&unameData) == 0)
 	shblen += addoption(shb + shblen, SHB_HARDWARE, strlen(unameData.machine), unameData.machine);
 	snprintf(sysinfo, SHB_SYSINFO_LEN, "%s %s", unameData.sysname, unameData.release);
 	shblen += addoption(shb + shblen, SHB_OS, strlen(sysinfo), sysinfo);
-	snprintf(sysinfo, SHB_SYSINFO_LEN, "hcxdumptool %s", VERSION_TAG);
+	snprintf(sysinfo, SHB_SYSINFO_LEN, "hcxlabtool %s", VERSION_TAG);
 	shblen += addoption(shb + shblen, SHB_USER_APPL, strlen(sysinfo), sysinfo);
 	}
 shblen += addcustomoption(shb + shblen);
