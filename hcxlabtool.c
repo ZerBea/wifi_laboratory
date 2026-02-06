@@ -50,6 +50,7 @@ static pid_t sid = 0;
 static size_t proberesponsetxindex = 0;
 static unsigned int seed = 3;
 
+static bool rpi = false;
 static bool deauthflag = false;
 
 static u16 nlfamily = 0;
@@ -311,7 +312,7 @@ if(uname(&unameData) == 0)
 	shblen += addoption(shb + shblen, SHB_HARDWARE, strlen(unameData.machine), unameData.machine);
 	snprintf(sysinfo, SHB_SYSINFO_LEN, "%s %s", unameData.sysname, unameData.release);
 	shblen += addoption(shb + shblen, SHB_OS, strlen(sysinfo), sysinfo);
-	snprintf(sysinfo, SHB_SYSINFO_LEN, "hcxlabtool %s", VERSION_TAG);
+	snprintf(sysinfo, SHB_SYSINFO_LEN, "hcxdumptool %s", VERSION_TAG);
 	shblen += addoption(shb + shblen, SHB_USER_APPL, strlen(sysinfo), sysinfo);
 	}
 shblen += addcustomoption(shb + shblen);
@@ -1367,15 +1368,18 @@ ev.events = EPOLLIN;
 if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_timer3, &ev) < 0) return false;
 epi++;
 
-ev.data.fd = fd_timer4;
-ev.events = EPOLLIN;
-if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_timer4, &ev) < 0) return false;
-epi++;
+if(rpi == true)
+	{
+	ev.data.fd = fd_timer4;
+	ev.events = EPOLLIN;
+	if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_timer4, &ev) < 0) return false;
+	epi++;
 
-ev.data.fd = fd_timer5;
-ev.events = EPOLLIN;
-if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_timer5, &ev) < 0) return false;
-epi++;
+	ev.data.fd = fd_timer5;
+	ev.events = EPOLLIN;
+	if(epoll_ctl(fd_epoll, EPOLL_CTL_ADD, fd_timer5, &ev) < 0) return false;
+	epi++;
+	}
 
 fi = 0;
 if(set_frequency() == false) return false;
@@ -1667,6 +1671,8 @@ tm3.it_value.tv_nsec = timer3_vnsec;
 tm3.it_interval.tv_sec = timer3_isec;
 tm3.it_interval.tv_nsec = timer3_insec;
 if(timerfd_settime(fd_timer3, 0, &tm3, NULL) == -1) return false;
+
+if(rpi == false) return true;
 
 /* LED on */
 if((fd_timer4 = timerfd_create(CLOCK_BOOTTIME, 0)) < 0) return false;
@@ -2880,7 +2886,6 @@ static int index = 0;
 static struct timespec slp = { 0 }; 
 static u32 phyidx = 0xffffffff;
 
-static bool rpi = false;
 static bool daemon = false;
 static char *bpfname = NULL;
 static char *scanlist = NULL;
@@ -2988,8 +2993,11 @@ if((uid = getuid()) != 0)
 	fprintf(stdout, "%s must be run as root\n", basename(argv[0]));
 	return EXIT_FAILURE;
 	}
+
 if((rpi = init_rpi()) == true)
 	{
+	printf("debug\n");
+	exit(EXIT_FAILURE);
 	set_ftc();
 	sync();
 	if(GET_GPIO(GPIO_BUTTON) > 0)
@@ -3004,6 +3012,7 @@ if((rpi = init_rpi()) == true)
 		}
 	}
 else fprintf(stdout, "Raspberry Pi not detected\n");
+
 if(daemon == true)
 	{
 	if((pid = fork()) < 0)
