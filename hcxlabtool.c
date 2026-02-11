@@ -50,7 +50,6 @@ static pid_t sid = 0;
 static size_t proberesponsetxindex = 0;
 static unsigned int seed = 3;
 
-static bool rpi = false;
 static bool deauthflag = false;
 
 static u16 nlfamily = 0;
@@ -84,10 +83,10 @@ static time_t timer3_vnsec = TIMER3_VNSEC;
 static time_t timer3_isec = TIMER3_ISEC;
 static time_t timer3_insec = TIMER3_INSEC;
 
-static time_t	timer4_vsec = TIMER4_VSEC;
-static time_t	timer4_vnsec = TIMER4_VNSEC;
-static time_t	timer4_isec = TIMER4_ISEC;
-static time_t	timer4_insec = TIMER4_INSEC;
+static time_t timer4_vsec = TIMER4_VSEC;
+static time_t timer4_vnsec = TIMER4_VNSEC;
+static time_t timer4_isec = TIMER4_ISEC;
+static time_t timer4_insec = TIMER4_INSEC;
 
 static int fi = 0;
 static frequencylist_t *frequencylist;
@@ -1335,7 +1334,7 @@ while(1)
 return false;
 }
 /*---------------------------------------------------------------------------*/
-static bool scanloop(void)
+static bool scanloop(bool rpi)
 {
 static ssize_t i;
 static struct itimerspec tm5;
@@ -1640,7 +1639,7 @@ return true;
 }
 /*===========================================================================*/
 /* TIMER */
-static bool init_timer(void)
+static bool init_timer(bool rpi)
 {
 static struct itimerspec tm1;
 static struct itimerspec tm2;
@@ -2834,26 +2833,26 @@ fprintf(stdout, "%s %s  (C) %s ZeroBeat\n"
 	"-s <seconds>   : stay time on channel in seconds\n"
 	"-t <minutes>   : TOT time in minutes\n"
 	"-T <event>     : exit on TOT\n"
-	"                 reboot\n"
-	"                 poweroff\n"
+	"                  reboot\n"
+	"                  poweroff\n"
 	"-w <minutes>   : watchdog time out in minutes\n"
 	"-W <event>     : exit on watchdog\n"
-	"                 reboot\n"
-	"                 poweroff\n"
+	"                  reboot\n"
+	"                  poweroff\n"
 	"-E <event>     : exit on ERROR\n"
-	"                 reboot\n"
-	"                 poweroff\n"
+	"                  reboot\n"
+	"                  poweroff\n"
 	"-I <event>     : exit on init ERROR\n"
-	"                 reboot\n"
-	"                 poweroff\n"
+	"                  reboot\n"
+	"                  poweroff\n"
 	"-l <seconds>   : status LED interval\n"
 	"-f <digit>     : frequency or channel & band\n"
 	"-e <file>      : ESSID list\n"
 	"-D             : disable DEAUTHENTICATION, DISASSOCIATION and AUTHENTICATIONREQUEST\n"
 	"-S             : show very limited realtime display\n"
 	"-d             : daemonize\n"
-	"                 to terminate %s send SIGTERM to its PID\n"
-	"                 or press push button (modified Raspberry Pi)\n"
+	"                  to terminate %s send SIGTERM to its PID\n"
+	"                  or press push button (modified Raspberry Pi)\n"
 	"-h             : show help\n"
 	"-v             : show version\n"
 	"\n",
@@ -2887,6 +2886,7 @@ static struct timespec slp = { 0 };
 static u32 phyidx = 0xffffffff;
 
 static bool daemon = false;
+static bool rpi = false;
 static char *bpfname = NULL;
 static char *scanlist = NULL;
 static char *exitwatchdog = NULL;
@@ -3092,7 +3092,7 @@ if(init_raw_sockets(bpfname) == false)
 	}
 fprintf(stdout, "init sockets done\n");
 
-if(init_timer() == false)
+if(init_timer(rpi) == false)
 	{
 	fprintf(stdout, "initialization of timer failed\n");
 	eventflag |= EVENT_INIT_ERROR;
@@ -3107,7 +3107,7 @@ if(open_dumpfile() == false)
 	}
 fprintf(stdout, "open dumpfile done\n");
 
-if(scanloop() == false)
+if(scanloop(rpi) == false)
 	{
 	fprintf(stdout, "scan loop error\n");
 	eventflag |= EVENT_SCANLOOP_ERROR;
