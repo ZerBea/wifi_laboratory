@@ -2996,8 +2996,6 @@ if((uid = getuid()) != 0)
 
 if((rpi = init_rpi()) == true)
 	{
-	printf("debug\n");
-	exit(EXIT_FAILURE);
 	set_ftc();
 	sync();
 	if(GET_GPIO(GPIO_BUTTON) > 0)
