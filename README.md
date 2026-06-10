@@ -7,9 +7,9 @@ Expect compiler warnings and ERRORs.
 
 Expect missing or incomplete functions.
 
-Hardware modification (GPIO push button and GPIO LED is mandatory).
+Hardware modification (GPIO push button and GPIO LED) is mandatory when running on a Raspberry Pi!
 
-hcxlabtool highjacks all(!) interfaces, uses the first suitable interface as "rogue1" and disables the remaining ones.
+hcxlabtool highjacks all(!) interfaces, uses the first suitable interface as "rogue1" and disables the remaining ones!
 
 Do not report issues or feature requests.
 
