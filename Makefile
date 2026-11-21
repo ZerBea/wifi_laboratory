@@ -15,8 +15,11 @@ BINDIR		= $(DESTDIR)$(PREFIX)/bin
 HOSTOS		:= $(shell uname -s)
 
 CC		?= gcc
-CFLAGS		?= -O3 -Wall -Wextra -Wpedantic -Wstrict-prototypes
+CFLAGS		+= -O3
+CFLAGS		+= -Wall -Wextra -Wpedantic -Wstrict-prototypes -Wunused-function  -Wformat
+CFLAGS		+= -Werror=format-security -Werror=format-security -Werror=incompatible-pointer-types
 CFLAGS		+= -std=gnu99
+#CFLAGS		+= -ggdb -fsanitize=address
 DEFS		= -DVERSION_TAG=\"$(VERSION_TAG)\" -DVERSION_YEAR=\"$(VERSION_YEAR)\"
 
 INSTALL		?= install
@@ -26,7 +29,7 @@ ifeq ($(HOSTOS), Linux)
 INSTFLAGS += -D
 endif
 
-TOOLS=hcxlabtool
+TOOLS=hcxm2hunter
 
 .PHONY: all build install clean uninstall
 

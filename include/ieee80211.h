@@ -61,33 +61,62 @@
 #define IEEE80211_STYPE_QOS_CFPOLL		0xe
 #define IEEE80211_STYPE_QOS_CFACKPOLL		0xf
 
-/* Reason codes (IEEE 802.11-2007, 7.3.1.7, Table 7-22) */
-#define WLAN_REASON_UNSPECIFIED 1 /* ok */
-#define WLAN_REASON_PREV_AUTH_NOT_VALID 2
-#define WLAN_REASON_DEAUTH_LEAVING 3
-#define WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY 4
-#define WLAN_REASON_DISASSOC_AP_BUSY 5
-#define WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA 6 /* ok */
-#define WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA 7  /* ok */
-#define WLAN_REASON_DISASSOC_STA_HAS_LEFT 8
-#define WLAN_REASON_STA_REQ_ASSOC_WITHOUT_AUTH 9
-/* IEEE 802.11h */
-#define WLAN_REASON_PWR_CAPABILITY_NOT_VALID 10
-#define WLAN_REASON_SUPPORTED_CHANNEL_NOT_VALID 11
-/* IEEE 802.11i */
-#define WLAN_REASON_INVALID_IE 13
-#define WLAN_REASON_MICHAEL_MIC_FAILURE 14
-#define WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT 15
-#define WLAN_REASON_GROUP_KEY_UPDATE_TIMEOUT 16
-#define WLAN_REASON_IE_IN_4WAY_DIFFERS 17
-#define WLAN_REASON_GROUP_CIPHER_NOT_VALID 18
-#define WLAN_REASON_PAIRWISE_CIPHER_NOT_VALID 19
-#define WLAN_REASON_AKMP_NOT_VALID 20
-#define WLAN_REASON_UNSUPPORTED_RSN_IE_VERSION 21
-#define WLAN_REASON_INVALID_RSN_IE_CAPAB 22
-#define WLAN_REASON_IEEE_802_1X_AUTH_FAILED 23
-#define WLAN_REASON_CIPHER_SUITE_REJECTED 24
-
+/* Reason codes (IEEE 802.11) */
+#define WLAN_REASON_UNSPECIFIED				1
+#define WLAN_REASON_PREV_AUTH_NOT_VALID			2
+#define WLAN_REASON_DEAUTH_LEAVING			3
+#define WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY		4
+#define WLAN_REASON_DISASSOC_AP_BUSY			5
+#define WLAN_REASON_CLASS2_FRAME_FROM_NONAUTH_STA	6
+#define WLAN_REASON_CLASS3_FRAME_FROM_NONASSOC_STA	7
+#define WLAN_REASON_DISASSOC_STA_HAS_LEFT		8
+#define WLAN_REASON_STA_REQ_ASSOC_WITHOUT_AUTH		9
+/* 802.11h */
+#define WLAN_REASON_DISASSOC_BAD_POWER			10
+#define WLAN_REASON_DISASSOC_BAD_SUPP_CHAN		11
+/* 802.11i */
+#define WLAN_REASON_INVALID_IE				13
+#define WLAN_REASON_MIC_FAILURE				14
+#define WLAN_REASON_4WAY_HANDSHAKE_TIMEOUT		15
+#define WLAN_REASON_GROUP_KEY_HANDSHAKE_TIMEOUT		16
+#define WLAN_REASON_IE_DIFFERENT			17
+#define WLAN_REASON_INVALID_GROUP_CIPHER		18
+#define WLAN_REASON_INVALID_PAIRWISE_CIPHER		19
+#define WLAN_REASON_INVALID_AKMP			20
+#define WLAN_REASON_UNSUPP_RSN_VERSION			21
+#define WLAN_REASON_INVALID_RSN_IE_CAP			22
+#define WLAN_REASON_IEEE8021X_FAILED			23
+#define WLAN_REASON_CIPHER_SUITE_REJECTED		24
+/* TDLS (802.11z) */
+#define WLAN_REASON_TDLS_TEARDOWN_UNREACHABLE		25
+#define WLAN_REASON_TDLS_TEARDOWN_UNSPECIFIED		26
+/* 802.11e */
+#define WLAN_REASON_DISASSOC_UNSPECIFIED_QOS		32
+#define WLAN_REASON_DISASSOC_QAP_NO_BANDWIDTH		33
+#define WLAN_REASON_DISASSOC_LOW_ACK			34
+#define WLAN_REASON_DISASSOC_QAP_EXCEED_TXOP		35
+#define WLAN_REASON_QSTA_LEAVE_QBSS			36
+#define WLAN_REASON_QSTA_NOT_USE			37
+#define WLAN_REASON_QSTA_REQUIRE_SETUP			38
+#define WLAN_REASON_QSTA_TIMEOUT			39
+#define WLAN_REASON_QSTA_CIPHER_NOT_SUPP		45
+/* 802.11s */
+#define WLAN_REASON_MESH_PEER_CANCELED			52
+#define WLAN_REASON_MESH_MAX_PEERS			53
+#define WLAN_REASON_MESH_CONFIG				54
+#define WLAN_REASON_MESH_CLOSE				55
+#define WLAN_REASON_MESH_MAX_RETRIES			56
+#define WLAN_REASON_MESH_CONFIRM_TIMEOUT		57
+#define WLAN_REASON_MESH_INVALID_GTK			58
+#define WLAN_REASON_MESH_INCONSISTENT_PARAM		59
+#define WLAN_REASON_MESH_INVALID_SECURITY		60
+#define WLAN_REASON_MESH_PATH_ERROR			61
+#define WLAN_REASON_MESH_PATH_NOFORWARD			62
+#define WLAN_REASON_MESH_PATH_DEST_UNREACHABLE		63
+#define WLAN_REASON_MAC_EXISTS_IN_MBSS			64
+#define WLAN_REASON_MESH_CHAN_REGULATORY		65
+#define WLAN_REASON_MESH_CHAN				66
+		
 #define IEEE80211_SEQ_SEQ_MASK	0xfff0
 #define IEEE80211_SEQ_SEQ_SHIFT	4
 
@@ -106,7 +135,7 @@
 #define WPA_KEY_INFO_ERROR WBIT(10)
 #define WPA_KEY_INFO_REQUEST WBIT(11)
 #define WPA_KEY_INFO_ENCR_KEY_DATA WBIT(12) /* IEEE 802.11i/RSN only */
-/*---------------------------------------------------------------------------*/
+/*===========================================================================*/
 typedef struct __attribute__((packed))
 {
  u64	timestamp;
@@ -130,7 +159,7 @@ typedef struct __attribute__((packed))
  u8	ie[1];
 }ieee80211_proberequest_t;
 #define IEEE80211_PROBEREQUEST_SIZE offsetof(ieee80211_proberequest_t, ie)
-/*===========================================================================*/
+/*---------------------------------------------------------------------------*/
 typedef struct __attribute__((__packed__))
 {
  u8	category;
@@ -178,6 +207,18 @@ typedef struct __attribute__((__packed__))
 /*---------------------------------------------------------------------------*/
 typedef struct __attribute__((__packed__))
 {
+ u16 reason;
+}ieee80211_deauth_t;
+#define IEEE80211_DEAUTHENTICATION_SIZE sizeof(ieee80211_deauth_t)
+/*---------------------------------------------------------------------------*/
+typedef struct __attribute__((__packed__))
+{
+ u16 reason;
+}ieee80211_disassoc_t;
+#define IEEE80211_DISASSOCIATION_SIZE sizeof(ieee80211_disassoc_t)
+/*---------------------------------------------------------------------------*/
+typedef struct __attribute__((__packed__))
+{
  u16 capability;
  u16 listen_interval;
  u8 current_macap[ETH_ALEN];
@@ -213,8 +254,17 @@ typedef struct __attribute__((__packed__))
  u16	akmcount;
  u8	akm[4];
  u16	rsncapa; 
+}ieee80211_rsnsecclienttag_t;
+#define IEEE80211_RSNSECCLIENT_SIZE sizeof(ieee80211_rsnsecclienttag_t)
+
+typedef struct __attribute__((__packed__))
+{
+#define RSN1		1
+ u16	version;
+ u8	gcs[4];
+ u8	rsnsuites[1];
 }ieee80211_rsnsectag_t;
-#define IEEE80211_RSNSEC_SIZE sizeof(ieee80211_rsnsectag_t)
+#define IEEE80211_RSNSEC_SIZE offsetof(ieee80211_rsnsectag_t, rsnsuites)
 /*---------------------------------------------------------------------------*/
 typedef struct __attribute__((__packed__))
 {
@@ -227,6 +277,13 @@ typedef struct __attribute__((__packed__))
  u8	akm[4];
 }ieee80211_wpasectag_t;
 #define IEEE80211_WPASEC_SIZE sizeof(ieee80211_wpasectag_t)
+/*---------------------------------------------------------------------------*/
+typedef struct __attribute__((__packed__))
+{
+ u16	count;
+ u8	suite[1];
+}ieee80211_suite_t;
+#define IEEE80211_SUITE_SIZE offsetof(ieee80211_suite_t, suite)
 /*---------------------------------------------------------------------------*/
 typedef struct __attribute__((__packed__))
 {
@@ -296,14 +353,7 @@ typedef struct __attribute__((__packed__))
  u8	pmkid[PMKID_MAX];
 }ieee80211_pmkid_t;
 #define IEEE80211_PMKID_SIZE (sizeof(ieee80211_pmkid_t))
-#define IEEE80211_PMKIDIE_SIZE	(IEEE80211_PMKID_SIZE + IEEE80211_IETAG_SIZE)
-/*---------------------------------------------------------------------------*/
-typedef struct __attribute__((__packed__))
-{
- u16	count;
- u8	suite[4];
-}ieee80211_suite_t;
-#define IEEE80211_SUITE_SIZE sizeof(ieee80211_suite_t)
+#define IEEE80211_PMKIDIE_SIZE (IEEE80211_PMKID_SIZE - IEEE80211_IETAG_SIZE)
 /*---------------------------------------------------------------------------*/
 typedef struct __attribute__((__packed__))
 {

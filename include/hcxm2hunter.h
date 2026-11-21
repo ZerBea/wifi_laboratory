@@ -28,15 +28,17 @@
 #define NLTX_SIZE		0xfff
 #define NLRX_SIZE		0xffff
 
-#define EVENT_SIGTERM		0x0001
-#define EVENT_GPIO_BUTTON	0x0002
-#define EVENT_WATCHDOG		0x0004
-#define EVENT_TOT		0x0008
-#define EVENT_INIT_ERROR	0x0100
-#define EVENT_SCANLOOP_ERROR	0x0200
-#define EVENT_PKT_READ_ERROR	0x0400
-#define EVENT_PKT_SEND_ERROR	0x0800
-#define EVENT_PKT_STORE_ERROR	0x1000
+#define EVENT_SIGTERM		0x00000001
+#define EVENT_SIGUSR1		0x00000002
+#define EVENT_SIGUSR2		0x00000004
+#define EVENT_GPIO_BUTTON	0x00000008
+#define EVENT_WATCHDOG		0x00000010
+#define EVENT_TOT		0x00000020
+#define EVENT_INIT_ERROR	0x00000040
+#define EVENT_SCANLOOP_ERROR	0x00000080
+#define EVENT_PKT_READ_ERROR	0x00000100
+#define EVENT_PKT_SEND_ERROR	0x00000200
+#define EVENT_PKT_STORE_ERROR	0x00000400
 
 #define EAPOL_M12TOT		40000000
 #define EAPOL_M23TOT		20000000
@@ -72,6 +74,19 @@
 #define TIMER5_VNSEC		500000000L
 #define TIMER5_ISEC		0L
 #define TIMER5_INSEC		0L
+
+#define MOD_INTERVAL		15
+#define MOD_INTERVAL0		0
+#define MOD_INTERVAL1		1
+#define MOD_INTERVAL2		2
+#define MOD_INTERVAL3		3
+#define MOD_INTERVAL4		4
+#define MOD_INTERVAL5		5
+#define MOD_INTERVAL6		6
+#define MOD_INTERVAL7		7
+#define MOD_INTERVAL8		8
+#define MOD_INTERVAL9		9
+#define MOD_INTERVAL10		10
 
 /*===========================================================================*/
 #define ENTRIES(entries) (int)(sizeof(entries) / sizeof(*entries))
@@ -116,99 +131,75 @@ typedef struct
 }frequencylist_t;
 #define FREQUENCYLIST_SIZE (sizeof(frequencylist_t))
 /*===========================================================================*/
-#define COUNT_AUTH_MAX		25
-#define COUNT_ASSOC_MAX		25
-#define COUNT_REASSOC_MAX	25
-#define COUNT_M12RGMAX		4
-#define COUNT_M123MAX		4
-#define COUNT_NULL_MAX		100
-#define COUNT_DATA1_MAX		100
-#define COUNT_ACTION2_MAX	100
 typedef struct
 {
-#define CON_ESSID		0x0001
-#define CON_ACTION_ESSID	0x0002
-#define CON_AUTHREQ		0x0004
-#define CON_ASSOCREQ		0x0008
-#define CON_REASSOCREQ		0x0010
-#define CON_M1			0x0020
-#define CON_M2			0x0040
-#define CON_M2RG		0x0080
- time_t		secm1;
- time_t		secm2;
- long int	nsecm1;
- long int	nsecm2;
- u64		rcm1;
- u64		rcm2;
- u16		status;
- u16		seqauthreq;
- u16		seqassocreq;
- u16		seqreassocreq;
- u16		seqaction1;
- u16		seqaction2;
- u16		countm2rg;
- u16		countm3;
- u16		countauth;
- u16		countassoc;
- u16		countreassoc;
- u16		countnull;
- u16		countdata1;
- u16		countdata2;
- u16		countaction2;
- u8		akdv;
- u8		macap[ETH_ALEN];
- u8		maccl[ETH_ALEN];
- u8		mic[KEYMIC_MAX];
- u8		anonce[4];
- }condata_t;
-#define CONDATA_SIZE (sizeof(condata_t))
+ time_t		secfirst;
+ u8		mac[ETH_ALEN];
+ u8		len;
+ u8		essid[ESSID_MAX];
+ }ed_t;
+#define ED_SIZE (sizeof(ed_t))
 /*---------------------------------------------------------------------------*/
-#define CONLIST_MAX	512
+#define ESSIDL_MAX	256
+#define ESSIDL_SORT	24
 typedef struct
 {
  time_t		sec;
- condata_t	*condata;
-}conlist_t;
-#define CONLIST_SIZE (sizeof(conlist_t))
+ ed_t		*ed;
+}essidl_t;
+#define ESSIDL_SIZE (sizeof(essidl_t))
 
-static inline __attribute__((always_inline)) int sort_conlist_by_sec(const void *a, const void *b)
+static inline __attribute__((always_inline)) int sort_essidl_by_sec(const void *a, const void *b)
 {
-const conlist_t *ai = (const conlist_t *)a;
-const conlist_t *bi = (const conlist_t *)b;
+const essidl_t *ai = (const essidl_t *)a;
+const essidl_t *bi = (const essidl_t *)b;
 
 if(ai->sec < bi->sec) return 1;
 else if(ai->sec > bi->sec) return -1;
 return 0;
 }
 /*===========================================================================*/
-#define COUNT_BC_MAX	100
+#define	RSN_GCS_TKIP		0x0001
+#define	RSN_GCS_CCMP		0x0002
+#define	RSN_PCS_TKIP		0x0004
+#define	RSN_PCS_CCMP		0x0008
+#define	RSN_AKM_PSK		0x0010
+#define	RSN_AKM_PSK256		0x0020
+#define	RSN_AKM_PSKFT		0x0040
+#define RSN_MFP			0x0c00
+#define RSN_MFP_MANDATORY	0x0400
+#define RSN_MFP_CAPABLE		0x0800
+#define STAT_M1			0x0001
+#define STAT_M4			0x0002
+#define STAT_PMKID		0x0004
 typedef struct
 {
- time_t		secat;
- u32		count1;
- u16		seqprobereq;
- u16		seqproberesp;
- u8		macap[ETH_ALEN];
+ time_t		secfirst;
+ time_t		seccount;
+ time_t		seccl;
+ u16		status;
+ u16		rsninfo;
+ u8		mac[ETH_ALEN];
  u8		maccl[ETH_ALEN];
- u8		essidlen;
+ u8		len;
  u8		essid[ESSID_MAX];
- }apdata_t;
-#define APDATA_SIZE (sizeof(apdata_t))
+ u8		pmkid[PMKID_MAX];
+ }bd_t;
+#define BD_SIZE (sizeof(bd_t))
 /*---------------------------------------------------------------------------*/
-#define APLIST_MAX	128
-#define APLIST_HALF	64
-#define ESSIDLIST_MAX	256
+#define BSSIDL_MAX	256
+#define BSSIDL_SORT	24
 typedef struct
 {
  time_t		sec;
- apdata_t	*apdata;
-}aplist_t;
-#define APLIST_SIZE (sizeof(aplist_t))
+ bd_t		*bd;
+}bssidl_t;
+#define BSSIDL_SIZE (sizeof(bssidl_t))
 
-static inline __attribute__((always_inline)) int sort_aplist_by_sec(const void *a, const void *b)
+static inline __attribute__((always_inline)) int sort_bssidl_by_sec(const void *a, const void *b)
 {
-const aplist_t *ai = (const aplist_t *)a;
-const aplist_t *bi = (const aplist_t *)b;
+const bssidl_t *ai = (const bssidl_t *)a;
+const bssidl_t *bi = (const bssidl_t *)b;
 
 if(ai->sec < bi->sec) return 1;
 else if(ai->sec > bi->sec) return -1;

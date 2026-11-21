@@ -1,4 +1,4 @@
-hcxlabtool
+hcxm2hunter
 ============
 
 A tool to test updates on hcxdumptool.
@@ -9,7 +9,7 @@ Expect missing or incomplete functions.
 
 Hardware modification (GPIO push button and GPIO LED) is mandatory when running on a Raspberry Pi!
 
-hcxlabtool highjacks all(!) interfaces, uses the first suitable interface as "rogue1" and disables the remaining ones!
+hcxm2hunter highjacks all(!) interfaces, uses the first suitable interface as "rogue1" and disables the remaining ones!
 
 Do not report issues or feature requests.
 
@@ -31,7 +31,7 @@ I have a clear (non-negotiable) priority when testing/adding new features:
 ...
 
 
-What Doesn't hcxlabtool Do?
+What doesn't hcxm2hunter do?
 -----------------------------
 
 * It does not crack WPA PSK related hashes. (Use Hashcat or JtR to recover the PSK.)
@@ -54,7 +54,7 @@ What Doesn't hcxlabtool Do?
 Work Flow
 ----------
 
-hcxlabtool -> hcxpcapngtool -> hcxhashtool (additional hcxpsktool/hcxeiutool) -> Hashcat or JtR
+hcxm2hunter -> hcxpcapngtool -> hcxhashtool (additional hcxpsktool/hcxeiutool) -> Hashcat or JtR
 
 
 Requirements
