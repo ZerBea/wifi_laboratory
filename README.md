@@ -57,7 +57,7 @@ Work Flow
 hcxm2hunter -> hcxpcapngtool -> hcxhashtool (additional hcxpsktool/hcxeiutool) -> Hashcat or JtR
 
 
-Ypical command lines
+Typical command lines
 ----------
 
 maximally invasive: $ hcxm2hunter -b protect.bpf -e some_essids.list -l 5 -f 1a,6a,11a,2a,1a,6a,11a,13a,1a,6a,11a,3a,1a,6a,11a,12a,1a,6a,11a,4a,1a,6a,11a,10a,1a,6a,11a,5a,1a,6a,11a,9a,1a,6a,11a,7a,1a,6a,11a,8a
