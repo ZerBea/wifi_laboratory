@@ -1457,7 +1457,7 @@ for(i = 0; i < BSSIDL_MAX - 1; i++)
 					if(((bssidl + i)->bd->seccount % modinterval) == MOD_INTERVAL3) send_deauthentication6(macbc, macfrx->addr3);
 					if(((bssidl + i)->bd->seccount % modinterval) == MOD_INTERVAL7) send_deauthentication6(macbc, macfrx->addr3);
 					}
-				if(((bssidl + i)->bd->status & STAT_M1) == 0)
+				if((((bssidl + i)->bd->status & STAT_M1) == 0) && (((bssidl + i)->bd->rsninfo & RSN_AKM_PSK) == RSN_AKM_PSK))
 					{
 					if(((bssidl + i)->bd->seccount % modinterval) == MOD_INTERVAL5) send_authenticationrequest(macclrg, macfrx->addr3);
 					}
@@ -1480,7 +1480,7 @@ memcpy((bssidl + i)->bd->essid, essidtag->ie, essidtag->len);
 if(deauthflag == false)
 	{
 	if(((bssidl + i)->bd->rsninfo & RSN_MFP_MANDATORY) == 0) send_deauthentication6(macbc, macfrx->addr3);
-	send_authenticationrequest(macclrg, macfrx->addr3);
+	if(((bssidl + i)->bd->rsninfo & RSN_AKM_PSK) == RSN_AKM_PSK) send_authenticationrequest(macclrg, macfrx->addr3);
 	}
 qsort(bssidl, i + 1, BSSIDL_SIZE, sort_bssidl_by_sec);
 writeepb();
@@ -3318,7 +3318,7 @@ if(init_values() == false)
 	eventflag |= EVENT_INIT_ERROR;
 	goto byebye;
 	}
-fprintf(stdout, "init pi done\n");
+fprintf(stdout, "init of lists and values done\n");
 if(scanlist != NULL) init_scanlist(scanlist);
 if(fi == 0)
 	{
